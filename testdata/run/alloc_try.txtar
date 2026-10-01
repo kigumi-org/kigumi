@@ -1,0 +1,38 @@
+-- src --
+import map from std/map
+
+fn run() -> Unit {
+    let mut items = Array.empty[u8]()
+    items.push(72)
+    items.push(105)
+    let hi = Bytes.tryFromArray(&items).unwrap()
+    let text = String.tryFromBytes(hi).unwrap()
+    print "${hi.len()} ${text}"
+
+    let bang = Bytes.tryFromArray(&Array.of(33)).unwrap()
+    let cat = hi.tryConcat(bang).unwrap()
+    print "${cat.len()} ${String.tryFromBytes(cat).unwrap()}"
+
+    let mut invalid = Array.empty[u8]()
+    invalid.push(255)
+    let bad = Bytes.tryFromArray(&invalid).unwrap()
+    print "${String.tryFromBytes(bad) is Err(_)}"
+
+    let mut m = map.empty[String, Int]()
+    print "${m.trySet("a", 1) is Ok(_)}"
+    print "${m.trySet("b", 2) is Ok(_)}"
+    print "${m.trySet("a", 9) is Ok(_)}"
+    print "${m.len()} ${m.get(&"a") || 0} ${m.get(&"b") || 0}"
+}
+
+run()
+print "done"
+-- stdout --
+2 Hi
+3 Hi!
+true
+true
+true
+true
+2 9 2
+done

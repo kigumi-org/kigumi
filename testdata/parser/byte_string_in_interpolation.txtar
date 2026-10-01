@@ -1,0 +1,51 @@
+-- src --
+let magic = b"\x30\x82"
+print "${magic.indexOf(b"\x82") is Some(_)}"
+
+let escaped = b"\"\\"
+print "len ${escaped.len()} plain ${"abc"} byte ${b"\x41\x42"}"
+
+let nested = "${"outer ${b"\x30"} inner"}"
+-- expect --
+File
+  Let
+    pattern: PatBind magic
+    init: ByteStringLit b"\x30\x82"
+  ExprStmt
+    WsCall
+      Ident print
+      List
+        StringLit "${magic.indexOf(b"\x82") is Some(_)}"
+          List
+            Is
+              Call
+                Member indexOf
+                  Ident magic
+                List
+                  ByteStringLit b"\x82"
+              PatCtor
+                Path Some
+                List
+                  PatWildcard _
+  Let
+    pattern: PatBind escaped
+    init: ByteStringLit b"\"\\"
+  ExprStmt
+    WsCall
+      Ident print
+      List
+        StringLit "len ${escaped.len()} plain ${"abc"} byte ${b"\x41\x42"}"
+          List
+            Call
+              Member len
+                Ident escaped
+              List
+            StringLit "abc"
+            ByteStringLit b"\x41\x42"
+  Let
+    pattern: PatBind nested
+    init: StringLit "${"outer ${b"\x30"} inner"}"
+      List
+        StringLit "outer ${b"\x30"} inner"
+          List
+            ByteStringLit b"\x30"

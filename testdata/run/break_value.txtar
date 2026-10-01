@@ -1,0 +1,56 @@
+-- src --
+fn spin(n: Int) -> Int {
+    let mut i = 0
+    for {
+        i = i + 1
+        if i >= n {
+            break i * 10
+        }
+    }
+}
+
+fn nested() -> Int {
+    let mut i = 0
+    let outer = for {
+        i = i + 1
+        let inner = for {
+            break i * 100
+        }
+        if i >= 3 {
+            break inner + 1
+        }
+    }
+    outer
+}
+
+fn viaMatch(n: Int) -> Int {
+    let mut i = 0
+    for {
+        i = i + 1
+        match i {
+            _ if i == n -> break i * 1000
+            _ -> ()
+        }
+    }
+}
+
+fn plainBreak() -> Int {
+    let mut i = 0
+    for {
+        i = i + 1
+        if i > 2 {
+            break
+        }
+    }
+    i
+}
+
+print "${spin(4)}"
+print "${nested()}"
+print "${viaMatch(3)}"
+print "${plainBreak()}"
+-- stdout --
+40
+301
+3000
+3

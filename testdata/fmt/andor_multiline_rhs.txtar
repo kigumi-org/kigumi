@@ -1,0 +1,23 @@
+-- src --
+fn f(a: Bool, s: Shape) -> Bool {
+    a && match s {
+        Circle -> true
+        Square -> false
+    }
+}
+fn g(a: Bool) -> Bool {
+    a && foo(1,
+        2,
+    )
+}
+-- expect --
+fn f(a: Bool, s: Shape) -> Bool {
+    a && match s {
+        Circle -> true
+        Square -> false
+    }
+}
+
+fn g(a: Bool) -> Bool {
+    a && foo(1, 2)
+}

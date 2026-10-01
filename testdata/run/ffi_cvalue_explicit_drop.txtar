@@ -1,0 +1,19 @@
+-- src --
+import ffi from std/ffi
+
+// L-174: an explicit `.drop()` on a ffi resource must not be released a
+// second time when the local goes out of scope right after.
+let iv = ffi.CValue.new[i64](42)
+print "${iv.get()}"
+iv.drop()
+
+let uv = ffi.CValue.new[u32](7)
+uv.set(&9)
+print "${uv.get()}"
+uv.drop()
+
+print "done"
+-- stdout --
+42
+9
+done

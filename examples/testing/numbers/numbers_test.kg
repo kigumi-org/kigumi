@@ -1,0 +1,14 @@
+import test from std/test
+
+test "gcd of coprime numbers is 1" {
+    test.expectEq(gcd(7, 9), 1)?
+}
+
+test "gcd handles zero" {
+    test.expectEq(gcd(5, 0), 5)?
+}
+
+test "lcm" {
+    test.expectEq(lcm(4, 6), 12)?
+    test.expectEq(lcm(3, 5), 15)?
+}

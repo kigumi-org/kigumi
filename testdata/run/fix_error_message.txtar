@@ -1,0 +1,17 @@
+-- src --
+let raw: Array[u8] = Array.of(255)
+let bad = Bytes.fromArray(&raw)
+let r = String.fromBytes(bad)
+match r {
+    Ok(s) -> print "ok ${s}"
+    Err(e) -> print "1: ${e.message()}"
+}
+let again = String.fromBytes(Bytes.fromArray(&raw))
+if again is Err(e2) {
+    print "2: ${e2.message()} ${e2.message().len()}"
+}
+print "end"
+-- stdout --
+1: invalid UTF-8
+2: invalid UTF-8 13
+end

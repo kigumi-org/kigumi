@@ -1,0 +1,30 @@
+-- src --
+fn f() -> Int! {
+    let xs = Array.of(41)
+    xs.get(0) || 0
+}
+
+fn h() -> Int? {
+    let xs = Array.of(41)
+    xs.get(0) || 0
+}
+
+fn k() -> Int! {
+    let xs = Array.of(41)
+    if true {
+        xs.get(0) || 0
+    } else {
+        1
+    }
+}
+
+fn run() -> Unit! {
+    let a = f()?
+    let c = h() || -1
+    let d = k()?
+    print "${a} ${c} ${d}"
+}
+
+let r = run()
+-- stdout --
+41 41 41

@@ -1,0 +1,32 @@
+-- lib/reborrow.kg --
+fn combine(a: &mut Array[u8], b: &mut Array[u8]) -> Unit {
+    a.push(1)
+    b.push(2)
+}
+
+fn outer(out: &mut Array[u8]) -> Unit {
+    combine(out, out)
+}
+-- expect --
+fn lib.combine(%a: &mut Array[u8], %b: &mut Array[u8]) -> Unit {
+  b0:
+    %t2 = const 1: u8
+    %t3 = borrow 1(%a)
+    %t4 = call push(%t3, %t2)
+    drop(%t4)
+    %t5 = const 2: u8
+    %t6 = borrow 1(%b)
+    %t7 = call push(%t6, %t5)
+    return %t7
+}
+fn lib.outer(%out: &mut Array[u8]) -> Unit {
+  b0:
+    %t1 = call combine(%out, %out)
+    return %t1
+}
+error[borrow-conflict]: `out` is passed twice as `&mut`; the callee would get two exclusive borrows of the same value
+ --> lib/reborrow.kg:7:5
+  |
+7 |     combine(out, out)
+  |     ^^^^^^^^^^^^^^^^
+

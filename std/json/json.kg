@@ -1,0 +1,80 @@
+import map from std/map
+
+/// Field metadata read by encode and decode; attach it in a field's `{ ... }` block, e.g. `pub id Int { json.name("user_id") }`.
+pub type Metadata = {
+    key String
+}
+
+/// Uses n as the JSON key of the field instead of its Kigumi name.
+pub pure fn name(n: String) -> Metadata {
+    Metadata { key: n }
+}
+
+/// Leaves the field out of the output when its value is None.
+pub pure fn omitNone() -> Metadata {
+    Metadata { key: "" }
+}
+
+/// A JSON document. Integers and other numbers are kept apart so a decode into an integer type can refuse `1.5`.
+/// Unsigned holds an integral literal above i64::MAX, which Integer cannot represent.
+pub type Value =
+    | Null
+    | Boolean(Bool)
+    | Integer(Int)
+    | Unsigned(u64)
+    | Number(Float)
+    | Text(String)
+    | List(Array[Value])
+    | Object(map.Map[String, Value])
+
+/// Why an encode or decode failed.
+pub type Error = {
+    pub text String
+}
+
+pub fn Error.message(self) -> String {
+    self.text
+}
+
+/// Types that encode to JSON. Records and ADTs get a structural implementation from the compiler unless they define one.
+pub interface Encode {
+    fn toJson(self) -> Value
+}
+
+/// Types that decode from JSON; the requirement has no receiver, so it is dispatched on the type argument.
+pub interface Decode {
+    fn fromJson(value: Value) -> Self!
+}
+
+/// Types a Map key can round-trip through JSON as: reconstructs Self from the object field name that Map.toJson rendered it into.
+pub interface DecodeKey {
+    fn fromKeyText(text: String) -> Self!
+}
+
+/// Serializes value to JSON text, following the field metadata of record types.
+pub fn encode[T: Encode](value: T) -> String! {
+    render(value.toJson())
+}
+
+/// Parses JSON text into a T; fails on malformed input or a shape that does not match T.
+pub fn decode[T: Decode](text: String) -> T! {
+    T.fromJson(parse(text)?)
+}
+
+/// The JSON kind of a value, for error messages.
+pub fn kindOf(value: Value) -> String {
+    match value {
+        Value.Null -> "null"
+        Value.Boolean(_) -> "boolean"
+        Value.Integer(_) -> "number"
+        Value.Unsigned(_) -> "number"
+        Value.Number(_) -> "number"
+        Value.Text(_) -> "string"
+        Value.List(_) -> "array"
+        Value.Object(_) -> "object"
+    }
+}
+
+fn mismatch[T](want: String, found: Value) -> T! {
+    fail Error { text: "expected ${want}, found ${kindOf(found)}" }
+}

@@ -1,0 +1,52 @@
+# Reusable: render a module's documentation with `kigumi doc --html` and
+# publish it to GitHub Pages. The caller needs Pages enabled with the
+# "GitHub Actions" source, and grants pages/id-token permissions:
+#   permissions: { contents: read, pages: write, id-token: write }
+#   uses: kigumi-org/kigumi/.github/workflows/kigumi-docs.yml@master
+name: kigumi docs
+
+on:
+  workflow_call:
+    inputs:
+      module-root:
+        description: Directory holding mod.kg, or `std` for the standard library.
+        type: string
+        default: .
+      kigumi-version:
+        description: Git ref of the kigumi toolchain to build, or `local`.
+        type: string
+        default: main
+      all:
+        description: Include declarations without `pub`.
+        type: boolean
+        default: false
+      deploy:
+        description: Deploy to Pages; false only builds and uploads the artifact.
+        type: boolean
+        default: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: kigumi-org/kigumi/.github/actions/setup-kigumi@master
+        with:
+          version: ${{ inputs.kigumi-version }}
+      - run: kigumi doc --html ${{ inputs.all && '--all' || '' }} -o _site "${{ inputs.module-root }}"
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+  deploy:
+    if: inputs.deploy
+    needs: build
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

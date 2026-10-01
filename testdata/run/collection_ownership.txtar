@@ -1,0 +1,44 @@
+-- src --
+import map from std/map
+
+type Res = resource {
+    pub id Int
+}
+
+fn Res.drop(move self) -> Unit {
+    print "drop ${self.id}"
+}
+
+fn arrays() -> Unit {
+    let mut xs = Array.of(Res { id: 1 }, Res { id: 2 }, Res { id: 3 })
+    print "with ${xs.with(1, (r) => r.id * 10) || 0} ${xs.with(9, (r) => r.id) is None}"
+    let taken = xs.takeAt(0) || Res { id: 0 }
+    print "took ${taken.id} left ${xs.len()} ${xs.with(0, (r) => r.id) || 0}"
+}
+
+fn maps() -> Unit {
+    let mut m = map.empty[String, Res]()
+    m.set("a", Res { id: 4 })
+    m.set("b", Res { id: 5 })
+    print "with ${m.with(&"b", (r) => r.id) || 0} ${m.contains(&"a")} ${m.contains(&"z")}"
+    let t = m.take(&"a") || Res { id: 0 }
+    print "took ${t.id} left ${m.len()}"
+    m.remove(&"b")
+    print "removed ${m.len()}"
+}
+
+arrays()
+maps()
+print "end"
+-- stdout --
+with 20 true
+took 1 left 2 2
+drop 1
+drop 3
+drop 2
+with 5 true false
+took 4 left 1
+drop 5
+removed 0
+drop 4
+end

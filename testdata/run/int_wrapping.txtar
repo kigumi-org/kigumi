@@ -1,0 +1,27 @@
+-- src --
+let big: u32 = 4000000000
+let zeroU32: u32 = 0
+let oneU32: u32 = 1
+let rlBase: u32 = 0x80000001
+let sum = big.wrappingAdd(big)
+let diff = zeroU32.wrappingSub(oneU32)
+let prod = big.wrappingMul(3)
+let rl = rlBase.rotateLeft(1)
+let rr = oneU32.rotateRight(1)
+let shl = oneU32.wrappingShiftLeft(33)
+let negEight: i32 = -8
+let shr = negEight.wrappingShiftRight(1)
+let wide: u64 = 18446744073709551615
+let back = wide.toInt()
+let fits = wide.wrappingAdd(2).toInt() || -1
+let n: Int = -5
+let three: Int = 3000000000
+let seven: Int = 7
+let oneU64: u64 = 1
+print "${sum} ${diff} ${prod} ${rl} ${rr} ${shl} ${shr}"
+print "${wide} ${back is None} ${fits} ${n.toU32() is None} ${(n + 12).toU32() || 0} ${three.toU32() || 0}"
+print "${big.toU64()} ${big.toUsize()} ${wide.toU32() is None} ${seven.toU64() || 0} ${oneU64.rotateRight(1)}"
+-- stdout --
+3705032704 4294967295 3410065408 3 2147483648 2 -4
+18446744073709551615 true 1 true 7 3000000000
+4000000000 4000000000 true 7 9223372036854775808

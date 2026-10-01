@@ -1,0 +1,25 @@
+-- src --
+let a: Int? = None
+let b = a == None //~ WARNING prefer `a is None`
+let c = if a is None { 1 } else { 0 }
+let d = match a {
+    Some(v) -> v
+    None -> 0
+}
+let e = a == Some(1)
+let f = a == 1 //~ ERROR expected `Int?`, found `Int`
+let g: Int?? = None
+let h: Int?? = Some(None)
+-- expect --
+warning[W600]: prefer `a is None`
+ --> main/main.kg:2:9
+  |
+2 | let b = a == None //~ WARNING prefer `a is None`
+  |         ^^^^^^^^^
+
+error[E400]: expected `Int?`, found `Int`
+ --> main/main.kg:9:14
+  |
+9 | let f = a == 1 //~ ERROR expected `Int?`, found `Int`
+  |              ^
+

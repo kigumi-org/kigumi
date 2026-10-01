@@ -1,0 +1,6 @@
+-- src --
+let a = b"\x30\x82A\r\n\t\\\"\0"
+let empty = b""
+-- expect --
+let a = b"\x30\x82A\r\n\t\\\"\0"
+let empty = b""

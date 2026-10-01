@@ -1,0 +1,31 @@
+-- lib/pat.kg --
+type Shape = Circle(r: Int) | Square(s: Int)
+
+fn okNoElse(x: Int?) -> Unit {
+    if let Some(v) = x {
+        let w = v //~ TYPE w : Int
+    }
+}
+
+fn okElse(x: Shape) -> Int {
+    if let Circle(r) = x {
+        r
+    } else {
+        0
+    }
+}
+
+fn badLiteral(x: Shape) -> Int {
+    if let Circle("x") = x { //~ ERROR literal pattern `"x"` does not fit `Int`
+        1
+    } else {
+        0
+    }
+}
+-- expect --
+error[E805]: literal pattern `"x"` does not fit `Int`
+  --> lib/pat.kg:18:19
+   |
+18 |     if let Circle("x") = x { //~ ERROR literal pattern `"x"` does not fit `Int`
+   |                   ^^^
+

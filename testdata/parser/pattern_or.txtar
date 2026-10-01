@@ -1,0 +1,82 @@
+-- src --
+fn label(n: Int) -> String {
+    match n {
+        3 | 6 | 9 -> "fizz"
+        5 | 10 -> "buzz"
+        _ -> "${n}"
+    }
+}
+fn unpack(s: Shape?) -> Int {
+    if s is Some(Rect { w }) { w } else { 0 }
+}
+-- expect --
+File
+  FnDecl
+    attrs: -
+    vis: -
+    recv: -
+    name: label
+    generics: -
+    params: List
+      Param n
+        type: TypePath
+          Path Int
+    ret: TypePath
+      Path String
+    body: Block
+      ExprStmt
+        Match
+          Ident n
+          List
+            Arm
+              pattern: PatOr
+                PatLit
+                  IntLit 3
+                PatLit
+                  IntLit 6
+                PatLit
+                  IntLit 9
+              body: StringLit "fizz"
+            Arm
+              pattern: PatOr
+                PatLit
+                  IntLit 5
+                PatLit
+                  IntLit 10
+              body: StringLit "buzz"
+            Arm
+              pattern: PatWildcard _
+              body: StringLit "${n}"
+                List
+                  Ident n
+  FnDecl
+    attrs: -
+    vis: -
+    recv: -
+    name: unpack
+    generics: -
+    params: List
+      Param s
+        type: TypeOptional
+          TypePath
+            Path Shape
+    ret: TypePath
+      Path Int
+    body: Block
+      ExprStmt
+        If
+          cond: Is
+            Ident s
+            PatCtor
+              Path Some
+              List
+                PatRecord
+                  Path Rect
+                  List
+                    PatField w
+          then: Block
+            ExprStmt
+              Ident w
+          else: Block
+            ExprStmt
+              IntLit 0

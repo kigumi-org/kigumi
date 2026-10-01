@@ -1,0 +1,58 @@
+/// setsockopt level/name for SOL_SOCKET/SO_REUSEADDR on this platform.
+fn solSocket() -> i32 {
+    1
+}
+
+fn soReuseAddr() -> i32 {
+    2
+}
+
+/// setsockopt name for SO_RCVTIMEO/SO_SNDTIMEO on this platform.
+fn soRcvTimeo() -> i32 {
+    20
+}
+
+fn soSndTimeo() -> i32 {
+    21
+}
+
+// struct timeval on this LP64 target: both tv_sec and tv_usec are 8 bytes.
+type Timeval layout(C) = {
+    pub sec i64
+    pub usec i64
+}
+
+fn timeoutValue(seconds: i32) -> Timeval {
+    Timeval {
+        sec: seconds.toInt()
+        usec: 0
+    }
+}
+
+/// fcntl(2) F_GETFL/F_SETFL and the O_NONBLOCK flag on this platform.
+fn fcntlGetFl() -> i32 {
+    3
+}
+
+fn fcntlSetFl() -> i32 {
+    4
+}
+
+fn oNonBlock() -> i32 {
+    2048
+}
+
+/// getsockopt name for SO_ERROR on this platform.
+fn soError() -> i32 {
+    4
+}
+
+/// poll(2) POLLOUT bit for Pollfd.events on this platform.
+fn pollOut() -> i16 {
+    4
+}
+
+/// errno(3) EINTR on this platform.
+fn eintr() -> i32 {
+    4
+}

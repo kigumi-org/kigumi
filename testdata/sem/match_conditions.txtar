@@ -1,0 +1,75 @@
+-- lib/cond.kg --
+fn use(x: Int?, y: Int?, mut m: Int?, z: Int?) -> Int {
+    if x is None { return 0 }
+    match x {
+        Some(v) -> v
+    }
+    if y is Some(v) && v > 0 {
+        if y is None { return 1 } //~ WARNING `y` is known not to be `None`
+        if y is Some(_) { return 2 } //~ WARNING `y` is already known to be `Some`
+    }
+    if !(y is None) {
+        match y {
+            Some(v) -> v
+        }
+    }
+    if y == None { return 3 } //~ WARNING prefer `y is None`
+    match y {
+        Some(v) -> v
+    }
+    if m is None { return 4 }
+    match m {
+        Some(v) -> v
+    }
+    m = None
+    match m { //~ ERROR non-exhaustive match: `None` is not covered
+        Some(v) -> v
+    }
+    let ok = x is Some(v) //~ WARNING bindings of `is` are only in scope inside a condition
+    let w = x is Some(_)
+    if z is Some(_) {
+    } else {
+        match z {
+            None -> 0
+        }
+    }
+    if z is Some(_) {
+    } else {
+        return 5
+    }
+    match z {
+        Some(v) -> v
+    }
+    0
+}
+-- expect --
+warning[W803]: `y` is known not to be `None`
+ --> lib/cond.kg:7:12
+  |
+7 |         if y is None { return 1 } //~ WARNING `y` is known not to be `None`
+  |            ^^^^^^^^^
+
+warning[W802]: `y` is already known to be `Some`
+ --> lib/cond.kg:8:12
+  |
+8 |         if y is Some(_) { return 2 } //~ WARNING `y` is already known to be `Some`
+  |            ^^^^^^^^^^^
+
+warning[W600]: prefer `y is None`
+  --> lib/cond.kg:15:8
+   |
+15 |     if y == None { return 3 } //~ WARNING prefer `y is None`
+   |        ^^^^^^^^^
+
+error[E814]: non-exhaustive match: `None` is not covered
+  --> lib/cond.kg:24:5
+   |
+24 |     match m { //~ ERROR non-exhaustive match: `None` is not covered
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning[W805]: bindings of `is` are only in scope inside a condition
+  --> lib/cond.kg:27:14
+   |
+27 |     let ok = x is Some(v) //~ WARNING bindings of `is` are only in scope inside a condition
+   |              ^^^^^^^^^^^
+

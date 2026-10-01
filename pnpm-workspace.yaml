@@ -1,0 +1,9 @@
+packages:
+  - editors/*
+
+# vsce's optional signing and credential helpers ship native build scripts
+# the extension does not need.
+allowBuilds:
+  "@vscode/vsce-sign": false
+  esbuild: true
+  keytar: false

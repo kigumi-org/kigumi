@@ -1,0 +1,45 @@
+-- lib/reborrow.kg --
+async fn addOne(out: &mut Array[u8]) -> Unit {
+    out.push(99)
+}
+
+async fn scenario(out: &mut Array[u8]) -> Unit {
+    let f = addOne(out)
+    out.push(1)
+    await f
+}
+-- expect --
+fn lib.addOne(%out: &mut Array[u8]) -> Unit {
+  b0:
+    %t1 = const 99: u8
+    %t2 = borrow 1(%out)
+    %t3 = call push(%t2, %t1)
+    return %t3
+}
+fn lib.scenario(%out: &mut Array[u8]) -> Unit {
+  b0:
+    %t1 = move(%out)
+    %t2 = fnitem addOne
+    %t3 = builtin future(%t2, %t1)
+    %f = copy(%t3)
+    %t5 = const 1: u8
+    %t6 = borrow 1(%out)
+    %t7 = call push(%t6, %t5)
+    drop(%t7)
+    %t8 = move(%f)
+    %t9 = builtin await(%t8)
+    nop
+    return %t9
+}
+error[use-after-move]: `out` was moved; it cannot be used again
+ --> lib/reborrow.kg:7:5
+  |
+7 |     out.push(1)
+  |     ^^^
+
+error[move-from-borrow]: `out` is borrowed by this method and cannot be moved out; clone it or take `move self`
+ --> lib/reborrow.kg:6:20
+  |
+6 |     let f = addOne(out)
+  |                    ^^^
+

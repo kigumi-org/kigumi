@@ -1,0 +1,9 @@
+#!/usr/bin/env kigumi
+
+import {Tone, hello} from greet
+
+// `greet` is a Require in mod.kg; `kigumi get` would fetch it, but the
+// Replace in mod.local.kg points at the local copy instead. Its packages
+// are imported under the module name.
+print hello("Kigumi", Tone.Warm)
+print hello("world", Tone.Plain)

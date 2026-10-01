@@ -1,0 +1,98 @@
+-- app/t/t.kg --
+pub type UserId = Int
+
+type A = B //~ ERROR alias cycle: A
+
+type B = A
+
+type C = Int?
+
+type D = Result[UserId, Error]
+
+type E = fn(Int) -> Int
+
+type F = Nope //~ ERROR undefined name `Nope`
+
+fn f(x: UserId) -> i64 {
+    x
+}
+
+fn g(x: Copy) -> Unit {} //~ ERROR `Copy` is a constraint, not a type
+
+fn h(x: Option) -> Unit {} //~ ERROR `Option` is generic
+
+fn i(x: Result[Int]) -> Unit {} //~ ERROR `Result` takes 2 type arguments, 1 given
+
+fn j(x: Int[Bool]) -> Unit {} //~ ERROR `Int` takes no type arguments
+
+fn k(x: &Int) -> &Int { //~ ERROR a returned borrow needs a lifetime
+    x
+}
+
+type G = {
+    r &Int //~ ERROR a field cannot hold a borrow without a lifetime
+}
+
+fn UserId.next(self) -> UserId { //~ ERROR alias `UserId` cannot own methods
+    self
+}
+
+-- expect --
+error[E214]: alias cycle: A
+ --> app/t/t.kg:3:1
+  |
+3 | type A = B //~ ERROR alias cycle: A
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E100]: undefined name `Nope`
+  --> app/t/t.kg:13:10
+   |
+13 | type F = Nope //~ ERROR undefined name `Nope`
+   |          ^^^^
+
+error[E125]: `Copy` is a constraint, not a type
+  --> app/t/t.kg:19:9
+   |
+19 | fn g(x: Copy) -> Unit {} //~ ERROR `Copy` is a constraint, not a type
+   |         ^^^^
+
+error[E218]: `Option` is generic
+  --> app/t/t.kg:21:9
+   |
+21 | fn h(x: Option) -> Unit {} //~ ERROR `Option` is generic
+   |         ^^^^^^
+   = help: write `Option[...]`
+
+error[E217]: `Result` takes 2 type arguments, 1 given
+  --> app/t/t.kg:23:9
+   |
+23 | fn i(x: Result[Int]) -> Unit {} //~ ERROR `Result` takes 2 type arguments, 1 given
+   |         ^^^^^^^^^^
+
+error[E219]: `Int` takes no type arguments
+  --> app/t/t.kg:25:9
+   |
+25 | fn j(x: Int[Bool]) -> Unit {} //~ ERROR `Int` takes no type arguments
+   |         ^^^^^^^^
+
+error[E1016]: a returned borrow needs a lifetime
+  --> app/t/t.kg:27:18
+   |
+27 | fn k(x: &Int) -> &Int { //~ ERROR a returned borrow needs a lifetime
+   |                  ^^^^
+   = help: annotate `&'a` here, or give the function exactly one `&'a` parameter to elide it
+
+error[E1017]: a field cannot hold a borrow without a lifetime
+  --> app/t/t.kg:32:7
+   |
+32 |     r &Int //~ ERROR a field cannot hold a borrow without a lifetime
+   |       ^^^^
+   = help: add a lifetime parameter to this type, `['a]`, and write `&'a`
+
+error[E215]: alias `UserId` cannot own methods
+  --> app/t/t.kg:35:4
+   |
+35 | fn UserId.next(self) -> UserId { //~ ERROR alias `UserId` cannot own methods
+   |    ^^^^^^
+   = help: use a one-field record
+

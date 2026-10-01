@@ -1,0 +1,33 @@
+-- src --
+import text from std/text
+
+let mut b = text.StringBuilder.new()
+print "empty: ${b.isEmpty()} ${b.len()}"
+b.push("hello")
+b.push(", ")
+b.push("world")
+b.pushByte(33)
+print "len: ${b.len()} empty: ${b.isEmpty()}"
+let s = b.freeze()?
+print s
+
+let mut c = text.StringBuilder.new()
+let r = c.tryPush("ok")
+print "tryPush: ${r is Ok(_)} len=${c.len()}"
+let r2 = c.tryPushByte(63)
+print "tryPushByte: ${r2 is Ok(_)}"
+print c.freeze()?
+
+let mut broken = text.StringBuilder.new()
+broken.push("ok-")
+broken.pushByte(200)
+let bad = broken.freeze()
+print "invalid utf8 freeze is Err: ${bad is Err(_)}"
+-- stdout --
+empty: true 0
+len: 13 empty: false
+hello, world!
+tryPush: true len=2
+tryPushByte: true
+ok?
+invalid utf8 freeze is Err: true

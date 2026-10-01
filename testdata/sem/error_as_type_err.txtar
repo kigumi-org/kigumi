@@ -1,0 +1,16 @@
+-- app/t/t.kg --
+import error from std/error
+
+type NotAnError = { text String }
+
+fn useConcrete(e: &Error) -> NotAnError? {
+    error.as[NotAnError](e) //~ ERROR `NotAnError` cannot be `std/error.as`'s type argument
+}
+
+-- expect --
+error[E970]: `NotAnError` cannot be `std/error.as`'s type argument: it must be a concrete type that implements `Error`
+ --> app/t/t.kg:6:5
+  |
+6 |     error.as[NotAnError](e) //~ ERROR `NotAnError` cannot be `std/error.as`'s type argument
+  |     ^^^^^^^^^^^^^^^^^^^^^^
+

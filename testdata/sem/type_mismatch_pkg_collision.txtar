@@ -1,0 +1,27 @@
+-- pkga/widget.kg --
+pub type Widget = {
+    pub n Int
+}
+-- pkgb/widget.kg --
+pub type Widget = {
+    pub s String
+}
+-- main/main.kg --
+import a from pkga
+import b from pkgb
+
+fn takesA(w: a.Widget) -> Int {
+    w.n
+}
+
+fn use() -> Unit {
+    let wb = b.Widget { s: "hi" }
+    _ = takesA(wb) //~ ERROR expected `pkga.Widget`, found `pkgb.Widget`
+}
+-- expect --
+error[E400]: expected `pkga.Widget`, found `pkgb.Widget`
+  --> main/main.kg:10:16
+   |
+10 |     _ = takesA(wb) //~ ERROR expected `pkga.Widget`, found `pkgb.Widget`
+   |                ^^
+

@@ -1,0 +1,14 @@
+-- src --
+type Box = {
+    pub items Array[Int]
+}
+
+fn Box.peek(self) -> Int {
+    let x = self
+    x.items.get(0) || 0
+}
+
+let b = Box { items: Array.of(1, 2, 3) }
+print "peek=${b.peek()}"
+-- stdout --
+peek=1

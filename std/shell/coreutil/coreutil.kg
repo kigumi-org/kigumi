@@ -1,0 +1,7 @@
+import shell from std/shell
+
+/// Appends a grep stage that keeps the lines matching the regular
+/// expression pattern (`plan |> coreutil.grep("^a")`).
+pub pure fn grep(plan: shell.Plan, pattern: String) -> shell.Plan {
+    shell.planPush(plan, shell.Item.Grep(pattern))
+}

@@ -1,0 +1,96 @@
+-- lib/va.kg --
+fn cmd(name: String, args: ...String) -> usize {
+    args.len()
+}
+
+fn cmd(name: String) -> Int {
+    0
+}
+
+fn fixed(a: String) -> Unit {}
+
+fn single(xs: ...Int) -> usize {
+    xs.len()
+}
+
+fn use() -> Unit {
+    let a = cmd("git") //~ TYPE a : Int
+    let b = cmd("git", "log") //~ TYPE b : usize
+    let xs = Array.of("a", "b")
+    let c = cmd("git", ...xs) //~ TYPE c : usize
+    cmd("git", "a", ...xs) //~ ERROR cannot mix listed arguments with `...expr`
+    let d = single() //~ TYPE d : usize
+    let e = single(1, 2, 3)
+    let f = single(...Array.of(1))
+    single("s") //~ ERROR expected `Int`, found `String` //~ WARNING unused value of type `usize`
+    single(...xs) //~ ERROR expected `Array[Int]`, found `Array[String]` //~ WARNING unused value of type `usize`
+    let v = single //~ ERROR variadic function `single` has no function value
+    let w = a + 1
+    w(...xs) //~ ERROR `Int` is not callable
+    cmd(...xs) //~ ERROR no overload of `cmd` takes (Array[String])
+    fixed(...xs) //~ ERROR `fixed` is not variadic
+    fixed("a", "b") //~ ERROR `fixed` expects 1 argument, 2 given
+}
+-- expect --
+error[E505]: cannot mix listed arguments with `...expr`
+  --> lib/va.kg:20:21
+   |
+20 |     cmd("git", "a", ...xs) //~ ERROR cannot mix listed arguments with `...expr`
+   |                     ^^^^^
+
+warning[W400]: unused value of type `usize`
+  --> lib/va.kg:24:5
+   |
+24 |     single("s") //~ ERROR expected `Int`, found `String` //~ WARNING unused value of type `usize`
+   |     ^^^^^^^^^^
+
+error[E400]: expected `Int`, found `String`
+  --> lib/va.kg:24:12
+   |
+24 |     single("s") //~ ERROR expected `Int`, found `String` //~ WARNING unused value of type `usize`
+   |            ^^^
+
+warning[W400]: unused value of type `usize`
+  --> lib/va.kg:25:5
+   |
+25 |     single(...xs) //~ ERROR expected `Array[Int]`, found `Array[String]` //~ WARNING unused value of type `usize`
+   |     ^^^^^^^^^^^^
+
+error[E400]: expected `Array[Int]`, found `Array[String]`
+  --> lib/va.kg:25:15
+   |
+25 |     single(...xs) //~ ERROR expected `Array[Int]`, found `Array[String]` //~ WARNING unused value of type `usize`
+   |               ^^
+
+error[E418]: variadic function `single` has no function value
+  --> lib/va.kg:26:13
+   |
+26 |     let v = single //~ ERROR variadic function `single` has no function value
+   |             ^^^^^^
+   = help: write `(a) => single(..., ...a)`
+
+error[E500]: `Int` is not callable
+  --> lib/va.kg:28:5
+   |
+28 |     w(...xs) //~ ERROR `Int` is not callable
+   |     ^^^^^^^
+
+error[E502]: no overload of `cmd` takes (Array[String])
+  --> lib/va.kg:29:5
+   |
+29 |     cmd(...xs) //~ ERROR no overload of `cmd` takes (Array[String])
+   |     ^^^^^^^^^
+   = help: candidates: `fn(String, ...String) -> usize`, `fn(String) -> Int`
+
+error[E506]: `fixed` is not variadic
+  --> lib/va.kg:30:11
+   |
+30 |     fixed(...xs) //~ ERROR `fixed` is not variadic
+   |           ^^^^^
+
+error[E501]: `fixed` expects 1 argument, 2 given
+  --> lib/va.kg:31:5
+   |
+31 |     fixed("a", "b") //~ ERROR `fixed` expects 1 argument, 2 given
+   |     ^^^^^^^^^^^^^^
+

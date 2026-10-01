@@ -1,0 +1,9 @@
+-- src --
+let zero: usize = 0
+let one: usize = 1
+let n: usize = zero.wrappingSub(one)
+let e = host.entropy()
+let r = e.bytes(n)
+print "${r is Err(_)}"
+-- stdout --
+true

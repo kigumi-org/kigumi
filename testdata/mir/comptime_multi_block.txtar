@@ -1,0 +1,39 @@
+-- src --
+let a = comptime {
+    1 == 1
+}
+print "a: ${a}"
+
+let b = comptime {
+    42
+}
+print "b: ${b}"
+
+let c = comptime {
+    "hi"
+}
+print "c: ${c}"
+-- expect --
+fn main() -> Unit! {
+  b0:
+    %t0 = builtin comptime
+    %a = copy(%t0)
+    %t2 = interp "a: \x00"(%a)
+    %t3 = builtin print(%t2)
+    drop(%t3)
+    %t4 = builtin comptime
+    %b = copy(%t4)
+    %t6 = interp "b: \x00"(%b)
+    %t7 = builtin print(%t6)
+    drop(%t7)
+    %t8 = builtin comptime
+    %c = copy(%t8)
+    %t10 = interp "c: \x00"(%c)
+    %t11 = builtin print(%t10)
+    drop(%t11)
+    drop(%c)
+    drop(%b)
+    drop(%a)
+    %t12 = unit
+    return %t12
+}

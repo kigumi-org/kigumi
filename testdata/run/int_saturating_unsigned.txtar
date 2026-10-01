@@ -1,0 +1,72 @@
+-- src --
+let u8Add0a: u8 = 255
+let u8Add0b: u8 = 1
+let u8Add1a: u8 = 5
+let u8Add1b: u8 = 3
+let u8Sub0a: u8 = 0
+let u8Sub0b: u8 = 1
+let u8Sub1a: u8 = 100
+let u8Sub1b: u8 = 10
+let u8Mul0a: u8 = 255
+let u8Mul0b: u8 = 2
+let u8Mul1a: u8 = 3
+let u8Mul1b: u8 = 4
+let u16Add0a: u16 = 65535
+let u16Add0b: u16 = 1
+let u16Add1a: u16 = 5
+let u16Add1b: u16 = 3
+let u16Sub0a: u16 = 0
+let u16Sub0b: u16 = 1
+let u16Sub1a: u16 = 100
+let u16Sub1b: u16 = 10
+let u16Mul0a: u16 = 65535
+let u16Mul0b: u16 = 2
+let u16Mul1a: u16 = 3
+let u16Mul1b: u16 = 4
+let u32Add0a: u32 = 4294967295
+let u32Add0b: u32 = 1
+let u32Add1a: u32 = 5
+let u32Add1b: u32 = 3
+let u32Sub0a: u32 = 0
+let u32Sub0b: u32 = 1
+let u32Sub1a: u32 = 100
+let u32Sub1b: u32 = 10
+let u32Mul0a: u32 = 4294967295
+let u32Mul0b: u32 = 2
+let u32Mul1a: u32 = 3
+let u32Mul1b: u32 = 4
+let u64Add0a: u64 = 18446744073709551615
+let u64Add0b: u64 = 1
+let u64Add1a: u64 = 5
+let u64Add1b: u64 = 3
+let u64Sub0a: u64 = 0
+let u64Sub0b: u64 = 1
+let u64Sub1a: u64 = 100
+let u64Sub1b: u64 = 10
+let u64Mul0a: u64 = 18446744073709551615
+let u64Mul0b: u64 = 2
+let u64Mul1a: u64 = 3
+let u64Mul1b: u64 = 4
+let usizeAdd0a: usize = 18446744073709551615
+let usizeAdd0b: usize = 1
+let usizeAdd1a: usize = 5
+let usizeAdd1b: usize = 3
+let usizeSub0a: usize = 0
+let usizeSub0b: usize = 1
+let usizeSub1a: usize = 100
+let usizeSub1b: usize = 10
+let usizeMul0a: usize = 18446744073709551615
+let usizeMul0b: usize = 2
+let usizeMul1a: usize = 3
+let usizeMul1b: usize = 4
+print "${u8Add0a.saturatingAdd(u8Add0b)} ${u8Add1a.saturatingAdd(u8Add1b)} ${u8Sub0a.saturatingSub(u8Sub0b)} ${u8Sub1a.saturatingSub(u8Sub1b)} ${u8Mul0a.saturatingMul(u8Mul0b)} ${u8Mul1a.saturatingMul(u8Mul1b)}"
+print "${u16Add0a.saturatingAdd(u16Add0b)} ${u16Add1a.saturatingAdd(u16Add1b)} ${u16Sub0a.saturatingSub(u16Sub0b)} ${u16Sub1a.saturatingSub(u16Sub1b)} ${u16Mul0a.saturatingMul(u16Mul0b)} ${u16Mul1a.saturatingMul(u16Mul1b)}"
+print "${u32Add0a.saturatingAdd(u32Add0b)} ${u32Add1a.saturatingAdd(u32Add1b)} ${u32Sub0a.saturatingSub(u32Sub0b)} ${u32Sub1a.saturatingSub(u32Sub1b)} ${u32Mul0a.saturatingMul(u32Mul0b)} ${u32Mul1a.saturatingMul(u32Mul1b)}"
+print "${u64Add0a.saturatingAdd(u64Add0b)} ${u64Add1a.saturatingAdd(u64Add1b)} ${u64Sub0a.saturatingSub(u64Sub0b)} ${u64Sub1a.saturatingSub(u64Sub1b)} ${u64Mul0a.saturatingMul(u64Mul0b)} ${u64Mul1a.saturatingMul(u64Mul1b)}"
+print "${usizeAdd0a.saturatingAdd(usizeAdd0b)} ${usizeAdd1a.saturatingAdd(usizeAdd1b)} ${usizeSub0a.saturatingSub(usizeSub0b)} ${usizeSub1a.saturatingSub(usizeSub1b)} ${usizeMul0a.saturatingMul(usizeMul0b)} ${usizeMul1a.saturatingMul(usizeMul1b)}"
+-- stdout --
+255 8 0 90 255 12
+65535 8 0 90 65535 12
+4294967295 8 0 90 4294967295 12
+18446744073709551615 8 0 90 18446744073709551615 12
+18446744073709551615 8 0 90 18446744073709551615 12

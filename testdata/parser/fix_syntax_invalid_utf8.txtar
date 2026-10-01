@@ -1,0 +1,16 @@
+-- src --
+print "good ÿþ bad"
+-- expect --
+File
+  ExprStmt
+    WsCall
+      Ident print
+      List
+        StringLit "good ÿþ bad"
+-- diagnostics --
+error: string literal contains invalid UTF-8
+ --> fix_syntax_invalid_utf8.txtar:1:7
+  |
+1 | print "good ÿþ bad"
+  |       ^^^^^^^^^^^^^
+

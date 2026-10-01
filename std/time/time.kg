@@ -1,0 +1,87 @@
+import fmt from std/fmt
+
+/// A point in time taken from the system clock.
+pub type Instant = {
+    ms i64
+}
+
+/// The instant ms milliseconds after 1970-01-01T00:00:00Z.
+pub pure fn fromUnixMillis(ms: i64) -> Instant {
+    Instant { ms: ms }
+}
+
+/// Milliseconds since 1970-01-01T00:00:00Z.
+pub pure noalloc fn Instant.unixMillis(self) -> i64 {
+    self.ms
+}
+
+/// The instant in UTC as RFC 3339 text with seconds, e.g. `2026-09-06T01:02:03Z`.
+pub pure fn Instant.utc(self) -> String {
+    let mut secs = self.ms / 1000
+    if self.ms % 1000 < 0 {
+        secs = secs - 1
+    }
+    let mut days = secs / 86400
+    let mut rem = secs % 86400
+    if rem < 0 {
+        rem = rem + 86400
+        days = days - 1
+    }
+    // Days to a civil date (Howard Hinnant's algorithm), era by era.
+    let z = days + 719468
+    let era = (if z >= 0 {
+        z
+    } else {
+        z - 146096
+    }) / 146097
+    let doe = z - era * 146097
+    let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100)
+    let mp = (5 * doy + 2) / 153
+    let day = doy - (153 * mp + 2) / 5 + 1
+    let month = if mp < 10 {
+        mp + 3
+    } else {
+        mp - 9
+    }
+    let year = yoe + era * 400 + (if month <= 2 {
+        1
+    } else {
+        0
+    })
+    "${fmt.int(year, 4)}-${fmt.int(month, 2)}-${fmt.int(day, 2)}T${fmt.int(rem / 3600, 2)}:${fmt.int(rem % 3600 / 60, 2)}:${fmt.int(rem % 60, 2)}Z"
+}
+
+/// Milliseconds elapsed since this instant was taken.
+pub fn Instant.elapsedMillis(self) -> i64 {
+    saturatingSubMillis(now().unixMillis(), self.unixMillis())
+}
+
+// Saturates instead of trapping for readings near the ends of the i64 range.
+fn saturatingSubMillis(current: i64, then: i64) -> i64 {
+    let max = 9223372036854775807
+    if then < 0 && current > max + then {
+        return max
+    }
+    if then > 0 && current < -max - 1 + then {
+        return -max - 1
+    }
+    current - then
+}
+
+/// A reading from a clock that only ever moves forward, unaffected by
+/// clock adjustments (e.g. NTP). Unlike `Instant`, it carries no wall-clock
+/// meaning; use it for ticks, timeouts and animation frame timing.
+pub type Monotonic = {
+    ticks i64
+}
+
+/// Milliseconds between two monotonic readings (self minus earlier).
+pub pure noalloc fn Monotonic.diffMillis(self, earlier: Monotonic) -> i64 {
+    saturatingSubMillis(self.ticks, earlier.ticks)
+}
+
+/// Milliseconds elapsed since this reading was taken.
+pub fn Monotonic.elapsedMillis(self) -> i64 {
+    monotonic().diffMillis(self)
+}

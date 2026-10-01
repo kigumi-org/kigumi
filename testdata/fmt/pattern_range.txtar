@@ -1,0 +1,38 @@
+-- src --
+const low = 11
+const high = 15
+const LOW = 21
+const HIGH = 25
+
+fn classify(n: Int) -> Int {
+    match n {
+        low..high -> 1
+        LOW..HIGH -> 2
+        20..=25 -> 2
+        -3..0 -> 3
+        _ -> 0
+    }
+}
+
+for i in 1..=10 {
+    print i
+}
+-- expect --
+const low = 11
+const high = 15
+const LOW = 21
+const HIGH = 25
+
+fn classify(n: Int) -> Int {
+    match n {
+        low..high -> 1
+        LOW..HIGH -> 2
+        20..=25 -> 2
+        -3..0 -> 3
+        _ -> 0
+    }
+}
+
+for i in 1..=10 {
+    print i
+}

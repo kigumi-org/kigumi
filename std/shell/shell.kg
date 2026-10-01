@@ -1,0 +1,153 @@
+/// Ability to run external commands, obtained from `host.shell()`.
+pub type Shell
+
+/// One piece of a plan; a `$"..."` literal pushes them in source order.
+pub type Item =
+    | Text(String)
+    | Word
+    | Pipe
+    | Redirect(Int, Int)
+    | Grep(String)
+
+/// Command pipeline built from `$"..."` literals; nothing runs until it is piped into `run` or `capture`.
+pub type Plan = {
+    mut items Array[Item]
+}
+
+/// One command argument inside a `$"..."` literal; `${...}` always yields exactly one Arg.
+pub type Arg
+
+/// Exit statuses of every stage of a pipeline that was run.
+pub type PipelineResult = {
+    statuses Array[Int]
+}
+
+/// Output collected by `capture`.
+pub type Captured = {
+    pub stdout Bytes
+    pub stderr Bytes
+}
+
+/// A stage of a plan: an external command, or a grep filter.
+pub type Stage = {
+    pub argv Array[String]
+    pub redirs Array[Redir]
+    pub grep String?
+}
+
+/// A redirection of one stage: op is the `<` (1), `>` (2), `>>` (3), `<&` (4) or `>&` (5) form.
+pub type Redir = {
+    pub op Int
+    pub fd Int
+    pub target String
+}
+
+/// Error from running a pipeline.
+pub type Failure = {
+    pub text String
+}
+
+/// The failure text.
+pub fn Failure.message(self) -> String {
+    self.text
+}
+
+/// An empty plan; the compiler starts every `$"..."` literal with one.
+pub pure fn planNew() -> Plan {
+    Plan { items: Array.empty() }
+}
+
+/// Appends one piece to a plan.
+pub pure fn planPush(mut p: Plan, item: Item) -> Plan {
+    p.items.push(item)
+    p
+}
+
+/// Fails when any stage exited with a non-zero status.
+pub pure fn check(result: PipelineResult) -> Unit! {
+    for status in result.statuses {
+        if status != 0 {
+            fail Failure { text: "command exited with status ${status}" }
+        }
+    }
+}
+
+type Building = {
+    mut out Array[Stage]
+    mut argv Array[String]
+    mut redirs Array[Redir]
+    mut word String
+    mut inWord Bool
+    mut rop Int
+    mut rfd Int
+}
+
+fn Building.endWord(mut self) -> Unit {
+    if !self.inWord {
+        return
+    }
+    if self.rop != 0 {
+        self.redirs.push(Redir {
+            op: self.rop
+            fd: self.rfd
+            target: self.word
+        })
+        self.rop = 0
+    } else {
+        self.argv.push(self.word)
+    }
+    self.word = ""
+    self.inWord = false
+}
+
+fn Building.endStage(mut self, grep: String?) -> Unit {
+    self.endWord()
+    if self.argv.len() > 0 || grep is Some(_) {
+        self.out.push(Stage {
+            argv: self.argv.clone()
+            redirs: self.redirs.clone()
+            grep: grep
+        })
+    }
+    self.argv = Array.empty()
+    self.redirs = Array.empty()
+}
+
+/// Splits a plan into its stages, joining the text pieces of each word.
+pub pure fn stages(plan: &Plan) -> Array[Stage] {
+    let mut b = Building {
+        out: Array.empty()
+        argv: Array.empty()
+        redirs: Array.empty()
+        word: ""
+        inWord: false
+        rop: 0
+        rfd: 0
+    }
+    for item in plan.items {
+        match item {
+            Text(s) -> {
+                b.word = "${b.word}${s}"
+            }
+            Word -> {
+                b.endWord()
+                b.inWord = true
+            }
+            Redirect(op, fd) -> {
+                b.endWord()
+                b.rop = op
+                b.rfd = fd
+                b.inWord = true
+            }
+            Pipe -> {
+                b.endStage(None)
+            }
+            Grep(pattern) -> {
+                b.endStage(None)
+                b.endStage(Some(pattern))
+            }
+        }
+    }
+    b.endStage(None)
+    b.out
+}

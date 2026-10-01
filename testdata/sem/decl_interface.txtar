@@ -1,0 +1,79 @@
+-- app/i/i.kg --
+pub interface Display {
+    fn display(self) -> String
+}
+
+interface Bad {
+    fn make() -> Int
+    fn body(self) -> Int { //~ ERROR interface requirements cannot have a body
+        1
+    }
+    async fn a(self) -> Int //~ ERROR `async` requirements are not allowed
+    pub fn p(self) -> Int //~ WARNING redundant `pub` on an interface requirement
+    type T = Int //~ ERROR interface bodies contain only function requirements
+}
+
+interface Cl {
+    fn dup(self) -> Self
+}
+
+fn useCl(c: Cl) -> Unit {} //~ ERROR `Cl` is not object-safe (`Self` appears outside the receiver of `dup`)
+
+fn genericOk[T: Cl](c: T) -> Unit {}
+
+interface Gen {
+    fn g[U](self, u: U) -> U
+}
+
+fn useGen(g: Gen) -> Unit {} //~ ERROR `Gen` is not object-safe (requirement `g` is generic)
+
+fn selfOut(x: Self) -> Unit {} //~ ERROR `Self` is only available inside an interface body
+
+fn ok(d: Display) -> Display {
+    d
+}
+-- expect --
+error[E202]: interface requirements cannot have a body
+ --> app/i/i.kg:7:26
+  |
+7 |     fn body(self) -> Int { //~ ERROR interface requirements cannot have a body
+  |                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E204]: `async` requirements are not allowed
+  --> app/i/i.kg:10:11
+   |
+10 |     async fn a(self) -> Int //~ ERROR `async` requirements are not allowed
+   |           ^^^^^^^^^^^^^^^^^
+
+warning[W200]: redundant `pub` on an interface requirement
+  --> app/i/i.kg:11:5
+   |
+11 |     pub fn p(self) -> Int //~ WARNING redundant `pub` on an interface requirement
+   |     ^^^
+
+error[E205]: interface bodies contain only function requirements
+  --> app/i/i.kg:12:5
+   |
+12 |     type T = Int //~ ERROR interface bodies contain only function requirements
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E307]: `Cl` is not object-safe (`Self` appears outside the receiver of `dup`)
+  --> app/i/i.kg:19:13
+   |
+19 | fn useCl(c: Cl) -> Unit {} //~ ERROR `Cl` is not object-safe (`Self` appears outside the receiver of `dup`)
+   |             ^^
+   = help: use it as a constraint
+
+error[E307]: `Gen` is not object-safe (requirement `g` is generic)
+  --> app/i/i.kg:27:14
+   |
+27 | fn useGen(g: Gen) -> Unit {} //~ ERROR `Gen` is not object-safe (requirement `g` is generic)
+   |              ^^^
+   = help: use it as a constraint
+
+error[E132]: `Self` is only available inside an interface body
+  --> app/i/i.kg:29:15
+   |
+29 | fn selfOut(x: Self) -> Unit {} //~ ERROR `Self` is only available inside an interface body
+   |               ^^^^
+

@@ -1,0 +1,99 @@
+-- src --
+import json from std/json
+import {decode,encode} from std/json
+
+// leading comment
+noalloc pub pure fn f(  data : Bytes ) -> u64 { data.len() }
+/// doc
+@impl(Display)
+@impl(Identified)
+pub type User = { pub id Int { json.name("id") }, name String, }
+
+pure pure fn g() -> Unit {}
+fn h() -> Unit {
+    io.print "x"
+    user.display locale
+    print "hi"   // trailing
+    let v = encode text |> sink
+    let w = a
+    |> b
+    |> c
+    let plan = $ "echo hi"
+    let s = Summary { ..user, name: "x" }
+    let chain = authors.entries()
+        .map((e) => e.key)
+        .take(3)
+    let flat = a.b().c()
+    let t = Summary { ..user }
+    if x { 1 }
+    else { 2 }
+    match s {
+        Some(v) -> v, None -> 0
+    }
+}
+pub interface Hash {
+    pub fn hash(self) -> u64
+}
+type Shape = Circle(radius: Float) | Rect(w: Float, h: Float)
+type Cmd = | Serve(ServeFlags) | Stat(StatFlags) | Version | Help
+-- expect --
+import json from std/json
+import {decode, encode} from std/json
+
+// leading comment
+pub pure noalloc fn f(data: Bytes) -> u64 {
+    data.len()
+}
+
+/// doc
+@impl(Display, Identified)
+pub type User = {
+    pub id Int {
+        json.name("id")
+    }
+
+    name String
+}
+
+pure fn g() -> Unit {}
+
+fn h() -> Unit {
+    io.print("x")
+    user.display(locale)
+    print "hi" // trailing
+    let v = encode text |> sink
+    let w = a
+        |> b
+        |> c
+    let plan = $"echo hi"
+    let s = Summary {
+        ..user
+        name: "x"
+    }
+    let chain = authors.entries()
+        .map((e) => e.key)
+        .take(3)
+    let flat = a.b().c()
+    let t = Summary { ..user }
+    if x {
+        1
+    } else {
+        2
+    }
+    match s {
+        Some(v) -> v
+        None -> 0
+    }
+}
+
+pub interface Hash {
+    pub fn hash(self) -> u64
+}
+
+type Shape = Circle(radius: Float) | Rect(w: Float, h: Float)
+
+type Cmd =
+    | Serve(ServeFlags)
+    | Stat(StatFlags)
+    | Version
+    | Help

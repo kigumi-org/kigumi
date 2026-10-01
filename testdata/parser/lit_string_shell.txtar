@@ -1,0 +1,200 @@
+-- src --
+let s1 = "x=${x}"
+let s2 = "a ${b + "}"} c ${d.e()}"
+let s3 = "家族: 👨‍👩‍👧 ${text.graphemes(s).count()}"
+let plan = $"cat ${path} | grep ERROR > errors.log 2>&1"
+let p2 = $"git log --no-merges --pretty=format:%an%x09%as"
+    |> coreutil.grep(pattern)
+let p3 = $ "echo hi"
+let p4 = $"tool 2>&1 >out.log >b.log <in.txt 3>&2"
+let p5 = $"echo 'single ${notInterp}' \"double ${yes}\" plain\\ escaped"
+let p6 = $"a && b"
+let p7 = $"echo $var"
+let p8 = $"cat <<EOF"
+let p9 = $
+    "next line"
+let c = 'a'
+let n = 0x_ff + 1_000 + 2e10
+-- expect --
+File
+  Let
+    pattern: PatBind s1
+    init: StringLit "x=${x}"
+      List
+        Ident x
+  Let
+    pattern: PatBind s2
+    init: StringLit "a ${b + "}"} c ${d.e()}"
+      List
+        Binary +
+          Ident b
+          StringLit "}"
+        Call
+          Member e
+            Ident d
+          List
+  Let
+    pattern: PatBind s3
+    init: StringLit "家族: 👨‍👩‍👧 ${text.graphemes(s).count()}"
+      List
+        Call
+          Member count
+            Call
+              Member graphemes
+                Ident text
+              List
+                Ident s
+          List
+  Let
+    pattern: PatBind plan
+    init: ShellLit "cat ${path} | grep ERROR > errors.log 2>&1"
+      ShellPlan
+        ShellCmd
+          ShellWord
+            ShellText "cat"
+          ShellWord
+            ShellInterp
+              Ident path
+        ShellCmd
+          ShellWord
+            ShellText "grep"
+          ShellWord
+            ShellText "ERROR"
+          ShellRedirect > fd=1
+            target: ShellWord
+              ShellText "errors.log"
+          ShellRedirect >& fd=2
+            target: ShellWord
+              ShellText "1"
+  Let
+    pattern: PatBind p2
+    init: Binary |>
+      ShellLit "git log --no-merges --pretty=format:%an%x09%as"
+        ShellPlan
+          ShellCmd
+            ShellWord
+              ShellText "git"
+            ShellWord
+              ShellText "log"
+            ShellWord
+              ShellText "--no-merges"
+            ShellWord
+              ShellText "--pretty=format:%an%x09%as"
+      Call
+        Member grep
+          Ident coreutil
+        List
+          Ident pattern
+  Let
+    pattern: PatBind p3
+    init: ShellLit "echo hi"
+      ShellPlan
+        ShellCmd
+          ShellWord
+            ShellText "echo"
+          ShellWord
+            ShellText "hi"
+  Let
+    pattern: PatBind p4
+    init: ShellLit "tool 2>&1 >out.log >b.log <in.txt 3>&2"
+      ShellPlan
+        ShellCmd
+          ShellWord
+            ShellText "tool"
+          ShellRedirect >& fd=2
+            target: ShellWord
+              ShellText "1"
+          ShellRedirect > fd=1
+            target: ShellWord
+              ShellText "out.log"
+          ShellRedirect > fd=1
+            target: ShellWord
+              ShellText "b.log"
+          ShellRedirect < fd=0
+            target: ShellWord
+              ShellText "in.txt"
+          ShellRedirect >& fd=3
+            target: ShellWord
+              ShellText "2"
+  Let
+    pattern: PatBind p5
+    init: ShellLit "echo 'single ${notInterp}' \"double ${yes}\" plain\\ escaped"
+      ShellPlan
+        ShellCmd
+          ShellWord
+            ShellText "echo"
+          ShellWord
+            ShellText "single ${notInterp}"
+          ShellWord
+            ShellText "double "
+            ShellInterp
+              Ident yes
+          ShellWord
+            ShellText "plain\\\\ escaped"
+  Let
+    pattern: PatBind p6
+    init: ShellLit "a && b"
+      ShellPlan
+        ShellCmd
+          ShellWord
+            ShellText "a"
+          ShellWord
+            ShellText "b"
+  Let
+    pattern: PatBind p7
+    init: ShellLit "echo $var"
+      ShellPlan
+        ShellCmd
+          ShellWord
+            ShellText "echo"
+          ShellWord
+            ShellText "var"
+  Let
+    pattern: PatBind p8
+    init: ShellLit "cat <<EOF"
+      ShellPlan
+        ShellCmd
+          ShellWord
+            ShellText "cat"
+          ShellRedirect < fd=0
+            target: ShellWord
+              ShellText "EOF"
+  Let
+    pattern: PatBind p9
+  ExprStmt
+    StringLit "next line"
+  Let
+    pattern: PatBind c
+    init: CharLit 'a'
+  Let
+    pattern: PatBind n
+    init: Binary +
+      Binary +
+        IntLit 0x_ff
+        IntLit 1_000
+      FloatLit 2e10
+-- diagnostics --
+error: `&&` is not part of the portable shell dialect (§10.7)
+  --> lit_string_shell.txtar:10:14
+   |
+10 | let p6 = $"a && b"
+   |              ^
+
+error: `$name` expansion is not allowed; use `${name}` (§10.7)
+  --> lit_string_shell.txtar:11:17
+   |
+11 | let p7 = $"echo $var"
+   |                 ^
+
+error: here documents are not supported (§10.7)
+  --> lit_string_shell.txtar:12:16
+   |
+12 | let p8 = $"cat <<EOF"
+   |                ^
+
+error: expected string literal after `$`
+  --> lit_string_shell.txtar:13:11
+   |
+13 | let p9 = $
+   |           ^
+

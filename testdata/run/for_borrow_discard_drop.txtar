@@ -1,0 +1,38 @@
+-- src --
+// Ledger L-181: discarding a `for` loop's borrowed binding (`_ = x`) must
+// not drop it — the loop never owns a borrowed element, so only the real
+// owner's own scope exit drops it, exactly once.
+type Res = resource {
+    pub id Int
+}
+
+fn Res.drop(move self) -> Unit {
+    print "drop ${self.id}"
+}
+
+type Box = {
+    items Array[Res]
+}
+
+fn scanField(b: &Box) -> Unit {
+    for x in &b.items {
+        _ = x
+    }
+}
+
+let xs = Array.of(Res { id: 1 }, Res { id: 2 })
+for x in &xs {
+    _ = x
+}
+print "checkpoint1"
+
+let b = Box { items: Array.of(Res { id: 10 }, Res { id: 20 }) }
+scanField(&b)
+print "checkpoint2"
+-- stdout --
+checkpoint1
+checkpoint2
+drop 20
+drop 10
+drop 2
+drop 1

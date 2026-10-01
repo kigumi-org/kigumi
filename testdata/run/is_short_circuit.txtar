@@ -1,0 +1,33 @@
+-- src --
+type Tag = resource {
+    pub n Int
+}
+
+fn Tag.drop(move self) -> Unit {
+    print "drop ${self.n}"
+}
+
+fn probe(n: Int) -> Tag? {
+    if n > 1 {
+        Some(Tag { n: n })
+    } else {
+        None
+    }
+}
+
+let mut hits = 0
+let mut seen = false
+for i in 0..4 {
+    if !seen && probe(i) is Some(t) {
+        hits = hits + t.n
+        seen = i == 2
+    }
+    if i == 3 && probe(i) is Some(_) {
+        hits = hits + 100
+    }
+}
+print "hits ${hits}"
+-- stdout --
+drop 2
+drop 3
+hits 102

@@ -1,0 +1,54 @@
+-- src --
+type Res = resource {
+    pub id Int
+}
+
+fn Res.drop(move self) -> Unit {
+    print "drop ${self.id}"
+}
+
+fn optionCombinators() -> Unit {
+    let holder = Res { id: 7 }
+    let some: Int? = Some(4)
+    let mapped = some.map((x) => {
+        print "use ${holder.id}"
+        x + holder.id
+    })
+    print "mapped ${debug(mapped)}"
+
+    let noneInt: Int? = None
+    let mappedNone = noneInt.map((x) => x * 2)
+    print "mappedNone ${debug(mappedNone)}"
+
+    let chained = Some(3).andThen((x) => if x > 0 { Some(x * 10) } else { None })
+    print "chained ${debug(chained)}"
+
+    print "chainedNone ${debug(noneInt.andThen((x) => Some(x + 1)))}"
+
+    print "unwrapOr ${Some(5).unwrapOr(0)} ${noneInt.unwrapOr(9)}"
+}
+
+fn resultCombinators() -> Unit {
+    let ok: Result[Int, String] = Ok(2)
+    let err: Result[Int, String] = Err("bad")
+
+    print "map ${debug(ok.map((x) => x * 3))} ${debug(err.map((x) => x * 3))}"
+    print "mapErr ${debug(ok.mapErr((e) => "${e}!"))} ${debug(err.mapErr((e) => "${e}!"))}"
+    print "andThen ${debug(ok.andThen((x) => if x > 0 { Ok(x + 1) } else { Err("neg") }))}"
+    print "andThenErr ${debug(err.andThen((x) => Ok(x + 1)))}"
+}
+
+optionCombinators()
+resultCombinators()
+-- stdout --
+use 7
+mapped Some(11)
+mappedNone None
+chained Some(30)
+chainedNone None
+unwrapOr 5 9
+drop 7
+map Ok(6) Err(bad)
+mapErr Ok(2) Err(bad!)
+andThen Ok(3)
+andThenErr Err(bad)

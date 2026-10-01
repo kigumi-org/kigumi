@@ -1,0 +1,84 @@
+-- src --
+type View['a] = { pub data &'a Bytes, pub off usize }
+fn head['a](b: &'a Bytes) -> View['a] { b }
+fn pick['a](x: &'a mut Int, y: &Int) -> &'a mut Int { x }
+fn View['a].first(self) -> &'a u8 { self.data[0] }
+-- expect --
+File
+  TypeDecl
+    name: View
+    generics: List
+      GenericParam 'a lifetime
+    body: RecordBody
+      Field data
+        vis: Visibility
+        type: TypeRef 'a
+          TypePath
+            Path Bytes
+      Field off
+        vis: Visibility
+        type: TypePath
+          Path usize
+  FnDecl
+    attrs: -
+    vis: -
+    recv: -
+    name: head
+    generics: List
+      GenericParam 'a lifetime
+    params: List
+      Param b
+        type: TypeRef 'a
+          TypePath
+            Path Bytes
+    ret: TypePath
+      Path View
+      List
+        TypeLifetime 'a
+    body: Block
+      ExprStmt
+        Ident b
+  FnDecl
+    attrs: -
+    vis: -
+    recv: -
+    name: pick
+    generics: List
+      GenericParam 'a lifetime
+    params: List
+      Param x
+        type: TypeRef 'a mut
+          TypePath
+            Path Int
+      Param y
+        type: TypeRef
+          TypePath
+            Path Int
+    ret: TypeRef 'a mut
+      TypePath
+        Path Int
+    body: Block
+      ExprStmt
+        Ident x
+  FnDecl
+    attrs: -
+    vis: -
+    recv: TypePath
+      Path View
+      List
+        GenericParam 'a lifetime
+    name: first
+    generics: -
+    params: List
+      Param self
+        flags: self
+    ret: TypeRef 'a
+      TypePath
+        Path u8
+    body: Block
+      ExprStmt
+        Bracket
+          Member data
+            Ident self
+          List
+            IntLit 0

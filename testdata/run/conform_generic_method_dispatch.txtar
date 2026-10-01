@@ -1,0 +1,21 @@
+-- src --
+interface R {
+    fn render(self, x: Int) -> String
+}
+
+type W = {
+    pub n Int
+}
+
+fn W.render[T](self, x: T) -> String {
+    "W(${self.n})"
+}
+
+fn show(r: R, x: Int) -> String {
+    r.render(x)
+}
+
+let boxed: R = W { n: 7 }
+print show(boxed, 42)
+-- stdout --
+W(7)

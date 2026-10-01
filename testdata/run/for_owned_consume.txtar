@@ -1,0 +1,47 @@
+-- src --
+// Ledger L-181: `for x in xs` over an owned collection moves xs into the
+// loop and binds each element by value; a resource element drops exactly
+// once, including the ones an early break leaves behind.
+type Res = resource {
+    pub id Int
+}
+
+fn Res.drop(move self) -> Unit {
+    print "drop ${self.id}"
+}
+
+fn consumeAll() -> Unit {
+    let items = Array.of(Res { id: 1 }, Res { id: 2 }, Res { id: 3 })
+    for it in items {
+        print "see ${it.id}"
+    }
+    print "consumeAll done"
+}
+
+fn consumeUntilBreak() -> Unit {
+    let items = Array.of(Res { id: 10 }, Res { id: 20 }, Res { id: 30 })
+    for it in items {
+        print "see ${it.id}"
+        if it.id == 20 {
+            break
+        }
+    }
+    print "consumeUntilBreak done"
+}
+
+consumeAll()
+consumeUntilBreak()
+-- stdout --
+see 1
+drop 1
+see 2
+drop 2
+see 3
+drop 3
+consumeAll done
+see 10
+drop 10
+see 20
+drop 20
+drop 30
+consumeUntilBreak done

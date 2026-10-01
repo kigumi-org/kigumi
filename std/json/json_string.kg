@@ -1,0 +1,89 @@
+/// Decodes a JSON string body starting at the opening quote, including \uXXXX escapes and surrogate pairs; a lone surrogate becomes U+FFFD (RFC 3629 has no encoding for it).
+fn Cursor.string(mut self) -> String! {
+    self.pos = self.pos + 1
+    let mut out = Buffer { bytes: Array.empty[u8]() }
+    for {
+        let b = self.peek()
+        if b < 0 {
+            fail invalid()
+        }
+        self.pos = self.pos + 1
+        if b == 34 {
+            break
+        }
+        if b < 32 {
+            fail invalid()
+        }
+        if b != 92 {
+            out.bytes.push(b.toU8() || 0)
+            continue
+        }
+        let e = self.peek()
+        self.pos = self.pos + 1
+        if e == 110 {
+            out.bytes.push(10)
+        } else if e == 116 {
+            out.bytes.push(9)
+        } else if e == 114 {
+            out.bytes.push(13)
+        } else if e == 98 {
+            out.bytes.push(8)
+        } else if e == 102 {
+            out.bytes.push(12)
+        } else if e == 117 {
+            let cp = self.codePoint()?
+            out.codePoint(cp)
+        } else if e == 34 || e == 92 || e == 47 {
+            out.bytes.push(e.toU8() || 0)
+        } else {
+            fail invalid()
+        }
+    }
+    out.finish()
+}
+
+fn hexValue(b: Int) -> Int {
+    if b >= 48 && b <= 57 {
+        b - 48
+    } else if b >= 97 && b <= 102 {
+        b - 87
+    } else if b >= 65 && b <= 70 {
+        b - 55
+    } else {
+        -1
+    }
+}
+
+/// Reads the four hex digits after `\u`; a high surrogate followed by `\u` and a low surrogate combines into one code point.
+fn Cursor.hex4(mut self) -> Int! {
+    let mut cp = 0
+    for _ in 0..4 {
+        let h = hexValue(self.peek())
+        if h < 0 {
+            fail invalid()
+        }
+        cp = cp * 16 + h
+        self.pos = self.pos + 1
+    }
+    Ok(cp)
+}
+
+fn Cursor.codePoint(mut self) -> Int! {
+    let cp = self.hex4()?
+    if cp >= 55296 && cp <= 56319 {
+        if self.peek() == 92 && self.pos + 1 < self.bytes.len() && (self.bytes.get(self.pos + 1) || 0).toInt() == 117 {
+            let save = self.pos
+            self.pos = self.pos + 2
+            let lo = self.hex4()?
+            if lo >= 56320 && lo <= 57343 {
+                return Ok(65536 + (cp - 55296) * 1024 + (lo - 56320))
+            }
+            self.pos = save
+        }
+        return Ok(65533)
+    }
+    if cp >= 56320 && cp <= 57343 {
+        return Ok(65533)
+    }
+    Ok(cp)
+}

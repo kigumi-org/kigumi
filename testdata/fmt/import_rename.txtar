@@ -1,0 +1,6 @@
+-- src --
+import {encode, decode as decodeUser} from std/json
+pub import {zeta as alpha, beta} from std/math
+-- expect --
+import {decode as decodeUser, encode} from std/json
+pub import {zeta as alpha, beta} from std/math

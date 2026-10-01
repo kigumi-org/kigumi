@@ -1,0 +1,27 @@
+-- app/n/n.kg --
+import json from std/json
+
+type Box[T] = {
+    pub value Option[T]
+}
+
+type Safe[T] = {
+    pub items Array[Option[T]]
+}
+
+fn useIt() -> Unit! {
+    let bad = Box[Option[Int]] { value: Some(None) }
+    let encoded = json.encode(bad)? //~ ERROR `Box[Int?]` cannot derive JSON `Encode`
+    _ = encoded
+
+    let ok = Safe[Int] { items: Array.of(Some(1), None) }
+    let encodedOk = json.encode(ok)?
+    _ = encodedOk
+}
+-- expect --
+error[E972]: `Box[Int?]` cannot derive JSON `Encode`: field `value` is `Option[Option[...]]`, and JSON `null` cannot tell `Some(None)` from `None` (ledger L-123)
+  --> app/n/n.kg:13:19
+   |
+13 |     let encoded = json.encode(bad)? //~ ERROR `Box[Int?]` cannot derive JSON `Encode`
+   |                   ^^^^^^^^^^^^^^^
+

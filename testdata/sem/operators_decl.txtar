@@ -1,0 +1,79 @@
+-- app/o/o.kg --
+pub type Vec = {
+    pub x Float
+    pub y Float
+}
+
+pub pure fn Vec.+(a: Vec, b: Vec) -> Vec {
+    a
+}
+
+pub pure fn Vec.*(a: Float, b: Vec) -> Vec {
+    b
+}
+
+pub pure fn Vec.!(a: Vec) -> Vec {
+    a
+}
+
+pub pure fn Vec.-(self, b: Vec) -> Vec { //~ ERROR operators are associated functions without `self`
+    b
+}
+
+pub pure fn Vec.^(a: Vec) -> Vec { //~ ERROR operator `^` takes 2 operands
+    a
+}
+
+pub pure fn Vec.~(a: Vec, b: Vec) -> Vec { //~ ERROR operator `~` takes 1 operand
+    a
+}
+
+pub pure fn Vec.%(a: Int, b: Int) -> Int { //~ ERROR neither operand type of `%` is `Vec`
+    a
+}
+
+fn i64.+(a: i64, b: i64) -> i64 { //~ ERROR member functions of `i64` must be declared in package `std/prelude`
+    a
+}
+
+fn Int.+(a: Int, b: Int) -> Int { //~ ERROR alias `Int` cannot own methods
+    a
+}
+-- expect --
+error[E603]: operators are associated functions without `self`
+  --> app/o/o.kg:18:1
+   |
+18 | pub pure fn Vec.-(self, b: Vec) -> Vec { //~ ERROR operators are associated functions without `self`
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E604]: operator `^` takes 2 operands
+  --> app/o/o.kg:22:1
+   |
+22 | pub pure fn Vec.^(a: Vec) -> Vec { //~ ERROR operator `^` takes 2 operands
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E604]: operator `~` takes 1 operand
+  --> app/o/o.kg:26:1
+   |
+26 | pub pure fn Vec.~(a: Vec, b: Vec) -> Vec { //~ ERROR operator `~` takes 1 operand
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E605]: neither operand type of `%` is `Vec`
+  --> app/o/o.kg:30:1
+   |
+30 | pub pure fn Vec.%(a: Int, b: Int) -> Int { //~ ERROR neither operand type of `%` is `Vec`
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E229]: member functions of `i64` must be declared in package `std/prelude`
+  --> app/o/o.kg:34:4
+   |
+34 | fn i64.+(a: i64, b: i64) -> i64 { //~ ERROR member functions of `i64` must be declared in package `std/prelude`
+   |    ^^^
+
+error[E215]: alias `Int` cannot own methods
+  --> app/o/o.kg:38:4
+   |
+38 | fn Int.+(a: Int, b: Int) -> Int { //~ ERROR alias `Int` cannot own methods
+   |    ^^^
+   = help: use a one-field record
+

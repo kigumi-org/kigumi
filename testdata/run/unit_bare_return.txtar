@@ -1,0 +1,59 @@
+-- src --
+fn bareReturn() -> Unit! {
+    return
+}
+bareReturn()?
+print "ok"
+
+type Boom = { }
+
+fn Boom.message(self) -> String {
+    "boom"
+}
+
+fn mixedFail(flag: Bool) -> Unit! {
+    if flag {
+        return
+    }
+    fail Boom { }
+}
+
+fn loopReturn() -> Unit! {
+    for i in 0..3 {
+        if i == 1 {
+            return
+        }
+    }
+    fail Boom { }
+}
+
+fn nestedIfReturn() -> Unit! {
+    if true {
+        {
+            return
+        }
+    }
+    fail Boom { }
+}
+
+fn caller() -> Unit! {
+    mixedFail(true)?
+    loopReturn()?
+    nestedIfReturn()?
+}
+
+caller()?
+print "mixed ok"
+
+match mixedFail(false) {
+    Ok(_) -> print "unexpected ok"
+    Err(e) -> print "err=${e.message()}"
+}
+
+let _ = bareReturn()
+print "direct call ok"
+-- stdout --
+ok
+mixed ok
+err=boom
+direct call ok

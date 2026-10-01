@@ -1,0 +1,60 @@
+-- app/t/t.kg --
+async fn fetch() -> Int {
+    1
+}
+
+async fn twice() -> Int {
+    let v = await fetch()
+    v * 2
+}
+
+fn sync() -> Int {
+    let f = fetch()
+    let n: Int = fetch() //~ ERROR expected `Int`, found `Future[Int]`
+    let m = await f //~ ERROR `await` is only allowed inside an `async fn`
+    m + n
+}
+
+async fn wrong() -> Int {
+    await 3 //~ ERROR `await` needs a `Future[T]`, found `{integer}`
+}
+
+type Box = {
+    v Int
+}
+
+async fn Box.get(move self) -> Int {
+    self.v
+}
+
+fn method() -> Unit {
+    let b = Box { v: 1 }
+    let n: Int = b.get() //~ ERROR expected `Int`, found `Future[Int]`
+}
+
+-- expect --
+error[E400]: expected `Int`, found `Future[Int]`
+  --> app/t/t.kg:12:18
+   |
+12 |     let n: Int = fetch() //~ ERROR expected `Int`, found `Future[Int]`
+   |                  ^^^^^^
+
+error[E925]: `await` is only allowed inside an `async fn`
+  --> app/t/t.kg:13:13
+   |
+13 |     let m = await f //~ ERROR `await` is only allowed inside an `async fn`
+   |             ^^^^^^^
+   = help: use `task.local().run(...)` elsewhere
+
+error[E926]: `await` needs a `Future[T]`, found `{integer}`
+  --> app/t/t.kg:18:5
+   |
+18 |     await 3 //~ ERROR `await` needs a `Future[T]`, found `{integer}`
+   |     ^^^^^^^
+
+error[E400]: expected `Int`, found `Future[Int]`
+  --> app/t/t.kg:31:18
+   |
+31 |     let n: Int = b.get() //~ ERROR expected `Int`, found `Future[Int]`
+   |                  ^^^^^^
+

@@ -1,0 +1,40 @@
+-- src --
+fn pattern() -> Bytes {
+    Bytes.fromArray(&Array.of[u8](1, 2, 3, 5, 7, 11, 13))
+}
+
+// Doubles an irregular 7-byte pattern 19 times so every doubling's copy
+// boundary lands mid-pattern instead of on a repeat; 7 * 2^19 = ~3.5 MB.
+fn grow(b: Bytes, doublings: usize) -> Bytes {
+    let mut out = b
+    let mut i: usize = 0
+    for i < doublings {
+        out = out.concat(out)
+        i = i + 1
+    }
+    out
+}
+
+let base = pattern()
+let big = grow(base, 19)
+let half = big.len() / 2
+let left = big.slice(0, half) || Bytes.zeros(0)
+let right = big.slice(half, big.len()) || Bytes.zeros(0)
+let rejoined = left.concat(right)
+print "len=${big.len()} hash_stable=${big.hash() == rejoined.hash()}"
+print "rejoined_equal=${rejoined.equals(&big)}"
+print "starts_with_pattern=${big.startsWith(base)}"
+
+let tried = base.tryConcat(base).unwrap()
+print "try_len=${tried.len()} try_matches=${tried.equals(&base.concat(base))}"
+
+let arr = Array.of[u8](9, 8, 7)
+let viaArray = Bytes.fromArray(&arr)
+let viaTry = Bytes.tryFromArray(&arr).unwrap()
+print "from_array_equal=${viaArray.equals(&viaTry)} from_array_len=${viaArray.len()}"
+-- stdout --
+len=3670016 hash_stable=true
+rejoined_equal=true
+starts_with_pattern=true
+try_len=14 try_matches=true
+from_array_equal=true from_array_len=3

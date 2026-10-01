@@ -1,0 +1,61 @@
+/// Arena allocator: everything allocated in its scope is freed together when the scope ends.
+pub type Arena
+
+/// Handle to an allocator, obtained from `Arena.create()`; `scope()` makes it current.
+pub type AllocatorHandle
+
+/// Value consumed by an `allocator ... { }` block to route its allocations.
+pub type AllocatorScope
+
+/// Reference-counted shared ownership of a T within one thread: every clone is the same cell, and `set` replaces its value. It is neither Send nor Sync.
+pub type Shared[T]
+
+/// Non-owning handle to a Shared cell; it breaks reference cycles.
+pub type Weak[T]
+
+/// Creates an arena; fails when the host cannot provide memory.
+pub fn Arena.create() -> AllocatorHandle!
+
+/// Creates an arena, reporting a refused allocation as AllocError.
+pub fn Arena.tryCreate() -> Result[AllocatorHandle, AllocError] {
+    if Arena.create() is Ok(handle) {
+        return Ok(handle)
+    }
+    Err(AllocError.OutOfMemory)
+}
+
+/// Scope that makes this allocator current inside an `allocator` block; its
+/// bookkeeping lives in this allocator, so no ambient allocator is needed.
+pub noalloc fn AllocatorHandle.scope(self) -> AllocatorScope
+
+/// Bytes handed out by this allocator so far; the interpreter reports 0.
+pub fn AllocatorHandle.allocated(self) -> Int
+
+/// Wraps a value in a shared cell.
+pub fn Shared.new[T](value: T) -> Shared[T]
+
+/// Another handle to the same cell.
+pub fn Shared[T].clone(self) -> Shared[T]
+
+/// A copy of the current content.
+pub fn Shared[T: Copy].get(self) -> T
+
+/// Replaces the content; the old value is dropped.
+pub fn Shared[T].set(self, value: T) -> Unit
+
+/// Calls f with a borrow of the content and returns what it returns.
+/// Panics on reentrant `withMut` into the same cell.
+pub fn Shared[T].with[R](self, f: fn(&T) -> R) -> R
+
+/// Calls f with an exclusive borrow of the content, so f can mutate it in
+/// place. Panics on reentrant `with`/`withMut` into the same cell.
+pub fn Shared[T].withMut[R](self, f: fn(&mut T) -> R) -> R
+
+/// A weak handle to the same cell.
+pub fn Shared[T].downgrade(self) -> Weak[T]
+
+/// The cell as a Shared while some Shared still owns it; None once the last one was dropped.
+pub fn Weak[T].upgrade(self) -> Shared[T]?
+
+/// Another weak handle to the same cell.
+pub fn Weak[T].clone(self) -> Weak[T]

@@ -1,0 +1,18 @@
+-- src --
+let magic = b"\x30\x82"
+print "match: ${magic.indexOf(b"\x82") is Some(_)}"
+
+let escaped = b"\"\\"
+let escapedExpect = Bytes.fromArray(&Array.of[u8](34, 92))
+print "escaped decode: ${escaped.equals(&escapedExpect)}"
+print "escaped len alongside plain string: ${escaped.len()} vs ${"a plain string"}"
+
+print "byte len next to string: ${b"\x41\x42".len()} ${"tail"}"
+
+print "nested: ${"outer ${b"\x30".len()} inner"}"
+-- stdout --
+match: true
+escaped decode: true
+escaped len alongside plain string: 2 vs a plain string
+byte len next to string: 2 tail
+nested: outer 1 inner

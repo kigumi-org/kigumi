@@ -1,0 +1,40 @@
+-- src --
+import {Shared} from std/alloc
+
+type Item = {
+    pub mut count Int
+}
+
+fn Item.update(mut self, delta: Int) -> Unit {
+    self.count = self.count + delta
+}
+
+fn arrays() -> Unit {
+    let mut xs = Array.of(Item { count: 1 }, Item { count: 2 }, Item { count: 3 })
+    let r = xs.withMut(1, (x: &mut Item) => {
+        x.update(10)
+        x.count = x.count + 1
+        x.count
+    })
+    print "withMut ${r || 0} miss ${xs.withMut(9, (x: &mut Item) => x.count) is None}"
+    print "after ${xs.with(1, (x: &Item) => x.count) || 0}"
+}
+
+fn shared() -> Unit {
+    let cell = Shared.new(Item { count: 100 })
+    let other = cell.clone()
+    let r = cell.withMut((x: &mut Item) => {
+        x.update(5)
+        x.count
+    })
+    print "shared ${r} readback ${other.with((x: &Item) => x.count)}"
+}
+
+arrays()
+shared()
+print "end"
+-- stdout --
+withMut 13 miss true
+after 13
+shared 105 readback 105
+end

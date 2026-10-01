@@ -1,0 +1,131 @@
+/// Renders a value as compact JSON text; fails on a non-finite float, which JSON cannot express.
+pub fn render(value: Value) -> String! {
+    let mut b = Buffer { bytes: Array.empty[u8]() }
+    b.value(value)?
+    b.finish()
+}
+
+/// Growing byte buffer for rendering and string decoding.
+type Buffer = {
+    mut bytes Array[u8]
+}
+
+fn Buffer.finish(move self) -> String! {
+    String.fromBytes(Bytes.fromArray(&self.bytes))
+}
+
+fn Buffer.byte(mut self, b: u8) -> Unit {
+    self.bytes.push(b)
+}
+
+fn Buffer.text(mut self, s: String) -> Unit {
+    let bs = s.bytes()
+    for i in 0..bs.len() {
+        self.bytes.push(bs.get(i) || 0)
+    }
+}
+
+fn hexDigit(n: Int) -> u8 {
+    if n < 10 {
+        (48 + n).toU8() || 48
+    } else {
+        (87 + n).toU8() || 48
+    }
+}
+
+/// Escapes s as a JSON string: quote, backslash and every code point below U+0020.
+fn Buffer.string(mut self, s: String) -> Unit {
+    self.bytes.push(34)
+    let bs = s.bytes()
+    for i in 0..bs.len() {
+        let b = bs.get(i) || 0
+        let n = b.toInt()
+        if n == 34 || n == 92 {
+            self.bytes.push(92)
+            self.bytes.push(b)
+        } else if n == 10 {
+            self.text("\\n")
+        } else if n == 13 {
+            self.text("\\r")
+        } else if n == 9 {
+            self.text("\\t")
+        } else if n == 8 {
+            self.text("\\b")
+        } else if n == 12 {
+            self.text("\\f")
+        } else if n < 32 {
+            self.text("\\u00")
+            self.bytes.push(hexDigit(n / 16))
+            self.bytes.push(hexDigit(n % 16))
+        } else {
+            self.bytes.push(b)
+        }
+    }
+    self.bytes.push(34)
+}
+
+fn Buffer.value(mut self, value: Value) -> Unit! {
+    match value {
+        Value.Null -> self.text("null")
+        Value.Boolean(b) -> self.text("${b}")
+        Value.Integer(n) -> self.text("${n}")
+        Value.Unsigned(n) -> self.text("${n}")
+        Value.Number(f) -> {
+            if f != f || f > 1.7976931348623157e308 || f < -1.7976931348623157e308 {
+                fail Error { text: "cannot encode non-finite float ${f} as JSON" }
+            }
+            let s = "${f}"
+            self.text(s)
+            if !s.contains(".") && !s.contains("e") && !s.contains("E") {
+                self.text(".0")
+            }
+        }
+        Value.Text(s) -> self.string(s)
+        Value.List(items) -> {
+            self.bytes.push(91)
+            let mut first = true
+            for item in items {
+                if !first {
+                    self.bytes.push(44)
+                }
+                first = false
+                self.value(item)?
+            }
+            self.bytes.push(93)
+        }
+        Value.Object(m) -> {
+            let mut fields = m
+            self.bytes.push(123)
+            let mut first = true
+            for key in fields.keys() {
+                if !first {
+                    self.bytes.push(44)
+                }
+                first = false
+                self.string(key)
+                self.bytes.push(58)
+                self.value(fields.take(&key) || Value.Null)?
+            }
+            self.bytes.push(125)
+        }
+    }
+}
+
+/// Appends a code point as UTF-8.
+fn Buffer.codePoint(mut self, cp: Int) -> Unit {
+    if cp < 128 {
+        self.bytes.push(cp.toU8() || 0)
+    } else if cp < 2048 {
+        self.bytes.push((192 + cp / 64).toU8() || 0)
+        self.bytes.push((128 + cp % 64).toU8() || 0)
+    } else if cp < 65536 {
+        self.bytes.push((224 + cp / 4096).toU8() || 0)
+        self.bytes.push((128 + (cp / 64) % 64).toU8() || 0)
+        self.bytes.push((128 + cp % 64).toU8() || 0)
+    } else {
+        self.bytes.push((240 + cp / 262144).toU8() || 0)
+        self.bytes.push((128 + (cp / 4096) % 64).toU8() || 0)
+        self.bytes.push((128 + (cp / 64) % 64).toU8() || 0)
+        self.bytes.push((128 + cp % 64).toU8() || 0)
+    }
+}

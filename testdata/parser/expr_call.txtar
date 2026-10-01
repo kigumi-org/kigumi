@@ -1,0 +1,340 @@
+-- src --
+print "hello"
+print stat.display()
+f g
+io.print "x"
+user.display locale
+measure "a" + n
+measure("a" + suffix)
+(measure "a") + n
+encode text |> sink
+f g x
+let v = json.decode[User](data)?
+let w = Array.empty[Commit]()
+let x = map.empty[K, Int]()
+let y = lib.get[extern(C) fn(f64) -> f64]("cbrt")?
+let z = Array.empty[*const u8]()
+let y = counts.set(k, (counts.get(k) || 0) + 1)
+let y2 = command("cat", ...args)
+let y3 = stat { a: 1 }
+let z = xs.filter((u) => u.active).map((u) => u.name)
+let s = Summary { ..user }
+let t = Summary {
+    ..user
+    name: "override"
+}
+let u = Vec { x: a.x + b.x, y: a.y + b.y }
+let p = Pair[B] { first: 1, second: 2 }
+let d = build.DeviceRequest { board: b }
+let l1 = (x) => x * 2
+let l2 = (a, b) => { a + b }
+let l3 = (x: Int) => x
+let l4 = () => 1
+let stats = authors.entries()
+    .map((e) => AuthorStat { name: e.key, commits: e.value })
+_ = compute()
+x += 1
+a.b[i] <<= 2
+-- expect --
+File
+  ExprStmt
+    WsCall
+      Ident print
+      List
+        StringLit "hello"
+  ExprStmt
+    WsCall
+      Ident print
+      List
+        Call
+          Member display
+            Ident stat
+          List
+  ExprStmt
+    WsCall
+      Ident f
+      List
+        Ident g
+  ExprStmt
+    WsCall
+      Member print
+        Ident io
+      List
+        StringLit "x"
+  ExprStmt
+    WsCall
+      Member display
+        Ident user
+      List
+        Ident locale
+  ExprStmt
+    Binary +
+      WsCall
+        Ident measure
+        List
+          StringLit "a"
+      Ident n
+  ExprStmt
+    Call
+      Ident measure
+      List
+        Binary +
+          StringLit "a"
+          Ident suffix
+  ExprStmt
+    Binary +
+      Paren
+        WsCall
+          Ident measure
+          List
+            StringLit "a"
+      Ident n
+  ExprStmt
+    Binary |>
+      WsCall
+        Ident encode
+        List
+          Ident text
+      Ident sink
+  ExprStmt
+    WsCall
+      Ident f
+      List
+        Ident g
+  Let
+    pattern: PatBind v
+    init: Try
+      Call
+        Bracket
+          Member decode
+            Ident json
+          List
+            Ident User
+        List
+          Ident data
+  Let
+    pattern: PatBind w
+    init: Call
+      Bracket
+        Member empty
+          Ident Array
+        List
+          Ident Commit
+      List
+  Let
+    pattern: PatBind x
+    init: Call
+      Bracket
+        Member empty
+          Ident map
+        List
+          Ident K
+          Ident Int
+      List
+  Let
+    pattern: PatBind y
+    init: Try
+      Call
+        Bracket
+          Member get
+            Ident lib
+          List
+            TypeFn
+              abi: C
+              params: List
+                TypePath
+                  Path f64
+              ret: TypePath
+                Path f64
+        List
+          StringLit "cbrt"
+  Let
+    pattern: PatBind z
+    init: Call
+      Bracket
+        Member empty
+          Ident Array
+        List
+          TypePtr
+            TypePath
+              Path u8
+      List
+  Let
+    pattern: PatBind y
+    init: Call
+      Member set
+        Ident counts
+      List
+        Ident k
+        Binary +
+          Paren
+            Binary ||
+              Call
+                Member get
+                  Ident counts
+                List
+                  Ident k
+              IntLit 0
+          IntLit 1
+  Let
+    pattern: PatBind y2
+    init: Call
+      Ident command
+      List
+        StringLit "cat"
+        Spread
+          Ident args
+  Let
+    pattern: PatBind y3
+    init: RecordLit
+      Ident stat
+      List
+        FieldInit a
+          IntLit 1
+  Let
+    pattern: PatBind z
+    init: Call
+      Member map
+        Call
+          Member filter
+            Ident xs
+          List
+            Lambda
+              List
+                Param u
+              Member active
+                Ident u
+      List
+        Lambda
+          List
+            Param u
+          Member name
+            Ident u
+  Let
+    pattern: PatBind s
+    init: RecordLit
+      Ident Summary
+      List
+        Spread
+          Ident user
+  Let
+    pattern: PatBind t
+    init: RecordLit
+      Ident Summary
+      List
+        Spread
+          Ident user
+        FieldInit name
+          StringLit "override"
+  Let
+    pattern: PatBind u
+    init: RecordLit
+      Ident Vec
+      List
+        FieldInit x
+          Binary +
+            Member x
+              Ident a
+            Member x
+              Ident b
+        FieldInit y
+          Binary +
+            Member y
+              Ident a
+            Member y
+              Ident b
+  Let
+    pattern: PatBind p
+    init: RecordLit
+      Bracket
+        Ident Pair
+        List
+          Ident B
+      List
+        FieldInit first
+          IntLit 1
+        FieldInit second
+          IntLit 2
+  Let
+    pattern: PatBind d
+    init: RecordLit
+      Member DeviceRequest
+        Ident build
+      List
+        FieldInit board
+          Ident b
+  Let
+    pattern: PatBind l1
+    init: Lambda
+      List
+        Param x
+      Binary *
+        Ident x
+        IntLit 2
+  Let
+    pattern: PatBind l2
+    init: Lambda
+      List
+        Param a
+        Param b
+      Block
+        ExprStmt
+          Binary +
+            Ident a
+            Ident b
+  Let
+    pattern: PatBind l3
+    init: Lambda
+      List
+        Param x
+          type: TypePath
+            Path Int
+      Ident x
+  Let
+    pattern: PatBind l4
+    init: Lambda
+      List
+      IntLit 1
+  Let
+    pattern: PatBind stats
+    init: Call
+      Member map
+        Call
+          Member entries
+            Ident authors
+          List
+      List
+        Lambda
+          List
+            Param e
+          RecordLit
+            Ident AuthorStat
+            List
+              FieldInit name
+                Member key
+                  Ident e
+              FieldInit commits
+                Member value
+                  Ident e
+  Assign =
+    Ident _
+    Call
+      Ident compute
+      List
+  Assign +=
+    Ident x
+    IntLit 1
+  Assign <<=
+    Bracket
+      Member b
+        Ident a
+      List
+        Ident i
+    IntLit 2
+-- diagnostics --
+error: whitespace call takes exactly one argument; write `f(g(x))` or `f(g, x)` (§4.2)
+  --> expr_call.txtar:10:5
+   |
+10 | f g x
+   |     ^
+

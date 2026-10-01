@@ -1,0 +1,220 @@
+-- lib/eff.kg --
+import fs from std/fs
+
+type Counter = {
+    pub mut n Int
+}
+
+fn Counter.inc(mut self) -> Unit {
+    self.n += 1
+}
+
+pure fn Counter.bump(mut self) -> Unit {
+    self.n += 1
+}
+
+pure fn viaRef(c: &mut Counter) -> Unit {
+    c.inc()
+}
+
+pure fn local() -> Int {
+    let mut c = Counter { n: 0 }
+    c.inc()
+    c.n
+}
+
+fn write(files: fs.Files, p: fs.Path) -> Unit! {
+    files.remove(p)?
+}
+
+pure fn callsInferredImpure(files: fs.Files, p: fs.Path) -> Unit! {
+    write(files, p)? //~ ERROR `write` is not `pure`
+}
+
+pure fn callsStub(files: fs.Files, p: fs.Path) -> Unit! {
+    files.remove(p)? //~ ERROR `remove` is not `pure`
+}
+
+fn helper(xs: Array[Int]) -> usize {
+    xs.len()
+}
+
+pure fn inferredOk(xs: Array[Int]) -> usize {
+    helper(xs)
+}
+
+pure fn cb(f: fn(Int) -> Int) -> Int {
+    f(1)
+}
+
+pure fn cbCaller(files: fs.Files, p: fs.Path) -> Int {
+    cb((x) => { //~ ERROR closure is not `pure` (calls `remove`)
+        _ = files.remove(p)
+        x
+    })
+}
+
+pure fn cbForward(f: fn(Int) -> Int) -> Int {
+    cb(f)
+}
+
+pure fn cbForwardCaller(files: fs.Files, p: fs.Path) -> Int {
+    cbForward((x) => { //~ ERROR closure is not `pure` (calls `remove`)
+        _ = files.remove(p)
+        x
+    })
+}
+
+pure fn cbKeep(f: fn(Int) -> Int) -> Int {
+    _ = f
+    2
+}
+
+pure fn cbKeepCaller(files: fs.Files, p: fs.Path) -> Int {
+    cbKeep((x) => {
+        _ = files.remove(p)
+        x
+    })
+}
+
+pure fn cbAlias(f: fn(Int) -> Int) -> Int {
+    let g = f
+    g(1)
+}
+
+pure fn cbOk(f: pure fn(Int) -> Int) -> Int {
+    f(1)
+}
+
+pure fn unsafeBlock(x: Int) -> Int {
+    unsafe { x } //~ ERROR `unsafe` blocks are not `pure`
+}
+
+interface Show {
+    fn show(self) -> String
+}
+
+interface PureShow {
+    pure fn show(self) -> String
+}
+
+pure fn witness[T: Show](x: T) -> String {
+    x.show() //~ ERROR requirement `show` of `Show` is not `pure`
+}
+
+pure fn witnessOk[T: PureShow](x: T) -> String {
+    x.show()
+}
+
+pure fn dropsError(e: Error) -> Int {
+    _ = e //~ ERROR dropping `Error` is not `pure`
+    1
+}
+
+pure fn hof(xs: Array[Int]) -> Array[Int] {
+    xs.map((x) => x + 1)
+}
+
+pure fn hofImpure(xs: Array[Int], files: fs.Files, p: fs.Path) -> Array[Int] {
+    xs.map((x) => { //~ ERROR closure is not `pure` (calls `remove`)
+        _ = files.remove(p)
+        x + 0
+    })
+}
+
+pure fn panics() -> Int {
+    panic()
+}
+
+pure fn mutParam(mut c: Counter) -> Int {
+    c.inc()
+    c.n
+}
+
+pure fn recursive(n: Int) -> Int {
+    if n == 0 { 0 } else { recursive(n - 1) }
+}
+
+pure fn mutual(n: Int) -> Int {
+    other(n)
+}
+
+fn other(n: Int) -> Int {
+    if n > 0 { mutual(n - 1) } else { 0 }
+}
+
+pure fn interp(x: Int) -> String {
+    "x=${x}"
+}
+
+fn block(files: fs.Files, p: fs.Path) -> Int {
+    let v = pure {
+        1
+    }
+    let w = pure {
+        _ = files.remove(p) //~ ERROR `remove` is not `pure` //~ ERROR dropping `Unit!` is not `pure`
+        2
+    }
+    v + w
+}
+-- expect --
+error[E900]: `write` is not `pure`
+  --> lib/eff.kg:30:5
+   |
+30 |     write(files, p)? //~ ERROR `write` is not `pure`
+   |     ^^^^^^^^^^^^^^
+
+error[E900]: `remove` is not `pure`
+  --> lib/eff.kg:34:5
+   |
+34 |     files.remove(p)? //~ ERROR `remove` is not `pure`
+   |     ^^^^^^^^^^^^^^
+
+error[E422]: closure is not `pure` (calls `remove`)
+  --> lib/eff.kg:50:8
+   |
+50 |     cb((x) => { //~ ERROR closure is not `pure` (calls `remove`)
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E422]: closure is not `pure` (calls `remove`)
+  --> lib/eff.kg:61:15
+   |
+61 |     cbForward((x) => { //~ ERROR closure is not `pure` (calls `remove`)
+   |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E905]: `unsafe` blocks are not `pure`
+  --> lib/eff.kg:89:5
+   |
+89 |     unsafe { x } //~ ERROR `unsafe` blocks are not `pure`
+   |     ^^^^^^^^^^
+
+error[E902]: requirement `show` of `Show` is not `pure`
+   --> lib/eff.kg:101:5
+    |
+101 |     x.show() //~ ERROR requirement `show` of `Show` is not `pure`
+    |     ^^^^^^^
+
+error[E906]: dropping `Error` is not `pure`
+   --> lib/eff.kg:109:9
+    |
+109 |     _ = e //~ ERROR dropping `Error` is not `pure`
+    |         ^
+
+error[E422]: closure is not `pure` (calls `remove`)
+   --> lib/eff.kg:118:12
+    |
+118 |     xs.map((x) => { //~ ERROR closure is not `pure` (calls `remove`)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E900]: `remove` is not `pure`
+   --> lib/eff.kg:154:13
+    |
+154 |         _ = files.remove(p) //~ ERROR `remove` is not `pure` //~ ERROR dropping `Unit!` is not `pure`
+    |             ^^^^^^^^^^^^^^
+
+error[E906]: dropping `Unit!` is not `pure`
+   --> lib/eff.kg:154:13
+    |
+154 |         _ = files.remove(p) //~ ERROR `remove` is not `pure` //~ ERROR dropping `Unit!` is not `pure`
+    |             ^^^^^^^^^^^^^^
+

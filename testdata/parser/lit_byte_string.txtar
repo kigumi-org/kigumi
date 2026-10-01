@@ -1,0 +1,26 @@
+-- src --
+let a = b"\x30\x82A\r\n\t\\\"\0"
+let empty = b""
+match a {
+    b"x" -> 1
+    _ -> 0
+}
+-- expect --
+File
+  Let
+    pattern: PatBind a
+    init: ByteStringLit b"\x30\x82A\r\n\t\\\"\0"
+  Let
+    pattern: PatBind empty
+    init: ByteStringLit b""
+  ExprStmt
+    Match
+      Ident a
+      List
+        Arm
+          pattern: PatLit
+            ByteStringLit b"x"
+          body: IntLit 1
+        Arm
+          pattern: PatWildcard _
+          body: IntLit 0

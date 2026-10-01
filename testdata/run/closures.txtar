@@ -1,0 +1,43 @@
+-- src --
+import array from std/array
+
+fn apply(f: fn(Int) -> Int, x: Int) -> Int {
+    f(x)
+}
+
+fn compose[A, B, C](f: fn(A) -> B, g: fn(B) -> C) -> fn(A) -> C {
+    (x) => g(f(x))
+}
+
+fn twice(x: Int) -> Int {
+    x * 2
+}
+
+let k = 10
+let add = (x: Int) => x + k
+print "apply=${apply(add, 5)} twice=${apply(twice, 5)}"
+let mut counter = 0
+let inc = () => {
+    counter += 1
+}
+inc()
+inc()
+print "counter=${counter}"
+let xs = Array.of(1, 2, 3)
+let doubled = xs.map((x) => x * 2)
+let strs = doubled.map((x) => "<${x}>")
+print "doubled=${doubled.len()} last=${strs.get(2) || "?"}"
+let h = compose((x: Int) => x + 1, (y: Int) => y * 10)
+print "composed=${h(4)}"
+let m = () => xs.len()
+print "method value ${m()}"
+let unsorted = Array.of(3, 1, 2)
+let sorted = array.sortedBy(&unsorted, (a, b) => a.compareTo(b))
+print "sorted=${sorted.get(0) || 0}${sorted.get(1) || 0}${sorted.get(2) || 0}"
+-- stdout --
+apply=15 twice=10
+counter=2
+doubled=3 last=<6>
+composed=50
+method value 3
+sorted=123

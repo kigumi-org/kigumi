@@ -1,0 +1,10 @@
+-- src --
+import time from std/time
+
+let ms: i64 = -500
+print time.fromUnixMillis(ms).utc()
+let ms2: i64 = -1500
+print time.fromUnixMillis(ms2).utc()
+-- stdout --
+1969-12-31T23:59:59Z
+1969-12-31T23:59:58Z

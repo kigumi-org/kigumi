@@ -1,0 +1,23 @@
+/// Network access, obtained from `host.net()`.
+pub type Net
+
+/// HTTP client, obtained from `Net.http()`.
+pub type Http
+
+/// Result of an HTTP request.
+pub type Response = {
+    pub status Int
+}
+
+/// HTTP client with a 10 second timeout per request.
+pub fn Net.http(self) -> Http
+
+/// Error from an HTTP request.
+pub type Failure = {
+    pub text String
+}
+
+/// The failure text.
+pub fn Failure.message(self) -> String {
+    self.text
+}

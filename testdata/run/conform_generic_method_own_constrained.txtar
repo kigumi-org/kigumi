@@ -1,0 +1,42 @@
+-- src --
+import map from std/map
+
+interface Show {
+    pure fn show(self) -> String
+}
+
+type W = {
+    pub n Int
+}
+
+pure fn W.show(self) -> String {
+    "${self.n}"
+}
+
+pure fn W.equals[T: Show](self, other: &T) -> Bool {
+    self.show() == other.show()
+}
+
+pure fn W.compareTo[T: Show](self, other: &T) -> Ordering {
+    self.show().compareTo(&other.show())
+}
+
+pure fn W.hash(self) -> u64 {
+    self.n.hash()
+}
+
+let a = W { n: 1 }
+let b = W { n: 5 }
+let c = W { n: 1 }
+print "${a == b} ${a == c} ${a == b} ${a != b}"
+print "${a < b} ${b < a} ${a < b} ${a <= c} ${b > a} ${a >= c}"
+print "${hash(&a) == hash(&c)}"
+let mut m = map.empty[W, Int]()
+m.set(a, 10)
+m.set(b, 20)
+print "${m.get(&c) || 0} ${m.get(&b) || 0} ${m.len()}"
+-- stdout --
+false true false true
+true false true true true true
+true
+10 20 2

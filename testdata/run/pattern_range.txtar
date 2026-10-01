@@ -1,0 +1,52 @@
+-- src --
+const low = 11
+const high = 15
+const LOW = 30
+const HIGH = 35
+
+fn classify(n: Int) -> Int {
+    match n {
+        low..high -> 1
+        LOW..HIGH -> 4
+        20..=25 -> 2
+        _ -> 0
+    }
+}
+
+for i in 8..27 {
+    print "${classify(i)}"
+}
+
+print "${classify(30)}"
+print "${classify(34)}"
+print "${classify(35)}"
+
+let mut sum = 0
+for i in 1..=10 {
+    sum = sum + i
+}
+print "${sum}"
+-- stdout --
+0
+0
+0
+1
+1
+1
+1
+0
+0
+0
+0
+0
+2
+2
+2
+2
+2
+2
+0
+4
+4
+0
+55

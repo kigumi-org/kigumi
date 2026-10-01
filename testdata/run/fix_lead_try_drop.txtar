@@ -1,0 +1,25 @@
+-- src --
+type H = resource {
+    pub id Int
+}
+
+fn H.drop(move self) -> Unit {
+    print "drop ${self.id}"
+}
+
+fn make(id: Int) -> H! {
+    Ok(H { id: id })
+}
+
+// A resource unwrapped with `?` must still be destroyed: the AOT backend
+// never released the Result, so the payload's count never reached zero and
+// every std/fs.File obtained this way leaked its descriptor.
+let a = H { id: 1 }
+print "direct"
+let b = make(2)?
+print "unwrapped"
+-- stdout --
+direct
+unwrapped
+drop 2
+drop 1

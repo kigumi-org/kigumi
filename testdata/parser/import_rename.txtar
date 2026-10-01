@@ -1,0 +1,20 @@
+-- src --
+import {encode, decode as decodeUser} from std/json
+pub import {zeta as alpha, beta} from std/math
+-- expect --
+File
+  ImportDecl
+    binding: List
+      Ident encode
+      ImportAlias
+        Ident decode
+        Ident decodeUser
+    path: Path std.json
+  ImportDecl
+    vis: Visibility
+    binding: List
+      ImportAlias
+        Ident zeta
+        Ident alpha
+      Ident beta
+    path: Path std.math

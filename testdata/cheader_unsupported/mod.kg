@@ -1,0 +1,9 @@
+Module {
+    name: "cheader-unsupported-sample"
+    kigumi: "0.1"
+}
+
+Header {
+    path: "only_unsupported.h"
+    package: "onlyunsupported"
+}

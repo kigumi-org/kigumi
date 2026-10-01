@@ -1,0 +1,17 @@
+-- module --
+entry: cmd/app/main.kg
+-- lib/lib.kg --
+pub fn print(x: String) -> Unit {
+    _ = x
+}
+-- cmd/app/other.kg --
+pub import {print} from lib //~ ERROR `print` is an entry-only intrinsic
+-- cmd/app/main.kg --
+print("hello")
+-- expect --
+error[E256]: `print` is an entry-only intrinsic (§10.2, §10.3) and cannot be redeclared in the entry package
+ --> cmd/app/other.kg:1:13
+  |
+1 | pub import {print} from lib //~ ERROR `print` is an entry-only intrinsic
+  |             ^^^^^
+

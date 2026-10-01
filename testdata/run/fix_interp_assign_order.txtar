@@ -1,0 +1,18 @@
+-- src --
+fn sideIdx() -> usize {
+    print "IDX"
+    1
+}
+
+fn sideRhs() -> Int {
+    print "RHS"
+    99
+}
+
+let mut arr = Array.of(10, 20, 30)
+arr[sideIdx()] = sideRhs()
+print "${arr[1]}"
+-- stdout --
+IDX
+RHS
+99

@@ -1,0 +1,13 @@
+-- src --
+import shell from std/shell
+
+// An endless producer piped into a stage that stops early must terminate:
+// the parent may not keep its own reader on an intermediate pipe alive, or
+// the producer never sees SIGPIPE.
+let r = ($"yes kigumi | head -n 3" |> shell.capture(host.shell()))?
+print "got=[${String.fromBytes(r.stdout)?}]"
+-- stdout --
+got=[kigumi
+kigumi
+kigumi
+]

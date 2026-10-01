@@ -1,0 +1,48 @@
+-- app/t/t.kg --
+type Res[T] = Result[T, Error]
+
+type Pair[A, B] = Array[Result[A, B]]
+
+pub type Id = Int
+
+fn ok(x: Int) -> Res[Int] {
+    Ok(x)
+}
+
+fn take(p: Pair[Int, Error]) -> usize {
+    p.len()
+}
+
+fn use1() -> Int! {
+    let r: Res[Int] = ok(1)
+    let v = r?
+    v
+}
+
+fn bad1(x: Res) -> Unit {} //~ ERROR `Res` is generic
+
+fn bad2(x: Res[Int, Int]) -> Unit {} //~ ERROR `Res` takes 1 type argument, 2 given
+
+type Bounded[T: Eq] = Array[T] //~ ERROR alias parameters take no constraints
+
+-- expect --
+error[E218]: `Res` is generic
+  --> app/t/t.kg:21:12
+   |
+21 | fn bad1(x: Res) -> Unit {} //~ ERROR `Res` is generic
+   |            ^^^
+   = help: write `Res[...]`
+
+error[E217]: `Res` takes 1 type argument, 2 given
+  --> app/t/t.kg:23:12
+   |
+23 | fn bad2(x: Res[Int, Int]) -> Unit {} //~ ERROR `Res` takes 1 type argument, 2 given
+   |            ^^^^^^^^^^^^
+
+error[E251]: alias parameters take no constraints
+  --> app/t/t.kg:25:14
+   |
+25 | type Bounded[T: Eq] = Array[T] //~ ERROR alias parameters take no constraints
+   |              ^^^^^
+   = help: the target type checks its own
+

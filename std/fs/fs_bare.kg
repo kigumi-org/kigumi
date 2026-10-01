@@ -1,0 +1,52 @@
+/// Creates a file; a bare target has no file system.
+pub fn Files.create(self, path: Path) -> File! {
+    panic()
+}
+
+/// Opens for appending; a bare target has no file system.
+pub fn Files.append(self, path: Path) -> File! {
+    panic()
+}
+
+/// Deletes a file; a bare target has no file system.
+pub fn Files.remove(self, path: Path) -> Unit! {
+    panic()
+}
+
+/// Writes to a file; a bare target has no file system.
+pub fn File.write(mut self, data: Bytes) -> usize! {
+    panic()
+}
+
+/// Closes a file; a bare target has no file system.
+pub fn File.close(move self) -> Unit! {
+    panic()
+}
+
+/// Drops a file handle; a bare target has no file system.
+pub fn File.drop(move self) -> Unit {}
+
+/// Reads a file; a bare target has no file system.
+pub fn Files.read(self, path: Path) -> String! {
+    panic()
+}
+
+/// Reads a file; a bare target has no file system.
+pub fn Files.readBytes(self, path: Path) -> Bytes! {
+    panic()
+}
+
+/// Creates a directory; a bare target has no file system.
+pub fn Files.mkdir(self, path: Path) -> Unit! {
+    panic()
+}
+
+/// Tests a path; a bare target has no file system.
+pub fn Files.exists(self, path: Path) -> Bool {
+    panic()
+}
+
+/// Lists a directory; a bare target has no file system.
+pub fn Files.list(self, path: Path) -> Array[Path]! {
+    panic()
+}

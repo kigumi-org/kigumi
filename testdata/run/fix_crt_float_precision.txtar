@@ -1,0 +1,20 @@
+-- src --
+import random from std/random
+let mut r = random.seeded(42)
+let mut i: Int = 0
+for i < 5 {
+    print "${r.nextInt(1000000)}"
+    print "${r.nextFloat()}"
+    i += 1
+}
+-- stdout --
+275413
+0.1599103928769201
+763858
+0.34419071652363753
+963250
+0.8682280765465323
+624925
+0.8006318767135033
+482005
+0.6184820663561348

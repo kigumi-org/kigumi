@@ -1,0 +1,34 @@
+-- src --
+fn viaShared(xs: &Int) -> Unit {
+    xs = 9 //~ ERROR
+}
+
+fn viaMutString(s: &mut String) -> Unit {
+    s = "hi" //~ ERROR
+}
+
+fn m() -> Unit {
+    let mut xs = Array.of(1, 2, 3)
+    let _ = xs.with(0, (x: &Int) => { x = 9 }) //~ ERROR
+}
+-- expect --
+error[E701]: `xs` is immutable
+ --> main/main.kg:2:5
+  |
+2 |     xs = 9 //~ ERROR
+  |     ^^
+  = help: declare `let mut xs`
+
+error[E400]: expected `&mut String`, found `String`
+ --> main/main.kg:6:9
+  |
+6 |     s = "hi" //~ ERROR
+  |         ^^^^
+
+error[E701]: `x` is immutable
+  --> main/main.kg:11:39
+   |
+11 |     let _ = xs.with(0, (x: &Int) => { x = 9 }) //~ ERROR
+   |                                       ^
+   = help: declare `let mut x`
+

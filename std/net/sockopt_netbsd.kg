@@ -1,0 +1,62 @@
+/// setsockopt level/name for SOL_SOCKET/SO_REUSEADDR on this platform.
+fn solSocket() -> i32 {
+    0xffff
+}
+
+fn soReuseAddr() -> i32 {
+    4
+}
+
+// setsockopt name for SO_RCVTIMEO/SO_SNDTIMEO on this platform: NetBSD
+// renumbered these (generic-netbsd/sys/socket.h retires the old
+// SO_ORCVTIMEO/SO_OSNDTIMEO 0x1006/0x1005 it shares with Darwin/FreeBSD/
+// OpenBSD, and assigns the current names 0x100c/0x100b instead).
+fn soRcvTimeo() -> i32 {
+    0x100c
+}
+
+fn soSndTimeo() -> i32 {
+    0x100b
+}
+
+// struct timeval as this platform lays it out; tv_usec is really a 32-bit
+// suseconds_t, but the extra zero bytes land in its own alignment padding.
+type Timeval layout(C) = {
+    pub sec i64
+    pub usec i64
+}
+
+fn timeoutValue(seconds: i32) -> Timeval {
+    Timeval {
+        sec: seconds.toInt()
+        usec: 0
+    }
+}
+
+/// fcntl(2) F_GETFL/F_SETFL and the O_NONBLOCK flag on this platform.
+fn fcntlGetFl() -> i32 {
+    3
+}
+
+fn fcntlSetFl() -> i32 {
+    4
+}
+
+fn oNonBlock() -> i32 {
+    4
+}
+
+/// getsockopt name for SO_ERROR on this platform.
+fn soError() -> i32 {
+    0x1007
+}
+
+/// poll(2) POLLOUT bit for Pollfd.events on this platform.
+fn pollOut() -> i16 {
+    4
+}
+
+/// errno(3) EINTR on this platform.
+fn eintr() -> i32 {
+    4
+}

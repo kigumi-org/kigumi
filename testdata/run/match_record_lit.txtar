@@ -1,0 +1,31 @@
+-- src --
+type Failure = {
+    text String
+}
+
+fn Failure.message(self) -> String {
+    self.text
+}
+
+type Box = {
+    pub n Int
+}
+
+fn look(xs: &Array[Int]) -> Int! {
+    match xs.get(0) || fail Failure { text: "empty" } {
+        1 -> 10
+        _ -> 20
+    }
+}
+
+fn pick(b: Box) -> Int {
+    if b.n == Box { n: 3 }.n {
+        1
+    } else {
+        0
+    }
+}
+
+print "${look(&Array.of(1)) || 0} ${look(&Array.of(5)) || 0} ${look(&Array.empty[Int]()) || 0} ${pick(Box { n: 3 })}"
+-- stdout --
+10 20 0 1

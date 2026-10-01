@@ -1,0 +1,22 @@
+-- src --
+fn f(a: Bool, b: Bool, c: Bool) -> Bool {
+    a && b && c
+}
+fn g(a: Bool, b: Bool, c: Bool, d: Bool) -> Bool {
+    a || b || c || d
+}
+fn h(a: Int) -> Int {
+    a |> double |> triple
+}
+-- expect --
+fn f(a: Bool, b: Bool, c: Bool) -> Bool {
+    a && b && c
+}
+
+fn g(a: Bool, b: Bool, c: Bool, d: Bool) -> Bool {
+    a || b || c || d
+}
+
+fn h(a: Int) -> Int {
+    a |> double |> triple
+}

@@ -1,0 +1,25 @@
+#!/usr/bin/env kigumi
+
+// An async fn call is a lazy Future; await runs it inside another async fn,
+// and std/task's local executor runs it from synchronous code.
+import task from std/task
+
+async fn fetchScore(name: String) -> Int {
+    print "fetching ${name}"
+    (name.len().toInt() || 0) * 10
+}
+
+async fn report(names: Array[String]) -> Int {
+    let mut total = 0
+    for name in names {
+        total = total + await fetchScore(name)
+    }
+    total
+}
+
+let ex = task.local()
+let job = report(Array.of("ada", "grace"))
+print "nothing has run yet"
+let background = ex.spawn(fetchScore("linus"))
+print "total ${ex.run(job)}"
+print "background ${background.join()}"

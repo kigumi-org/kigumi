@@ -1,0 +1,47 @@
+#!/usr/bin/env kigumi
+
+import {Arena} from std/alloc
+import fs from std/fs
+import shell from std/shell
+import coreutil from std/shell/coreutil
+import notify from repostat/notify
+import {parseAll} from repostat/parse
+import report from repostat/report
+
+let sh = host.shell()
+let pattern = host.args().get(1) || "."
+
+// gitは常にexternal command。${...}は常に1語なのでinjection不能
+let plan = $"git log --no-merges --pretty=format:%an%x09%as"
+    |> coreutil.grep(pattern)
+
+let captured = (plan |> shell.capture(sh))?
+let log = String.fromBytes(captured.stdout)?
+
+// 一括処理はアリーナで。escapeする値はorigin leaseで安全
+let arena = Arena.create()?
+let rep = allocator arena.scope() {
+    report.build(parseAll(log)?)
+}
+
+let out = fs.Path.fromString("repostat.json")?
+report.writeJson(host.files(), out, &rep)?
+
+print "commits=${rep.total} days=${rep.days} authors=${rep.authors.len()}"
+for stat in rep.authors.take(3) {
+    print stat.display()
+}
+
+if host.args().get(2) is Some(url) {
+    let client = host.net().http()
+    let body = "repostat: ${rep.total} commits"
+    notify.send(client, url, body) || (e) => {
+        if e is notify.TimeoutError {
+            notify.send(client, url, body)?
+        } else {
+            fail e
+        }
+    }
+}
+
+print "done"

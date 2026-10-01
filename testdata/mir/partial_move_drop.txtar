@@ -1,0 +1,92 @@
+-- lib/partial_move_drop.kg --
+type Res = resource {
+    pub id Int
+}
+
+fn Res.drop(move self) -> Unit {
+    ()
+}
+
+type Pair = { mut a Res, mut b Res }
+
+fn take(mut p: Pair) -> Res {
+    let taken = move p.a
+    p.a = Res { id: 9 }
+    taken
+}
+
+fn takeNoReinit(mut p: Pair) -> Res {
+    move p.a
+}
+
+fn consume(p: Pair) -> Unit {
+    ()
+}
+
+fn useWhole(mut p: Pair) -> Unit {
+    let taken = move p.a
+    consume(p)
+}
+
+type S = { mut r Res }
+
+fn S.leak(mut self) -> Res {
+    move self.r
+}
+-- expect --
+fn lib.Res.drop(%self: Res) -> Unit {
+  b0:
+    %t1 = unit
+    return %t1
+}
+fn lib.take(%p: Pair) -> Res {
+  b0:
+    %t1 = fieldmove 0(%p)
+    %taken = copy(%t1)
+    %t3 = const 9: Int
+    %t4 = record Res(%t3)
+    setfield 0(%p, %t4)
+    %t5 = move(%taken)
+    nop
+    drop(%p)
+    return %t5
+}
+fn lib.takeNoReinit(%p: Pair) -> Res {
+  b0:
+    %t1 = fieldmove 0(%p)
+    drop(%p)
+    return %t1
+}
+fn lib.consume(%p: Pair) -> Unit {
+  b0:
+    %t1 = unit
+    drop(%p)
+    return %t1
+}
+fn lib.useWhole(%p: Pair) -> Unit {
+  b0:
+    %t1 = fieldmove 0(%p)
+    %taken = copy(%t1)
+    %t3 = move(%p)
+    %t4 = call consume(%t3)
+    drop(%taken)
+    nop
+    return %t4
+}
+fn lib.S.leak(%self: S) -> Res {
+  b0:
+    %t1 = fieldmove 0(%self)
+    return %t1
+}
+error[E1025]: `p.a` was moved out of `p`; using the whole value needs it back
+  --> lib/partial_move_drop.kg:27:13
+   |
+27 |     consume(p)
+   |             ^
+
+error[E1025]: `self.r` was moved out of `self`; using the whole value needs it back
+  --> lib/partial_move_drop.kg:33:10
+   |
+33 |     move self.r
+   |          ^^^^^^
+

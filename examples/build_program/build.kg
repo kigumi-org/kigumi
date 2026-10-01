@@ -1,0 +1,19 @@
+// A build program: `kigumi build` runs configure in the
+// comptime sandbox, then executes the graph it recorded. This one builds a
+// freestanding library, generates a C source with a registered tool, and links
+// a host executable that uses both.
+import build from std/build
+
+fn configure(b: build.Builder) -> Unit! {
+    let gen = b.framework("example/gen", "1.0")
+    let core = b.library("core", "cmd/core", b.target("x86_64-freestanding"))?
+    let value = if b.request().flag("big") {
+        "700"
+    } else {
+        "7"
+    }
+    let generated = b.runToolOutput(gen, "gen", Array.of("--value", value, "--out", "$out:0"), Array.of(core.output()), "gen.c", Array.empty[build.Secret]())?
+    let app = b.executable("app", "cmd/app", b.request().target())?
+    app.addSource(generated)
+    app.uses(core)
+}

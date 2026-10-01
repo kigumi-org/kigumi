@@ -1,0 +1,239 @@
+-- app/t/t.kg --
+type Pair = {
+    pub lo u32
+    pub hi u32
+}
+
+extern(C) {
+    fn puts(s: *const u8) -> i32
+}
+
+fn plain(x: i32) -> i32 {
+    x
+}
+
+fn bad(x: u64, name: String) -> Out[u64] {
+    let a = asm { //~ ERROR inline assembly requires an `unsafe { }` block
+        "nop"
+    }
+    unsafe {
+        asm { //~ ERROR asm outputs need an expected record type
+            "mov {value}, 1"
+            value: out(reg)
+        }
+        asm {
+            "mov ${x}, 1" //~ ERROR asm templates take `{name}` operands, not `${}` interpolation
+            in(rax) x
+        }
+        asm { //~ ERROR asm outputs need an expected record type
+            "add {v}, 1" //~ ERROR the template names `v`, which is not an operand label
+            "x {" //~ ERROR unbalanced `{`
+            in(rbx) x //~ ERROR register `rbx` cannot be an operand: rbx is used internally by the code generator
+            in(zzz) x //~ ERROR unknown register `zzz` for amd64
+            in(eax) x //~ ERROR `u64` does not fit `eax`, which is 32 bits
+            in(xmm0) x //~ ERROR `u64` does not fit a floating-point register
+            in(reg) name //~ ERROR `String` is not an asm operand type
+            in(rcx) //~ ERROR `in` needs a value
+            out(rdx) //~ ERROR `out` operands need a label naming a field of the result record
+            k: const name //~ ERROR `const` operands take an integer literal or a `const`
+            const 4 //~ ERROR `const` operands need a label naming a field of the result record
+            "mov {k:zz}, 1" //~ ERROR unknown template modifier `zz` for amd64
+            f: sym plain //~ ERROR `sym` names an `extern(C)` declaration or an `export(C)` function
+            g: sym puts
+            clobber rax, nope //~ ERROR unknown clobber `nope`
+            clobber abi(Rust) //~ ERROR unknown ABI `Rust`
+            options nomem, bogus //~ ERROR unknown asm option `bogus`
+            options nomem, att_syntax //~ ERROR `nomem` is given twice
+        }
+        asm { //~ ERROR `pure` asm needs an output
+            "nop"
+            options pure, readonly
+        }
+        let p: Pair = asm { //~ ERROR asm does not write field `hi` of `Pair`
+            "cpuid"
+            lo: out(eax)
+            lo: out(edx) //~ ERROR label `lo` is used twice
+            zz: out(ecx) //~ ERROR `Pair` has no field `zz`
+        }
+        let sh: Out[u64] = asm { //~ ERROR `pure` needs `nomem` or `readonly`
+            "shl {value}, 1"
+            value: inout(reg) x
+            options pure
+        }
+        asm { //~ ERROR `noreturn` asm cannot have outputs
+            "ud2"
+            value: out(rax)
+            options noreturn
+        }
+    }
+}
+
+-- expect --
+error[E914]: inline assembly requires an `unsafe { }` block
+  --> app/t/t.kg:15:13
+   |
+15 |     let a = asm { //~ ERROR inline assembly requires an `unsafe { }` block
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E939]: asm outputs need an expected record type
+  --> app/t/t.kg:19:9
+   |
+19 |         asm { //~ ERROR asm outputs need an expected record type
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   = help: write `let r: T = unsafe { asm { ... } }` or return the block from a fn
+
+error[E932]: asm templates take `{name}` operands, not `${}` interpolation
+  --> app/t/t.kg:24:13
+   |
+24 |             "mov ${x}, 1" //~ ERROR asm templates take `{name}` operands, not `${}` interpolation
+   |             ^^^^^^^^^^^^^
+
+error[E939]: asm outputs need an expected record type
+  --> app/t/t.kg:27:9
+   |
+27 |         asm { //~ ERROR asm outputs need an expected record type
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   = help: write `let r: T = unsafe { asm { ... } }` or return the block from a fn
+
+error[E948]: the template names `v`, which is not an operand label
+  --> app/t/t.kg:28:13
+   |
+28 |             "add {v}, 1" //~ ERROR the template names `v`, which is not an operand label
+   |             ^^^^^^^^^^^^
+
+error[E950]: unbalanced `{`; write `{{` for a literal brace
+  --> app/t/t.kg:29:13
+   |
+29 |             "x {" //~ ERROR unbalanced `{`
+   |             ^^^^^
+
+error[E934]: register `rbx` cannot be an operand: rbx is used internally by the code generator
+  --> app/t/t.kg:30:13
+   |
+30 |             in(rbx) x //~ ERROR register `rbx` cannot be an operand: rbx is used internally by the code generator
+   |             ^^^^^^^^^
+
+error[E933]: unknown register `zzz` for amd64
+  --> app/t/t.kg:31:13
+   |
+31 |             in(zzz) x //~ ERROR unknown register `zzz` for amd64
+   |             ^^^^^^^^^
+   = help: write a register name, `reg` or `freg`
+
+error[E936]: `u64` does not fit `eax`, which is 32 bits
+  --> app/t/t.kg:32:13
+   |
+32 |             in(eax) x //~ ERROR `u64` does not fit `eax`, which is 32 bits
+   |             ^^^^^^^^^
+
+error[E936]: `u64` does not fit a floating-point register
+  --> app/t/t.kg:33:13
+   |
+33 |             in(xmm0) x //~ ERROR `u64` does not fit a floating-point register
+   |             ^^^^^^^^^^
+
+error[E935]: `String` is not an asm operand type
+  --> app/t/t.kg:34:13
+   |
+34 |             in(reg) name //~ ERROR `String` is not an asm operand type
+   |             ^^^^^^^^^^^^
+   = help: use a fixed-width number, a raw pointer or a C function pointer
+
+error[E942]: `in` needs a value
+  --> app/t/t.kg:35:13
+   |
+35 |             in(rcx) //~ ERROR `in` needs a value
+   |             ^^
+
+error[E937]: `out` operands need a label naming a field of the result record
+  --> app/t/t.kg:36:13
+   |
+36 |             out(rdx) //~ ERROR `out` operands need a label naming a field of the result record
+   |             ^^^
+
+error[E943]: `const` operands take an integer literal or a `const`
+  --> app/t/t.kg:37:16
+   |
+37 |             k: const name //~ ERROR `const` operands take an integer literal or a `const`
+   |                ^^^^^^^^^^
+
+error[E937]: `const` operands need a label naming a field of the result record
+  --> app/t/t.kg:38:13
+   |
+38 |             const 4 //~ ERROR `const` operands need a label naming a field of the result record
+   |             ^^^^^^^
+
+error[E956]: unknown template modifier `zz` for amd64
+  --> app/t/t.kg:39:13
+   |
+39 |             "mov {k:zz}, 1" //~ ERROR unknown template modifier `zz` for amd64
+   |             ^^^^^^^^^^^^^^^
+
+error[E944]: `sym` names an `extern(C)` declaration or an `export(C)` function
+  --> app/t/t.kg:40:16
+   |
+40 |             f: sym plain //~ ERROR `sym` names an `extern(C)` declaration or an `export(C)` function
+   |                ^^^^^^^^^
+
+error[E945]: unknown clobber `nope`
+  --> app/t/t.kg:42:26
+   |
+42 |             clobber rax, nope //~ ERROR unknown clobber `nope`
+   |                          ^^^^
+   = help: write a register name or `abi(C)`
+
+error[E928]: unknown ABI `Rust`
+  --> app/t/t.kg:43:25
+   |
+43 |             clobber abi(Rust) //~ ERROR unknown ABI `Rust`
+   |                         ^^^^
+   = help: only `C` is supported
+
+error[E946]: unknown asm option `bogus`
+  --> app/t/t.kg:44:28
+   |
+44 |             options nomem, bogus //~ ERROR unknown asm option `bogus`
+   |                            ^^^^^
+
+error[E947]: `nomem` is given twice
+  --> app/t/t.kg:45:21
+   |
+45 |             options nomem, att_syntax //~ ERROR `nomem` is given twice
+   |                     ^^^^^
+
+error[E947]: `pure` asm needs an output
+  --> app/t/t.kg:47:9
+   |
+47 |         asm { //~ ERROR `pure` asm needs an output
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E941]: asm does not write field `hi` of `Pair`
+  --> app/t/t.kg:51:23
+   |
+51 |         let p: Pair = asm { //~ ERROR asm does not write field `hi` of `Pair`
+   |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E938]: label `lo` is used twice
+  --> app/t/t.kg:54:17
+   |
+54 |             lo: out(edx) //~ ERROR label `lo` is used twice
+   |                 ^^^
+
+error[E940]: `Pair` has no field `zz`
+  --> app/t/t.kg:55:17
+   |
+55 |             zz: out(ecx) //~ ERROR `Pair` has no field `zz`
+   |                 ^^^
+
+error[E947]: `pure` needs `nomem` or `readonly`
+  --> app/t/t.kg:57:28
+   |
+57 |         let sh: Out[u64] = asm { //~ ERROR `pure` needs `nomem` or `readonly`
+   |                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E947]: `noreturn` asm cannot have outputs
+  --> app/t/t.kg:62:9
+   |
+62 |         asm { //~ ERROR `noreturn` asm cannot have outputs
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+

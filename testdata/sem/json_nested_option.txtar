@@ -1,0 +1,31 @@
+-- app/n/n.kg --
+import json from std/json
+
+type Weird = {
+    pub value Option[Option[Int]]
+}
+
+type Choice =
+    | A(Option[Option[String]])
+    | B
+
+fn useIt(text: String) -> Unit! {
+    let w = Weird { value: Some(None) }
+    let encoded = json.encode(w)? //~ ERROR `Weird` cannot derive JSON `Encode`
+    _ = encoded
+    let back = json.decode[Choice](text)? //~ ERROR `Choice` cannot derive JSON `Decode`
+    _ = back
+}
+-- expect --
+error[E972]: `Weird` cannot derive JSON `Encode`: field `value` is `Option[Option[...]]`, and JSON `null` cannot tell `Some(None)` from `None` (ledger L-123)
+  --> app/n/n.kg:13:19
+   |
+13 |     let encoded = json.encode(w)? //~ ERROR `Weird` cannot derive JSON `Encode`
+   |                   ^^^^^^^^^^^^^
+
+error[E972]: `Choice` cannot derive JSON `Decode`: field `A` is `Option[Option[...]]`, and JSON `null` cannot tell `Some(None)` from `None` (ledger L-123)
+  --> app/n/n.kg:15:16
+   |
+15 |     let back = json.decode[Choice](text)? //~ ERROR `Choice` cannot derive JSON `Decode`
+   |                ^^^^^^^^^^^^^^^^^^^^^^^^
+

@@ -1,0 +1,111 @@
+-- src --
+let x: String? = nil
+match v {
+    Some(a) -> a
+    nil -> 0
+}
+pure noalloc {
+    fn hash(self) -> u64 { 0 }
+}
+pub(self) fn same() -> Unit {}
+pub interface Hash {
+    pure noalloc {
+        fn hash(self) -> u64
+    }
+}
+-- expect --
+File
+  Let
+    pattern: PatBind x
+    type: TypeOptional
+      TypePath
+        Path String
+    init: Ident nil
+  ExprStmt
+    Match
+      Ident v
+      List
+        Arm
+          pattern: PatCtor
+            Path Some
+            List
+              PatBind a
+          body: Ident a
+        Arm
+          pattern: PatBind nil
+          body: IntLit 0
+  ContractBlock pure noalloc
+    List
+      FnDecl
+        attrs: -
+        vis: -
+        recv: -
+        name: hash
+        generics: -
+        params: List
+          Param self
+            flags: self
+        ret: TypePath
+          Path u64
+        body: Block
+          ExprStmt
+            IntLit 0
+  FnDecl
+    attrs: -
+    vis: Visibility self
+    recv: -
+    name: same
+    generics: -
+    params: List
+    ret: TypePath
+      Path Unit
+    body: Block
+  InterfaceDecl
+    vis: Visibility
+    name: Hash
+    members: List
+      ContractBlock pure noalloc
+        List
+          FnDecl
+            attrs: -
+            vis: -
+            recv: -
+            name: hash
+            generics: -
+            params: List
+              Param self
+                flags: self
+            ret: TypePath
+              Path u64
+            body: -
+-- diagnostics --
+error: `nil` does not exist; the absent value is `None` (v2.6 B3)
+ --> errors_v26.txtar:1:18
+  |
+1 | let x: String? = nil
+  |                  ^^^
+
+error: `nil` does not exist; the absent value is `None` (v2.6 B3)
+ --> errors_v26.txtar:4:5
+  |
+4 |     nil -> 0
+  |     ^^^
+
+error: contract blocks were removed from declarations (v2.6 B2); write `pure noalloc` on each fn
+ --> errors_v26.txtar:6:14
+  |
+6 | pure noalloc {
+  |              ^
+
+error: `pub(self)` is the same as no modifier; remove it (v2.6 B4)
+ --> errors_v26.txtar:9:5
+  |
+9 | pub(self) fn same() -> Unit {}
+  |     ^^^^
+
+error: contract blocks were removed from declarations (v2.6 B2); write `pure noalloc` on each fn
+  --> errors_v26.txtar:11:18
+   |
+11 |     pure noalloc {
+   |                  ^
+

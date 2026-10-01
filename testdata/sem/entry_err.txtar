@@ -1,0 +1,44 @@
+-- module --
+entry: cmd/app/main.kg
+-- cmd/app/main.kg --
+import {run} from app/lib
+
+let x = 1
+print "hi"
+
+fn main() -> Unit! { //~ ERROR implicit `main` (top-level statements) conflicts with `fn main`
+    run()
+}
+-- cmd/app/other.kg --
+let y = 2 //~ ERROR top-level statements are only allowed in the entry file
+-- app/lib/l.kg --
+pub fn run() -> Unit {}
+
+let z = 3 //~ ERROR top-level statements are only allowed in the entry file
+-- app/bad/b.kg --
+import app from cmd/app //~ ERROR `cmd/app` has top-level statements and cannot be imported
+-- expect --
+error[E109]: `cmd/app` has top-level statements and cannot be imported
+ --> app/bad/b.kg:1:17
+  |
+1 | import app from cmd/app //~ ERROR `cmd/app` has top-level statements and cannot be imported
+  |                 ^^^^^^^
+
+error[E915]: top-level statements are only allowed in the entry file
+ --> app/lib/l.kg:3:1
+  |
+3 | let z = 3 //~ ERROR top-level statements are only allowed in the entry file
+  | ^^^^^^^^^
+
+error[E245]: implicit `main` (top-level statements) conflicts with `fn main`
+ --> cmd/app/main.kg:6:1
+  |
+6 | fn main() -> Unit! { //~ ERROR implicit `main` (top-level statements) conflicts with `fn main`
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E915]: top-level statements are only allowed in the entry file
+ --> cmd/app/other.kg:1:1
+  |
+1 | let y = 2 //~ ERROR top-level statements are only allowed in the entry file
+  | ^^^^^^^^^
+

@@ -1,0 +1,78 @@
+-- app/model/a.kg --
+pub type User = {
+    pub id Int
+}
+
+pub fn make() -> User {
+    User { id: 1 }
+}
+
+fn helper() -> Int {
+    1
+}
+-- app/model/b.kg --
+type User = { //~ ERROR `User` is already declared in package `app/model`
+    pub name String
+}
+
+fn helper(x: Int) -> Int {
+    x
+}
+
+fn make() -> Int { //~ ERROR `make` with parameters () is already declared
+    2
+}
+
+type Option = { //~ ERROR `Option` is predeclared and cannot be redeclared
+    pub v Int
+}
+
+fn nil() -> Unit {} //~ ERROR `nil` cannot be used as a name
+
+fn panic() -> Never { //~ ERROR `panic` is a compiler intrinsic and cannot be declared
+    panic()
+}
+
+type Opaque //~ ERROR `type Opaque` needs a body outside std stubs
+-- expect --
+error[E104]: `User` is already declared in package `app/model`
+ --> app/model/b.kg:1:1
+  |
+1 | type User = { //~ ERROR `User` is already declared in package `app/model`
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+note: `User` was first declared here
+ --> app/model/a.kg:1:10
+  |
+1 | pub type User = {
+  |          ^^^^
+
+error[E249]: `make` with parameters () is already declared
+ --> app/model/b.kg:9:1
+  |
+9 | fn make() -> Int { //~ ERROR `make` with parameters () is already declared
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E121]: `Option` is predeclared and cannot be redeclared
+  --> app/model/b.kg:13:1
+   |
+13 | type Option = { //~ ERROR `Option` is predeclared and cannot be redeclared
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E122]: `nil` cannot be used as a name (v2.6 B3)
+  --> app/model/b.kg:17:1
+   |
+17 | fn nil() -> Unit {} //~ ERROR `nil` cannot be used as a name
+   | ^^^^^^^^^^^^^^^^^^
+
+error[E246]: `panic` is a compiler intrinsic and cannot be declared
+  --> app/model/b.kg:19:1
+   |
+19 | fn panic() -> Never { //~ ERROR `panic` is a compiler intrinsic and cannot be declared
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E216]: `type Opaque` needs a body outside std stubs
+  --> app/model/b.kg:23:1
+   |
+23 | type Opaque //~ ERROR `type Opaque` needs a body outside std stubs
+   | ^^^^
+

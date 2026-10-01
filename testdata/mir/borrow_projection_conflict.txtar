@@ -1,0 +1,138 @@
+-- lib/conflict.kg --
+type Res = resource {
+    pub label String
+}
+
+fn Res.drop(move self) -> Unit {
+    _ = self
+}
+
+type Holder = {
+    pub mut slot Res?
+}
+
+type Full = {
+    pub mut slot Res
+}
+
+type Outer = {
+    pub mut inner Full
+}
+
+fn steal(h: &mut Holder) -> String {
+    if h.slot is Some(r) {
+        h.slot = None
+        return r.label
+    }
+    "none"
+}
+
+fn stealOuter(o: &mut Outer) -> String {
+    let Full { slot } = o.inner
+    o.inner = Full { slot: Res { label: "r" } }
+    slot.label
+}
+
+fn peek(h: &mut Holder) -> String {
+    if h.slot is Some(r) {
+        let s = r.label
+        h.slot = None
+        return s
+    }
+    "none"
+}
+-- expect --
+fn lib.Res.drop(%self: Res) -> Unit {
+  b0:
+    %t1 = move(%self)
+    drop(%t1)
+    %t2 = unit
+    return %t2
+}
+fn lib.steal(%h: &mut Holder) -> String {
+  b0:
+    %t1 = field 0(%h)
+    %t2 = isvariant Some(%t1)
+    branch %t2 ? b1 : b2
+  b1:
+    %t3 = payload 0(%t1)
+    %r = borrow 0(%t3)
+    jump b2
+  b2:
+    drop(%t1)
+    branch %t2 ? b3 : b4
+  b3:
+    %t6 = variant None
+    setfield 0(%h, %t6)
+    %t7 = field 0(%r)
+    return %t7
+  b4:
+    %t9 = unit
+    %t5 = copy(%t9)
+    jump b5
+  b5:
+    drop(%t5)
+    %t10 = const "none": String
+    return %t10
+  b6:
+    %t8 = unit
+    jump b5
+}
+fn lib.stealOuter(%o: &mut Outer) -> String {
+  b0:
+    %t1 = field 0(%o)
+    %t2 = field 0(%t1)
+    %slot = borrow 0(%t2)
+    %t4 = const "r": String
+    %t5 = record Res(%t4)
+    %t6 = record Full(%t5)
+    setfield 0(%o, %t6)
+    %t7 = field 0(%slot)
+    drop(%t1)
+    return %t7
+}
+fn lib.peek(%h: &mut Holder) -> String {
+  b0:
+    %t1 = field 0(%h)
+    %t2 = isvariant Some(%t1)
+    branch %t2 ? b1 : b2
+  b1:
+    %t3 = payload 0(%t1)
+    %r = borrow 0(%t3)
+    jump b2
+  b2:
+    drop(%t1)
+    branch %t2 ? b3 : b4
+  b3:
+    %t6 = field 0(%r)
+    %s = copy(%t6)
+    %t8 = variant None
+    setfield 0(%h, %t8)
+    %t9 = copy(%s)
+    drop(%s)
+    return %t9
+  b4:
+    %t11 = unit
+    %t5 = copy(%t11)
+    jump b5
+  b5:
+    drop(%t5)
+    %t12 = const "none": String
+    return %t12
+  b6:
+    %t10 = unit
+    drop(%s)
+    jump b5
+}
+error[borrow-conflict]: `h` is borrowed and cannot be mutated here
+  --> lib/conflict.kg:23:9
+   |
+23 |         h.slot = None
+   |         ^^^^^^
+
+error[borrow-conflict]: `o` is borrowed and cannot be mutated here
+  --> lib/conflict.kg:31:5
+   |
+31 |     o.inner = Full { slot: Res { label: "r" } }
+   |     ^^^^^^^
+

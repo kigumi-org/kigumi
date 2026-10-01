@@ -1,0 +1,87 @@
+-- src --
+type Item = {
+    pub names Array[String]
+}
+
+fn twice(items: Array[Item]) -> Unit {
+    for it in &items {
+        print "${it.names.len()}"
+    }
+    for it in items {
+        print "${it.names.len()}"
+    }
+}
+
+twice(Array.of(Item { names: Array.of("a") }))
+-- expect --
+fn main.twice(%items: Array[Item]) -> Unit {
+  b0:
+    %t1 = borrow 0(%items)
+    %t2 = const 0: usize
+    %t3 = builtin iter.len(%t1)
+    jump b1
+  b1:
+    %t4 = bin <(%t2, %t3)
+    branch %t4 ? b2 : b4
+  b2:
+    %t5 = builtin iter.at_ref(%t1, %t2)
+    %it = borrow 0(%t5)
+    %t8 = field 0(%it)
+    %t9 = call len(%t8)
+    %t7 = interp ""(%t9)
+    %t10 = builtin print(%t7)
+    jump b3
+  b3:
+    %t11 = const 1: usize
+    %t12 = bin +(%t2, %t11)
+    drop(%t2)
+    %t2 = copy(%t12)
+    jump b1
+  b4:
+    drop(%t3)
+    drop(%t2)
+    %t13 = unit
+    drop(%t13)
+    %t14 = move(%items)
+    %t15 = const 0: usize
+    %t16 = builtin iter.len(%t14)
+    jump b5
+  b5:
+    %t17 = bin <(%t15, %t16)
+    branch %t17 ? b6 : b8
+  b6:
+    %t18 = builtin iter.at_move(%t14, %t15)
+    %it = copy(%t18)
+    %t21 = field 0(%it)
+    %t22 = call len(%t21)
+    %t20 = interp ""(%t22)
+    %t23 = builtin print(%t20)
+    drop(%it)
+    jump b7
+  b7:
+    %t24 = const 1: usize
+    %t25 = bin +(%t15, %t24)
+    drop(%t15)
+    %t15 = copy(%t25)
+    jump b5
+  b8:
+    drop(%t16)
+    drop(%t15)
+    drop(%t14)
+    %t26 = unit
+    nop
+    return %t26
+}
+fn main() -> Unit! {
+  b0:
+    %t0 = const "a": String
+    %t1 = array(%t0)
+    %t2 = call of(%t1)
+    %t3 = record Item(%t2)
+    %t4 = array(%t3)
+    %t5 = call of(%t4)
+    %t6 = call twice(%t5)
+    drop(%t6)
+    %t7 = unit
+    return %t7
+}

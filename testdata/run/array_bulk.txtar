@@ -1,0 +1,58 @@
+-- src --
+type Item = {
+    pub id Int
+}
+
+let mut a = Array.of[u8](1, 2)
+a.appendAll(Array.of[u8](3, 4))
+print "appendAll: ${a[0]} ${a[1]} ${a[2]} ${a[3]} len=${a.len()}"
+
+let mut b = Array.of[u8](9)
+let ok = b.tryAppendAll(Array.of[u8](8, 7))
+print "tryAppendAll ok=${ok is Ok(_)} len=${b.len()} ${b[0]} ${b[1]} ${b[2]}"
+
+let f = Array.fill[u8](5, 3)
+print "fill: ${f[0]} ${f[1]} ${f[2]} len=${f.len()}"
+print "fill empty: len=${Array.fill[u8](5, 0).len()}"
+
+let tf = Array.tryFill[u8](6, 4)
+print "tryFill ok=${tf is Ok(_)}"
+match tf {
+    Ok(arr) -> print "tryFill vals: ${arr[0]} ${arr[3]} len=${arr.len()}"
+    Err(_) -> print "unexpected"
+}
+
+let tfHuge = Array.tryFill[u8](1, 1125899906842624)
+print "tryFill huge is Err: ${tfHuge is Err(_)}"
+
+let src = Array.of[u8](10, 20, 30, 40, 50)
+print "slice mid: ${src.slice(1, 3) is Some(s) && s.len() == 2 && s[0] == 20 && s[1] == 30}"
+print "slice full: ${(src.slice(0, 5) || Array.empty[u8]()).len()}"
+print "slice empty range: len=${(src.slice(2, 2) || Array.fill[u8](0, 1)).len()}"
+print "slice end past len: ${src.slice(3, 10) is None}"
+print "slice start>end: ${src.slice(3, 1) is None}"
+print "slice start==len: len=${(src.slice(5, 5) || Array.fill[u8](0, 1)).len()}"
+print "slice empty self: ${Array.empty[u8]().slice(0, 0) is Some(_)}"
+
+let mut xs = Array.of(Item { id: 1 }, Item { id: 2 })
+let mut ys = Array.of(Item { id: 3 })
+ys.appendAll(xs)
+print "moved len=${ys.len()}"
+print "moved ids: ${ys.with(0, (r) => r.id) || 0} ${ys.with(1, (r) => r.id) || 0} ${ys.with(2, (r) => r.id) || 0}"
+-- stdout --
+appendAll: 1 2 3 4 len=4
+tryAppendAll ok=true len=3 9 8 7
+fill: 5 5 5 len=3
+fill empty: len=0
+tryFill ok=true
+tryFill vals: 6 6 len=4
+tryFill huge is Err: true
+slice mid: true
+slice full: 5
+slice empty range: len=0
+slice end past len: true
+slice start>end: true
+slice start==len: len=0
+slice empty self: true
+moved len=3
+moved ids: 3 1 2

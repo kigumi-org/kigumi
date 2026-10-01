@@ -1,0 +1,25 @@
+-- module --
+entry: cmd/app/main.kg
+-- cmd/app/other.kg --
+fn print(x: String) -> Unit { //~ ERROR `print` is an entry-only intrinsic
+    _ = x
+}
+
+fn eprint(x: String) -> Unit { //~ ERROR `eprint` is an entry-only intrinsic
+    _ = x
+}
+-- cmd/app/main.kg --
+print("still the intrinsic")
+-- expect --
+error[E256]: `print` is an entry-only intrinsic (§10.2, §10.3) and cannot be redeclared in the entry package
+ --> cmd/app/other.kg:1:1
+  |
+1 | fn print(x: String) -> Unit { //~ ERROR `print` is an entry-only intrinsic
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E256]: `eprint` is an entry-only intrinsic (§10.2, §10.3) and cannot be redeclared in the entry package
+ --> cmd/app/other.kg:5:1
+  |
+5 | fn eprint(x: String) -> Unit { //~ ERROR `eprint` is an entry-only intrinsic
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+

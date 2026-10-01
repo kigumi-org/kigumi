@@ -1,0 +1,21 @@
+-- src --
+// Ledger L-181: `for x in &mut xs` holds an exclusive borrow for the
+// loop's duration and binds x: &mut T, so a field write through x lands
+// in xs and is visible afterward.
+type Counter = {
+    mut count Int
+}
+
+fn main() -> Unit! {
+    let mut items = Array.of(Counter { count: 1 }, Counter { count: 2 }, Counter { count: 3 })
+    for it in &mut items {
+        it.count = it.count + 10
+    }
+    for it in &items {
+        print "count=${it.count}"
+    }
+}
+-- stdout --
+count=11
+count=12
+count=13

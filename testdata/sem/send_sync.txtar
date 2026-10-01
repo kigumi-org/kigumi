@@ -1,0 +1,87 @@
+-- app/t/t.kg --
+import {Shared} from std/alloc
+import random from std/random
+
+fn ship[T: Send](x: T) -> Unit {}
+
+fn share[T: Sync](x: &T) -> Unit {}
+
+type Plain = {
+    n Int
+    name String
+}
+
+type Holder = {
+    p *const u8
+}
+
+type Handle = resource {
+    fd Int
+}
+
+fn use(shared: Shared[Int], leaky: Shared[*const u8], plain: Plain, holder: Holder, handle: Handle, rng: random.Rng, f: fn(Int) -> Int) -> Unit {
+    ship(1)
+    ship("text")
+    ship(plain)
+    ship(shared) //~ ERROR `Shared[Int]` does not satisfy `Send`: it cannot move to another thread
+    ship(handle)
+    ship(rng)
+    ship(Array.of(1, 2))
+    ship(Some(plain))
+    ship(holder) //~ ERROR `Holder` does not satisfy `Send`: it cannot move to another thread
+    ship(leaky) //~ ERROR `Shared[*const u8]` does not satisfy `Send`: it cannot move to another thread
+    ship(f) //~ ERROR `fn(Int) -> Int` does not satisfy `Send`: it cannot move to another thread
+    let mut counter = 0
+    ship(() => { //~ ERROR does not satisfy `Send`
+        counter = counter + 1
+    })
+    share(&plain)
+    share(&shared) //~ ERROR `Shared[Int]` does not satisfy `Sync`: it cannot be shared between threads
+    share(&handle) //~ ERROR `Handle` does not satisfy `Sync`: it cannot be shared between threads
+    share(&rng)
+    counter = counter + 1
+}
+
+-- expect --
+error[E300]: `Shared[Int]` does not satisfy `Send`: it cannot move to another thread
+  --> app/t/t.kg:25:5
+   |
+25 |     ship(shared) //~ ERROR `Shared[Int]` does not satisfy `Send`: it cannot move to another thread
+   |     ^^^^^^^^^^^
+
+error[E300]: `Holder` does not satisfy `Send`: it cannot move to another thread
+  --> app/t/t.kg:30:5
+   |
+30 |     ship(holder) //~ ERROR `Holder` does not satisfy `Send`: it cannot move to another thread
+   |     ^^^^^^^^^^^
+
+error[E300]: `Shared[*const u8]` does not satisfy `Send`: it cannot move to another thread
+  --> app/t/t.kg:31:5
+   |
+31 |     ship(leaky) //~ ERROR `Shared[*const u8]` does not satisfy `Send`: it cannot move to another thread
+   |     ^^^^^^^^^^
+
+error[E300]: `fn(Int) -> Int` does not satisfy `Send`: it cannot move to another thread
+  --> app/t/t.kg:32:5
+   |
+32 |     ship(f) //~ ERROR `fn(Int) -> Int` does not satisfy `Send`: it cannot move to another thread
+   |     ^^^^^^
+
+error[E300]: `closure fn() -> Unit` does not satisfy `Send`: it cannot move to another thread
+  --> app/t/t.kg:34:5
+   |
+34 |     ship(() => { //~ ERROR does not satisfy `Send`
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E300]: `Shared[Int]` does not satisfy `Sync`: it cannot be shared between threads
+  --> app/t/t.kg:38:5
+   |
+38 |     share(&shared) //~ ERROR `Shared[Int]` does not satisfy `Sync`: it cannot be shared between threads
+   |     ^^^^^^^^^^^^^
+
+error[E300]: `Handle` does not satisfy `Sync`: it cannot be shared between threads
+  --> app/t/t.kg:39:5
+   |
+39 |     share(&handle) //~ ERROR `Handle` does not satisfy `Sync`: it cannot be shared between threads
+   |     ^^^^^^^^^^^^^
+

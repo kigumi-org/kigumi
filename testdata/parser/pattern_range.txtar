@@ -1,0 +1,86 @@
+-- src --
+const low = 11
+const high = 15
+const LOW = 21
+const HIGH = 25
+
+fn classify(n: Int) -> Int {
+    match n {
+        low..high -> 1
+        LOW..HIGH -> 2
+        20..=25 -> 2
+        -3..0 -> 3
+        _ -> 0
+    }
+}
+
+for i in 1..=10 {
+    print i
+}
+-- expect --
+File
+  ConstDecl
+    name: low
+    value: IntLit 11
+  ConstDecl
+    name: high
+    value: IntLit 15
+  ConstDecl
+    name: LOW
+    value: IntLit 21
+  ConstDecl
+    name: HIGH
+    value: IntLit 25
+  FnDecl
+    attrs: -
+    vis: -
+    recv: -
+    name: classify
+    generics: -
+    params: List
+      Param n
+        type: TypePath
+          Path Int
+    ret: TypePath
+      Path Int
+    body: Block
+      ExprStmt
+        Match
+          Ident n
+          List
+            Arm
+              pattern: PatRange ..
+                Ident low
+                Ident high
+              body: IntLit 1
+            Arm
+              pattern: PatRange ..
+                Ident LOW
+                Ident HIGH
+              body: IntLit 2
+            Arm
+              pattern: PatRange ..=
+                IntLit 20
+                IntLit 25
+              body: IntLit 2
+            Arm
+              pattern: PatRange ..
+                Unary -
+                  IntLit 3
+                IntLit 0
+              body: IntLit 3
+            Arm
+              pattern: PatWildcard _
+              body: IntLit 0
+  ExprStmt
+    For
+      pattern: PatBind i
+      head: Binary ..=
+        IntLit 1
+        IntLit 10
+      body: Block
+        ExprStmt
+          WsCall
+            Ident print
+            List
+              Ident i

@@ -1,0 +1,19 @@
+-- src --
+import alloc from std/alloc
+
+let mut xs = Array.empty[Int]()
+let pushed = xs.tryPush(1)
+let huge = xs.tryReserve(1125899906842624)
+let small = xs.tryReserve(8)
+let zero: usize = 0
+let wrapped: usize = zero.wrappingSub(xs.len())
+let wrapReserve = xs.tryReserve(wrapped)
+let upperHalf: usize = 9223372036854775808
+let upperReserve = xs.tryReserve(upperHalf)
+print "${pushed is Ok(_)} ${huge is Err(AllocError.OutOfMemory)} ${small is Ok(_)} ${xs.len()}"
+print "${wrapReserve is Err(AllocError.OutOfMemory)} ${upperReserve is Err(AllocError.OutOfMemory)} ${xs.len()}"
+print "${alloc.Arena.tryCreate() is Ok(_)}"
+-- stdout --
+true true true 1
+true true 1
+true

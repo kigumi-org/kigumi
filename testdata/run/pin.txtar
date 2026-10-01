@@ -1,0 +1,13 @@
+-- src --
+import ffi from std/ffi
+
+type Counter = {
+    pub base Int
+}
+
+let pin = ffi.Pin.new(Counter { base: 100 })
+let p = pin.ptr()
+let total = unsafe { ffi.Pin.with(p, (c: &Counter) => c.base + 5) }
+print "${total}"
+-- stdout --
+105

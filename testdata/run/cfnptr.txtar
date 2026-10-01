@@ -1,0 +1,15 @@
+-- src --
+export(C) {
+    pub fn twice(x: i32) -> i32 {
+        x * 2
+    }
+}
+
+fn applyTwice(f: extern(C) fn(i32) -> i32, x: i32) -> i32 {
+    unsafe { f(f(x)) }
+}
+
+let f: extern(C) fn(i32) -> i32 = twice
+print "${unsafe { f(21) }} ${applyTwice(twice, 5)}"
+-- stdout --
+42 20

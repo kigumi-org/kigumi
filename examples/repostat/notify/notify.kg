@@ -1,0 +1,25 @@
+import net from std/net
+
+pub type TimeoutError = {
+    pub url String
+}
+
+pub fn TimeoutError.message(self) -> String {
+    // Errorへ構造的に適合
+    "webhook timeout: ${self.url}"
+}
+
+pub type RejectedError = {
+    pub status Int
+}
+
+pub fn RejectedError.message(self) -> String {
+    "webhook rejected: status ${self.status}"
+}
+
+pub fn send(client: net.Http, url: String, body: String) -> Unit! {
+    let res = client.post(url, body) || (e) => fail e
+    if res.status >= 400 {
+        fail RejectedError { status: res.status }
+    }
+}

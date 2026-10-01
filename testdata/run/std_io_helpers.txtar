@@ -1,0 +1,50 @@
+-- src --
+import io from std/io
+
+type LogWriter = {
+    mut buf Array[u8]
+}
+
+fn LogWriter.write(mut self, data: Bytes) -> usize! {
+    let mut i: usize = 0
+    for i < data.len() {
+        self.buf.push(data.get(i) || 0)
+        i += 1
+    }
+    print "wrote ${data.len()} bytes: ${String.fromBytes(Bytes.fromArray(&self.buf)) || "?"}"
+    data.len()
+}
+
+let src = "hello io".toBytes()
+
+let mut r1 = io.BytesReader.new(src)
+let all = io.readAll(r1)?
+print "readAll: ${String.fromBytes(all) || "?"}"
+
+let mut w1 = LogWriter { buf: Array.empty[u8]() }
+io.writeAll(w1, src)?
+print "writeAll done"
+
+let mut r2 = io.BytesReader.new(src)
+let mut w2 = LogWriter { buf: Array.empty[u8]() }
+let n = io.copy(r2, w2)?
+print "copy n=${n}"
+
+let mut bw = io.BytesWriter.new()
+let wn = bw.write(src)?
+print "bytesWriter wrote=${wn} content=${String.fromBytes(bw.bytes()) || "?"}"
+
+let mut r3 = io.BytesReader.new(src)
+let mut buf: Array[u8] = Array.empty[u8]()
+let firstRead = r3.read(&mut buf, 4)?
+let secondRead = r3.read(&mut buf, 100)?
+let thirdRead = r3.read(&mut buf, 100)?
+print "reads=${firstRead},${secondRead},${thirdRead} eof=${thirdRead == 0}"
+-- stdout --
+readAll: hello io
+wrote 8 bytes: hello io
+writeAll done
+wrote 8 bytes: hello io
+copy n=8
+bytesWriter wrote=8 content=hello io
+reads=4,4,0 eof=true

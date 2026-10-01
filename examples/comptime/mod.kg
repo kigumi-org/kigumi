@@ -1,0 +1,4 @@
+Module {
+    name: "comptime"
+    kigumi: "0.1"
+}

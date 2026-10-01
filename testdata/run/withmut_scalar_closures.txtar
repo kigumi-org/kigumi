@@ -1,0 +1,62 @@
+-- src --
+let mut a = 5
+let clA = () => {
+    let r = &mut a
+    r = 100
+}
+let readerA = () => {
+    print "${a}"
+}
+clA()
+readerA()
+
+let mut b = 5
+let readerB = () => {
+    print "${b}"
+}
+let clB = () => {
+    let r = &mut b
+    r = 100
+}
+clB()
+readerB()
+
+let mut c = 5
+let readerC = () => {
+    print "${c}"
+}
+let r = &mut c
+r = 100
+readerC()
+
+fn setInt(x: &mut Int) -> Unit {
+    x = 100
+}
+fn run() -> Unit {
+    let mut d = 5
+    let clD = () => {
+        setInt(&mut d)
+    }
+    let readerD = () => {
+        print "${d}"
+    }
+    clD()
+    readerD()
+}
+run()
+
+let mut e = 5
+let readerE = () => {
+    print "${e}"
+}
+let writerE = () => {
+    e = 100
+}
+writerE()
+readerE()
+-- stdout --
+100
+100
+100
+100
+100

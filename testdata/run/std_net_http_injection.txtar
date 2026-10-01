@@ -1,0 +1,33 @@
+-- src --
+let h = host.net().http()
+match h.post("http://127.0.0.1:9797/foo\r\nX-Injected: pwned\r\n\r\nGET /evil HTTP/1.1\r\nHost: 127.0.0.1", "hi") {
+    Ok(r) -> print "ok status=${r.status}"
+    Err(e) -> print "1: ${e.message()}"
+}
+match h.post("http://exa mple.com/path", "hi") {
+    Ok(r) -> print "ok status=${r.status}"
+    Err(e) -> print "2: ${e.message()}"
+}
+match h.post("http://user:pass@example.com/path", "hi") {
+    Ok(r) -> print "ok status=${r.status}"
+    Err(e) -> print "3: ${e.message()}"
+}
+match h.post("http://[::1/path", "hi") {
+    Ok(r) -> print "ok status=${r.status}"
+    Err(e) -> print "4: ${e.message()}"
+}
+match h.post("http://[::1]xyz/path", "hi") {
+    Ok(r) -> print "ok status=${r.status}"
+    Err(e) -> print "5: ${e.message()}"
+}
+match h.post("http://example.com/has space", "hi") {
+    Ok(r) -> print "ok status=${r.status}"
+    Err(e) -> print "6: ${e.message()}"
+}
+-- stdout --
+1: path contains a control character or a space
+2: host contains a control character or a space
+3: userinfo in URL is not supported
+4: malformed IPv6 host
+5: malformed IPv6 host
+6: path contains a control character or a space

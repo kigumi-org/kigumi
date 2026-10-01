@@ -1,0 +1,40 @@
+import fs from std/fs
+import net from std/net
+import shell from std/shell
+
+/// The process environment; `host` is the predeclared instance in the entry file.
+pub type Host
+
+/// Command line arguments; index 0 is the program path.
+pub type Args
+
+/// Shell for running external commands.
+pub fn Host.shell(self) -> shell.Shell
+
+/// Command line arguments of the process.
+pub fn Host.args(self) -> Args
+
+/// Argument at index, or None when there are fewer arguments or the
+/// argument is not valid UTF-8 (argv is an arbitrary byte string on Unix).
+pub pure noalloc fn Args.get(self, index: usize) -> String?
+
+/// File system access.
+pub fn Host.files(self) -> fs.Files
+
+/// Network access.
+pub fn Host.net(self) -> net.Net
+
+/// Standard input of the process, obtained from `host.stdin()`.
+pub type Stdin
+
+/// Standard input.
+pub fn Host.stdin(self) -> Stdin
+
+/// Number of arguments, the program path included.
+pub pure noalloc fn Args.len(self) -> usize
+
+/// Standard output of the process, obtained from `host.stdout()`.
+pub type Stdout
+
+/// Standard output.
+pub fn Host.stdout(self) -> Stdout

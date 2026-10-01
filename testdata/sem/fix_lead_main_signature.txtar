@@ -1,0 +1,17 @@
+-- main/main.kg --
+import os from std/os
+
+fn main(x: Int) -> Int { //~ ERROR `main` must be `fn main() -> Unit!` or `fn main(host: Host) -> Unit!`
+    x + 1
+}
+
+fn other(host: os.Host) -> Unit! {
+    _ = host
+}
+-- expect --
+error[E244]: `main` must be `fn main() -> Unit!` or `fn main(host: Host) -> Unit!`
+ --> main/main.kg:3:1
+  |
+3 | fn main(x: Int) -> Int { //~ ERROR `main` must be `fn main() -> Unit!` or `fn main(host: Host) -> Unit!`
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+

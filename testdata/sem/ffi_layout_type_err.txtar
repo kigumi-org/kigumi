@@ -1,0 +1,50 @@
+-- app/t/t.kg --
+import ffi from std/ffi
+
+type Plain = { pub a i64, pub b i64 }
+
+type HasString = { pub s String, pub n i64 }
+
+fn useSizeOf() -> Unit! {
+    let p = Plain { a: 1, b: 2 }
+    let n = ffi.sizeOf(&p) //~ ERROR `Plain` cannot be passed to `sizeOf`
+}
+
+fn useSizeOfString() -> Unit! {
+    let h = HasString { s: "hi", n: 5 }
+    let n = ffi.sizeOf(&h) //~ ERROR `HasString` cannot be passed to `sizeOf`
+}
+
+fn useReadRecord(p: *const Plain) -> Unit! {
+    let v = unsafe { ffi.readRecord(p) } //~ ERROR `Plain` cannot be passed to `readRecord`
+}
+
+fn useWriteRecord(p: *mut Plain, v: &Plain) -> Unit! {
+    unsafe { ffi.writeRecord(p, v) } //~ ERROR `Plain` cannot be passed to `writeRecord`
+}
+
+-- expect --
+error[E968]: `Plain` cannot be passed to `sizeOf`: use a fixed-width number, `Bool`, `Char`, a pointer or a `layout(C)` record
+ --> app/t/t.kg:9:13
+  |
+9 |     let n = ffi.sizeOf(&p) //~ ERROR `Plain` cannot be passed to `sizeOf`
+  |             ^^^^^^^^^^^^^
+
+error[E968]: `HasString` cannot be passed to `sizeOf`: use a fixed-width number, `Bool`, `Char`, a pointer or a `layout(C)` record
+  --> app/t/t.kg:14:13
+   |
+14 |     let n = ffi.sizeOf(&h) //~ ERROR `HasString` cannot be passed to `sizeOf`
+   |             ^^^^^^^^^^^^^
+
+error[E968]: `Plain` cannot be passed to `readRecord`: use a fixed-width number, `Bool`, `Char`, a pointer or a `layout(C)` record
+  --> app/t/t.kg:18:22
+   |
+18 |     let v = unsafe { ffi.readRecord(p) } //~ ERROR `Plain` cannot be passed to `readRecord`
+   |                      ^^^^^^^^^^^^^^^^
+
+error[E968]: `Plain` cannot be passed to `writeRecord`: use a fixed-width number, `Bool`, `Char`, a pointer or a `layout(C)` record
+  --> app/t/t.kg:22:14
+   |
+22 |     unsafe { ffi.writeRecord(p, v) } //~ ERROR `Plain` cannot be passed to `writeRecord`
+   |              ^^^^^^^^^^^^^^^^^^^^
+

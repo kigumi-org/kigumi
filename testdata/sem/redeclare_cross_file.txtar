@@ -1,0 +1,56 @@
+-- lib/a.kg --
+pub fn same() -> Int {
+    1
+}
+
+pub type Shape = {
+    pub n Int
+}
+
+-- lib/b.kg --
+pub type Same = {
+    pub n Int
+}
+
+fn same() -> Int { //~ ERROR `same` with parameters () is already declared
+    2
+}
+
+pub fn Shape() -> Int { //~ ERROR `Shape` is already declared in package `lib`
+    3
+}
+
+-- lib/same.kg --
+pub type Same = { //~ ERROR `Same` is already declared in package `lib`
+    pub m Int
+}
+
+-- expect --
+error[E249]: `same` with parameters () is already declared
+ --> lib/b.kg:5:1
+  |
+5 | fn same() -> Int { //~ ERROR `same` with parameters () is already declared
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E104]: `Shape` is already declared in package `lib`
+ --> lib/b.kg:9:1
+  |
+9 | pub fn Shape() -> Int { //~ ERROR `Shape` is already declared in package `lib`
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+note: `Shape` was first declared here
+ --> lib/a.kg:5:10
+  |
+5 | pub type Shape = {
+  |          ^^^^^
+
+error[E104]: `Same` is already declared in package `lib`
+ --> lib/same.kg:1:1
+  |
+1 | pub type Same = { //~ ERROR `Same` is already declared in package `lib`
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+note: `Same` was first declared here
+ --> lib/b.kg:1:10
+  |
+1 | pub type Same = {
+  |          ^^^^
+

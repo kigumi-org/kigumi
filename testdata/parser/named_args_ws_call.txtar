@@ -1,0 +1,16 @@
+-- src --
+f a: 1
+-- expect --
+File
+  ExprStmt
+    WsCall
+      Ident f
+      List
+        Ident a
+-- diagnostics --
+error: expected end of statement, found `:`
+ --> named_args_ws_call.txtar:1:4
+  |
+1 | f a: 1
+  |    ^
+

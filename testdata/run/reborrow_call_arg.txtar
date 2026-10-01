@@ -1,0 +1,17 @@
+-- src --
+fn putByte(out: &mut Array[u8], b: u8) -> Unit {
+    out.push(b)
+}
+
+// out is a borrow already, so handing it to putByte reborrows it rather
+// than moving it; otherwise the second call below could not reuse it.
+fn putTwo(out: &mut Array[u8], a: u8, b: u8) -> Unit {
+    putByte(out, a)
+    putByte(out, b)
+}
+
+let mut xs = Array.empty[u8]()
+putTwo(&mut xs, 10, 20)
+print "len=${xs.len()} a=${xs[0]} b=${xs[1]}"
+-- stdout --
+len=2 a=10 b=20

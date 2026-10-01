@@ -1,0 +1,37 @@
+#!/usr/bin/env kigumi
+
+import test from std/test
+
+// A resource must be closed or dropped exactly once; drop runs at scope exit.
+type Connection = resource {
+    pub id Int
+}
+
+fn open(id: Int) -> Connection {
+    print "open ${id}"
+    Connection { id: id }
+}
+
+fn Connection.close(move self) -> Unit! {
+    print "close ${self.id}"
+}
+
+fn Connection.drop(move self) -> Unit {
+    print "drop ${self.id}"
+}
+
+fn transfer(fail_it: Bool) -> Unit! {
+    let a = open(1)
+    defer print "transfer finished"
+    errdefer print "rolling back"
+    let b = open(2)
+    if fail_it {
+        fail test.failure("network down")
+    }
+    b.close()?
+    a.close()?
+}
+
+transfer(false) || (e) => print "error: ${e.message()}"
+transfer(true) || (e) => print "error: ${e.message()}"
+print "end"

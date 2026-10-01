@@ -1,0 +1,63 @@
+-- src --
+// Ledger L-172 (追記 2026-09-28): passing a resource straight into a call
+// whose parameter type coerces the argument (`T?`, `T!`, or an object-safe
+// interface) double-dropped it under --engine interp, since args() applies
+// the coercion before transfer/markMoved compares by identity, and a
+// Some/Ok/Box-wrapped value no longer matched the source cell's raw content.
+// The existential (interface) case was worse: moveOnly didn't look inside a
+// Box at all, so the value was silently deep-cloned instead of moved.
+type Res = resource {
+    pub id Int
+}
+
+fn Res.drop(move self) -> Unit {
+    print "drop ${self.id}"
+}
+
+fn consumeOption(x: Res?) -> Unit {
+    match x {
+        Some(r) -> print "option ${r.id}"
+        None -> print "none"
+    }
+}
+
+fn consumeResult(x: Res!) -> Unit {
+    match x {
+        Ok(r) -> print "result ${r.id}"
+        Err(_) -> print "err"
+    }
+}
+
+interface Doer {
+    fn doIt(move self) -> Unit
+}
+
+fn Res.doIt(move self) -> Unit {
+    print "doer ${self.id}"
+}
+
+fn consumeIface(x: Doer) -> Unit {
+    x.doIt()
+}
+
+let a = Res { id: 1 }
+consumeOption(a)
+print "a"
+
+let b = Res { id: 2 }
+consumeResult(b)
+print "b"
+
+let c = Res { id: 3 }
+consumeIface(c)
+print "c"
+-- stdout --
+option 1
+drop 1
+a
+result 2
+drop 2
+b
+doer 3
+drop 3
+c

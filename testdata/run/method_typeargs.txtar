@@ -1,0 +1,19 @@
+-- src --
+import alloc from std/alloc
+
+type Op = fn(Int) -> Int
+
+type Handlers = {
+    pub fs Array[Op]
+}
+
+let s = alloc.Shared.new(3)
+let r = s.with[Int]((v) => v + 1)
+fn addTen(x: Int) -> Int {
+    x + 10
+}
+
+let h = Handlers { fs: Array.of(addTen) }
+print "${r} ${h.fs[0](5)}"
+-- stdout --
+4 15

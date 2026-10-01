@@ -1,0 +1,9 @@
+/// errno(3) EEXIST on this platform.
+fn eexist() -> i32 {
+    17
+}
+
+/// errno(3) EINTR on this platform.
+fn eintr() -> i32 {
+    4
+}

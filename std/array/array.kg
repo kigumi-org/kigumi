@@ -1,0 +1,308 @@
+/// Growable ordered sequence of T.
+pub type Array[T]
+
+/// A copy of the array; the elements are Copy, so nothing is shared.
+pub pure fn Array[T: Copy].clone(self) -> Array[T]
+
+/// A copy of the array whose elements f builds from a borrow of each original.
+pub pure fn Array[T].cloneWith(self, f: fn(&T) -> T) -> Array[T] {
+    let mut out = Array.empty[T]()
+    let mut i: usize = 0
+    for i < self.len() {
+        out.push(self.with(i, f) || panic())
+        i = i + 1
+    }
+    out
+}
+
+/// Creates an empty array.
+pub pure fn Array.empty[T]() -> Array[T]
+
+/// Creates an array holding the given items in order.
+pub pure fn Array.of[T](items: ...T) -> Array[T]
+
+/// n copies of value.
+pub pure fn Array.fill[T: Copy](value: T, n: usize) -> Array[T] {
+    let mut out = Array.empty[T]()
+    let mut i: usize = 0
+    for i < n {
+        out.push(value)
+        i = i + 1
+    }
+    out
+}
+
+/// n copies of value, or AllocError when the allocator refuses (fill panics instead).
+pub pure fn Array.tryFill[T: Copy](value: T, n: usize) -> Result[Array[T], AllocError] {
+    let mut out = Array.empty[T]()
+    out.tryReserve(n)?
+    let mut i: usize = 0
+    for i < n {
+        out.push(value)
+        i = i + 1
+    }
+    Ok(out)
+}
+
+/// Appends item at the end; panics when memory runs out (tryPush reports it instead).
+pub pure fn Array[T].push(mut self, item: T) -> Unit
+
+/// Makes room for extra more elements; false when the allocator refuses.
+pure fn Array[T].growBy(mut self, extra: usize) -> Bool
+
+/// Appends item, or returns AllocError when memory runs out.
+pub pure fn Array[T].tryPush(mut self, item: T) -> Result[Unit, AllocError] {
+    if !self.growBy(1) {
+        return Err(AllocError.OutOfMemory)
+    }
+    self.push(item)
+}
+
+/// Reserves room for extra more elements without adding any.
+pub pure fn Array[T].tryReserve(mut self, extra: usize) -> Result[Unit, AllocError] {
+    if !self.growBy(extra) {
+        return Err(AllocError.OutOfMemory)
+    }
+}
+
+/// Moves the elements of other into self.
+pub pure fn Array[T].appendAll(mut self, other: Array[T]) -> Unit {
+    for item in other {
+        self.push(item)
+    }
+}
+
+/// Moves the elements of other into self, or AllocError when the allocator refuses.
+pub pure fn Array[T].tryAppendAll(mut self, other: Array[T]) -> Result[Unit, AllocError] {
+    self.tryReserve(other.len())?
+    for item in other {
+        self.push(item)
+    }
+}
+
+/// Number of elements.
+pub pure noalloc fn Array[T].len(self) -> usize
+
+/// A copy of the element at index, or None when index is out of range.
+pub pure noalloc fn Array[T: Copy].get(self, index: usize) -> T?
+
+/// Calls f with a borrow of the element at index; None when index is out of range.
+pub pure fn Array[T].with[R](self, index: usize, f: fn(&T) -> R) -> R?
+
+/// Calls f with an exclusive borrow of the element at index, so f can mutate it in place; None when index is out of range.
+pub pure fn Array[T].withMut[R](mut self, index: usize, f: fn(&mut T) -> R) -> R?
+
+/// Moves the element at index out, closing the gap; None when index is out of range.
+pub pure fn Array[T].takeAt(mut self, index: usize) -> T?
+
+/// The first count elements, or all of them when the array is shorter.
+pub pure fn Array[T: Copy].take(self, count: usize) -> Array[T] {
+    let mut out = Array.empty[T]()
+    let mut i: usize = 0
+    for item in self {
+        if i >= count {
+            break
+        }
+        out.push(item)
+        i += 1
+    }
+    out
+}
+
+/// Applies f to every element and collects the results in order.
+pub pure fn Array[T].map[U](self, f: fn(&T) -> U) -> Array[U] {
+    let mut out = Array.empty[U]()
+    for item in &self {
+        out.push(f(item))
+    }
+    out
+}
+
+/// Sorted copy of items; order decides which of two elements comes first.
+pub pure fn sortedBy[T: Copy](items: &Array[T], order: fn(&T, &T) -> Ordering) -> Array[T] {
+    let mut src = Array.empty[T]()
+    for item in items {
+        src.push(item)
+    }
+    mergeSortedBy(src, order)
+}
+
+/// Stable merge sort over an owned array: order compares by borrow, so
+/// halves split and merge without ever holding an element across a loop
+/// that might also skip consuming it (own.go rejects that join).
+fn mergeSortedBy[T](arr: Array[T], order: fn(&T, &T) -> Ordering) -> Array[T] {
+    let n = arr.len()
+    if n <= 1 {
+        return arr
+    }
+    let mid = n / 2
+    let mut left = Array.empty[T]()
+    let mut right = Array.empty[T]()
+    let mut i: usize = 0
+    for item in arr {
+        if i < mid {
+            left.push(item)
+        } else {
+            right.push(item)
+        }
+        i += 1
+    }
+    mergeSortedHalves(mergeSortedBy(left, order), mergeSortedBy(right, order), order)
+}
+
+/// Merges two already-sorted arrays; ties keep the left element first, so
+/// the sort is stable.
+fn mergeSortedHalves[T](mut left: Array[T], mut right: Array[T], order: fn(&T, &T) -> Ordering) -> Array[T] {
+    let mut out = Array.empty[T]()
+    for left.len() > 0 && right.len() > 0 {
+        let rightFirst = left.with(0, (a: &T) => right.with(0, (b: &T) => order(b, a) is Ordering.Less) is Some(true)) is Some(true)
+        if rightFirst {
+            out.push(right.takeAt(0).unwrap())
+        } else {
+            out.push(left.takeAt(0).unwrap())
+        }
+    }
+    for item in left {
+        out.push(item)
+    }
+    for item in right {
+        out.push(item)
+    }
+    out
+}
+
+/// Elements for which keep returns true, in the original order.
+pub pure fn Array[T].filter(self, keep: fn(&T) -> Bool) -> Array[T] {
+    let mut out = Array.empty[T]()
+    for item in self {
+        if keep(&item) {
+            out.push(item)
+        }
+    }
+    out
+}
+
+/// Reduces the array left to right, starting from init.
+pub pure fn Array[T].fold[A](self, init: A, step: fn(A, T) -> A) -> A {
+    let mut acc = init
+    for item in self {
+        acc = step(acc, item)
+    }
+    acc
+}
+
+/// Element-wise equality; satisfies `Eq` when T does.
+pub pure fn Array[T: Eq].equals(self, other: &Array[T]) -> Bool {
+    if self.len() != other.len() {
+        return false
+    }
+    let mut i: usize = 0
+    for i < self.len() {
+        let same = self.with(i, (a: &T) => other.with(i, (b: &T) => a == b) is Some(true))
+        if same is Some(true) {
+            i = i + 1
+        } else {
+            return false
+        }
+    }
+    true
+}
+
+/// Hash over the elements in order; satisfies `Hash` when T does.
+pub pure fn Array[T: Hash].hash(self) -> u64 {
+    let mut h: u64 = 14695981039346656037
+    let mut i: usize = 0
+    for i < self.len() {
+        h = (h ^ (self.with(i, (a: &T) => hash(a)) || 0)).wrappingMul(1099511628211)
+        i = i + 1
+    }
+    h
+}
+
+/// Whether some element equals item.
+pub pure fn Array[T: Eq].contains(self, item: T) -> Bool {
+    for x in self {
+        if x == item {
+            return true
+        }
+    }
+    false
+}
+
+/// Copy with the elements in reverse order.
+pub pure fn Array[T: Copy].reverse(self) -> Array[T] {
+    let mut out = Array.empty[T]()
+    let mut i = self.len()
+    for _ in self {
+        i -= 1
+        out.push(self.get(i).unwrap())
+    }
+    out
+}
+
+/// The first element, or None when the array is empty.
+pub pure noalloc fn Array[T: Copy].first(self) -> T? {
+    self.get(0)
+}
+
+/// The last element, or None when the array is empty.
+pub pure noalloc fn Array[T: Copy].last(self) -> T? {
+    if self.len() == 0 {
+        return None
+    }
+    self.get(self.len() - 1)
+}
+
+/// Whether the array has no elements.
+pub pure noalloc fn Array[T].isEmpty(self) -> Bool {
+    self.len() == 0
+}
+
+/// Copies of self[start..end]; None unless start <= end <= self.len().
+pub pure fn Array[T: Copy].slice(self, start: usize, end: usize) -> Array[T]? {
+    if start > end || end > self.len() {
+        return None
+    }
+    let mut out = Array.empty[T]()
+    let mut i = start
+    for i < end {
+        out.push(self.get(i).unwrap())
+        i = i + 1
+    }
+    Some(out)
+}
+
+/// New array holding the elements of self followed by those of other.
+pub pure fn Array[T].concat(self, other: Array[T]) -> Array[T] {
+    let mut out = Array.empty[T]()
+    for item in self {
+        out.push(item)
+    }
+    for item in other {
+        out.push(item)
+    }
+    out
+}
+
+/// Concatenates items with sep between consecutive elements.
+pub pure fn join(items: &Array[String], sep: String) -> String {
+    // Collecting bytes keeps the join linear; concatenating strings would copy the prefix per item.
+    let mut bytes = Array.empty[u8]()
+    let mut first = true
+    for item in items {
+        if !first {
+            pushBytes(&mut bytes, sep)
+        }
+        pushBytes(&mut bytes, item)
+        first = false
+    }
+    String.fromBytes(Bytes.fromArray(&bytes)) || ""
+}
+
+pure fn pushBytes(bytes: &mut Array[u8], s: String) -> Unit {
+    let mut i: usize = 0
+    for i < s.len() {
+        bytes.push(s[i])
+        i = i + 1
+    }
+}

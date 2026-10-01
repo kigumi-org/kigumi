@@ -1,0 +1,65 @@
+-- lib/res.kg --
+type ParseError = BadLine(line: Int) | Empty
+
+fn ParseError.message(self) -> String {
+    match self {
+        BadLine(line) -> "bad line ${line}"
+        Empty -> "empty"
+    }
+}
+
+type Silent = {
+    pub code Int
+}
+
+fn parse(s: String) -> Result[Int, ParseError] {
+    if s.len() == 0 { fail Empty }
+    1
+}
+
+fn wrap(s: String) -> Int! {
+    let v = parse(s)? //~ TYPE v : Int
+    v
+}
+
+fn same(s: String) -> Result[Int, ParseError] {
+    parse(s)? + 1
+}
+
+fn err(s: String) -> Unit! {
+    if s.len() == 0 { fail Empty }
+    let e: Error = Empty
+    fail e
+}
+
+fn viaErr() -> Result[Int, Error] {
+    Err(Empty)
+}
+
+fn message(e: Error) -> String {
+    e.message()
+}
+
+fn isTest(e: Error) -> Bool {
+    if e is ParseError { return true }
+    e is Silent //~ ERROR `Silent` never conforms to `Error`
+}
+
+fn unit() -> Unit! {
+    let a = parse("x")?
+    let b = wrap("y")?
+}
+
+fn hostMain() -> Unit! {
+    let s = "x"
+    let v = parse(s)?
+    unit()?
+}
+-- expect --
+error[E812]: `Silent` never conforms to `Error`
+  --> lib/res.kg:44:10
+   |
+44 |     e is Silent //~ ERROR `Silent` never conforms to `Error`
+   |          ^^^^^^
+   = help: this test is always false
+

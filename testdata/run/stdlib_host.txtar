@@ -1,0 +1,29 @@
+-- src --
+import math from std/math
+import text from std/text
+import time from std/time
+import fs from std/fs
+
+let files = host.files()
+let dir = fs.Path.fromString("data")?
+let p = fs.Path.fromString("data/hello.txt")?
+print "exists-before=${files.exists(p)}"
+let started = time.now()
+files.mkdir(dir)?
+files.writeText(p, "héllo\nworld\n")?
+print "exists-after=${files.exists(p)} text=${text.replace(files.read(p)?, "\n", "|")} bytes=${(files.readBytes(p)?).len()}"
+for entry in files.list(dir)? {
+    print "entry=${entry.toString()}"
+}
+print "sqrt=${(math.toInt(math.sqrt(16.0)) || 0)} floor=${(math.toInt(math.floor(2.7)) || 0)} ceil=${(math.toInt(math.ceil(2.1)) || 0)} round=${(math.toInt(math.round(2.5)) || 0)} pow=${(math.toInt(math.pow(2.0, 10.0)) || 0)}"
+print "min=${math.min(3, 9)} max=${math.max(3, 9)} abs=${math.abs(-4)} fabs=${(math.toInt(math.abs(-2.5) * 2.0) || 0)} toFloat=${(math.toInt(math.toFloat(7) / 2.0) || 0)}"
+print "slice=${text.slice("héllo", 0, 3) || "?"} bad=${text.slice("héllo", 0, 2) || "?"} empty=${"".isEmpty()} args=${host.args().len()}"
+print "env=${host.env("KIGUMI_SURELY_UNSET_VARIABLE") || "unset"} elapsed-ok=${started.elapsedMillis() >= 0} unix-ok=${started.unixMillis() > 0}"
+-- stdout --
+exists-before=false
+exists-after=true text=héllo|world| bytes=13
+entry=data/hello.txt
+sqrt=4 floor=2 ceil=3 round=3 pow=1024
+min=3 max=9 abs=4 fabs=5 toFloat=3
+slice=hé bad=? empty=true args=3
+env=unset elapsed-ok=true unix-ok=true

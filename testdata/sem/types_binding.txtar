@@ -1,0 +1,84 @@
+-- src --
+let a = 1 //~ TYPE a : Int
+let b: u8 = 255 //~ TYPE b : u8
+let c = 1.5 //~ TYPE c : Float
+let d: f32 = 1 //~ TYPE d : f32
+let e = "s" //~ TYPE e : String
+let f = 'c' //~ TYPE f : Char
+let g = true //~ TYPE g : Bool
+let mut h = 0
+h = 2
+let i = h //~ TYPE i : Int
+let j: Int? = None //~ TYPE j : Int?
+let k = j //~ TYPE k : Int?
+let l: String = 1 //~ ERROR expected `String`, found `Int`
+let m: u8 = 256 //~ ERROR `256` does not fit `u8`
+let n: Int = 1.5 //~ ERROR float literal `1.5` cannot be `Int`
+let o = None //~ ERROR cannot infer type parameter
+let p = a
+p = 3 //~ ERROR `p` is immutable
+let mut q = 1
+q = "x" //~ ERROR expected `Int`, found `String`
+let r: i8 = -128 //~ TYPE r : i8
+let s: i8 = 128 //~ ERROR `128` does not fit `i8`
+let _ = 5
+let t = undefined //~ ERROR undefined name `undefined`
+let u = _ //~ ERROR `_` is only a pattern or an assignment target
+_ = 7
+-- expect --
+error[E400]: expected `String`, found `Int`
+  --> main/main.kg:13:17
+   |
+13 | let l: String = 1 //~ ERROR expected `String`, found `Int`
+   |                 ^
+
+error[E402]: `256` does not fit `u8`
+  --> main/main.kg:14:13
+   |
+14 | let m: u8 = 256 //~ ERROR `256` does not fit `u8`
+   |             ^^^
+
+error[E403]: float literal `1.5` cannot be `Int`
+  --> main/main.kg:15:14
+   |
+15 | let n: Int = 1.5 //~ ERROR float literal `1.5` cannot be `Int`
+   |              ^^^
+
+error[E301]: cannot infer type parameter `T`
+  --> main/main.kg:16:9
+   |
+16 | let o = None //~ ERROR cannot infer type parameter
+   |         ^^^^
+   = help: write explicit type arguments or an annotation
+
+error[E701]: `p` is immutable
+  --> main/main.kg:18:1
+   |
+18 | p = 3 //~ ERROR `p` is immutable
+   | ^
+   = help: declare `let mut p`
+
+error[E400]: expected `Int`, found `String`
+  --> main/main.kg:20:5
+   |
+20 | q = "x" //~ ERROR expected `Int`, found `String`
+   |     ^^^
+
+error[E402]: `128` does not fit `i8`
+  --> main/main.kg:22:13
+   |
+22 | let s: i8 = 128 //~ ERROR `128` does not fit `i8`
+   |             ^^^
+
+error[E100]: undefined name `undefined`
+  --> main/main.kg:24:9
+   |
+24 | let t = undefined //~ ERROR undefined name `undefined`
+   |         ^^^^^^^^^
+
+error[E127]: `_` is only a pattern or an assignment target
+  --> main/main.kg:25:9
+   |
+25 | let u = _ //~ ERROR `_` is only a pattern or an assignment target
+   |         ^
+

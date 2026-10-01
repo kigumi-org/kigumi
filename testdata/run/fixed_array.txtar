@@ -1,0 +1,59 @@
+-- src --
+type Point = { x i32, y i32 }
+
+let zeros = FixedArray.zeroed[u8, 4]()
+print "${zeros.len()} ${zeros.get(0) || 9} ${zeros.get(3) || 9} ${zeros.get(4) || 9}"
+
+let fzeros = FixedArray.zeroed[f64, 2]()
+print "${fzeros.get(0) || 9.0} ${fzeros.get(1) || 9.0}"
+
+let src: Array[i32] = Array.of(10, 20, 30)
+let fromOk = FixedArray.fromArray[i32, 3](&src) || panic()
+print "${fromOk.toArray().get(1) || 0}"
+print "${(FixedArray.fromArray[i32, 4](&src)) is None}"
+
+// Copy: assigning does not alias.
+let mut a = FixedArray.filled[i32, 3](1)
+let mut b = a
+let _ = b.set(0, 99)
+print "${a.get(0) || 0} ${b.get(0) || 0}"
+
+// set reports out-of-range instead of panicking.
+print "${b.set(3, 1)} ${b.set(0, 2)}"
+
+// at borrows for a callback; withMut mutates in place.
+let doubled = a.at(1, (v: &i32) => v * 2) || 0
+print "${doubled} ${a.at(9, (v: &i32) => v + 0) is None}"
+
+let mut c = FixedArray.filled[i32, 3](5)
+let _ = c.withMut(1, (v: &mut i32) => { v = v + 1 })
+print "${c.get(0) || 0} ${c.get(1) || 0}"
+
+// Eq / Hash derive the way a record's do, through the wrapped Array.
+let d1 = FixedArray.filled[i32, 3](7)
+let d2 = FixedArray.filled[i32, 3](7)
+let d3 = FixedArray.filled[i32, 3](8)
+print "${d1 == d2} ${d1 == d3} ${hash(&d1) == hash(&d2)}"
+
+// A record element type: Copy still holds, and fields read back correctly.
+let pts = FixedArray.filled[Point, 2](Point { x: 1, y: 2 })
+print "${(pts.get(0) || Point{x:0,y:0}).x} ${(pts.get(1) || Point{x:0,y:0}).y}"
+
+// Bytes interop.
+let bytes = Bytes.fromArray(&Array.of(1, 2, 3))
+let ok3: FixedArray[u8, 3]? = bytes.toFixed()
+let bad4: FixedArray[u8, 4]? = bytes.toFixed()
+let back = FixedArray.toBytes(ok3 || panic())
+print "${bad4 is None} ${back.len()} ${back.get(2) || 0}"
+-- stdout --
+4 0 0 9
+0 0
+20
+true
+1 99
+false true
+2 true
+5 6
+true false true
+1 2
+true 3 3

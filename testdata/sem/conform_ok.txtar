@@ -1,0 +1,37 @@
+-- lib/cf.kg --
+pub interface Display {
+    fn display(self) -> String
+}
+
+pub interface Named[T] {
+    fn name(self) -> T
+}
+
+type P = {
+    pub x Int
+}
+
+fn P.display(self) -> String {
+    "p"
+}
+
+fn P.name(self) -> Int {
+    self.x
+}
+
+fn show(d: Display) -> String {
+    d.display()
+}
+
+fn use(p: P) -> Unit {
+    let d: Display = p //~ TYPE d : Display
+    let s = show(p) //~ TYPE s : String
+    let t = d.display() //~ TYPE t : String
+    let n: Named[Int] = p
+    let v = n.name() //~ TYPE v : Int
+    let xs: Array[Display] = Array.of[Display](p, p)
+    let f = d.display //~ TYPE f : fn() -> String
+    let back = d is P //~ TYPE back : Bool
+    if d is P { }
+}
+-- expect --

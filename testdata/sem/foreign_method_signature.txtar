@@ -1,0 +1,40 @@
+-- app/ext/ext.kg --
+pub type Box = {
+    pub v Int
+}
+
+pub type Bag = {
+    pub v Int
+}
+
+-- app/t/t.kg --
+import {Box, Bag} from app/ext
+
+pub interface Sized {
+    fn size(self) -> Int //~ NOTE local requirement `size` needs `fn size(self) -> Int`
+}
+
+pub fn Box.size(self) -> Int {
+    self.v
+}
+
+pub fn Bag.size(self) -> String { //~ ERROR member functions of `Bag` must be declared in package `app/ext`
+    "n/a"
+}
+
+fn useIt() -> Unit {
+    let b = Box { v: 1 }
+    _ = b.size()
+}
+-- expect --
+error[E229]: member functions of `Bag` must be declared in package `app/ext`
+  --> app/t/t.kg:11:8
+   |
+11 | pub fn Bag.size(self) -> String { //~ ERROR member functions of `Bag` must be declared in package `app/ext`
+   |        ^^^
+note: local requirement `size` needs `fn size(self) -> Int`
+  --> app/t/t.kg:4:8
+   |
+ 4 |     fn size(self) -> Int //~ NOTE local requirement `size` needs `fn size(self) -> Int`
+   |        ^^^^
+

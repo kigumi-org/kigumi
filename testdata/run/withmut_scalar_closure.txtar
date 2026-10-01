@@ -1,0 +1,24 @@
+-- src --
+fn setIt(x: &mut Int) -> Unit {
+    x = x + 1
+}
+
+let mut y = 1
+let mut untouched = 2
+let cl = () => {
+    let r = &mut y
+    r = 7
+}
+cl()
+print "${y} ${untouched}"
+
+let mut z = 1
+let cl2 = () => {
+    setIt(&mut z)
+}
+cl2()
+cl2()
+print "${z}"
+-- stdout --
+7 2
+3

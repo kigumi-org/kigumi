@@ -1,0 +1,11 @@
+Module {
+    name: "dependency"
+    kigumi: "0.1"
+}
+
+// A dependency is a module; mod.local.kg points this one at a directory in this repo.
+Require {
+    name: "greet"
+    version: "v0.1.0"
+    url: "https://example.invalid/greet.git"
+}

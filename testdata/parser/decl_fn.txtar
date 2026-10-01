@@ -1,0 +1,383 @@
+-- src --
+/// stable checksum API
+pub pure noalloc fn checksum(data: Bytes) -> u64 { data.len() }
+noalloc pub pure fn f() -> Unit {}
+pure pure fn g() -> Unit {}
+pub async fn fetch(net: Network, url: Url) -> Response! { await net.get(url) }
+pub unsafe fn readByte(ptr: *const u8) -> u8 { unsafe { mem.read(ptr) } }
+fn Vec.length(self) -> Float { self.x }
+fn Vec.zero() -> Vec { Vec { x: 0.0 } }
+fn ByteBuffer.push(mut self, x: byte) -> Unit { self.data.push(x) }
+fn File.drop(move self) -> Unit {}
+fn Box[T].value(self) -> T { self.inner }
+pub pure fn Array[T].map[U](self, f: fn(T) -> U) -> Array[U] { self.inner }
+pub pure fn Vec.+^(a: Vec, b: Vec) -> Vec { a }
+pub pure fn Vec.*(a: Float, b: Vec) -> Vec { b }
+pub fn fold[A, S](items: list.List[A], initial: S, step: pure fn(S, A) -> S) -> S { initial }
+fn applyOnce[A, R, F: FnOnce[fn(A) -> R]](f: F, value: A) -> R { f(value) }
+pub fn command(program: String, args: ...String) -> Command { run(program, ...args) }
+pub pub(module) fn bad() -> Unit {}
+-- expect --
+File
+  FnDecl
+    doc: "/// stable checksum API"
+    attrs: -
+    mods: pure noalloc
+    vis: Visibility
+    recv: -
+    name: checksum
+    generics: -
+    params: List
+      Param data
+        type: TypePath
+          Path Bytes
+    ret: TypePath
+      Path u64
+    body: Block
+      ExprStmt
+        Call
+          Member len
+            Ident data
+          List
+  FnDecl
+    attrs: -
+    mods: pure noalloc
+    vis: Visibility
+    recv: -
+    name: f
+    generics: -
+    params: List
+    ret: TypePath
+      Path Unit
+    body: Block
+  FnDecl
+    attrs: -
+    mods: pure
+    vis: -
+    recv: -
+    name: g
+    generics: -
+    params: List
+    ret: TypePath
+      Path Unit
+    body: Block
+  FnDecl
+    attrs: -
+    mods: async
+    vis: Visibility
+    recv: -
+    name: fetch
+    generics: -
+    params: List
+      Param net
+        type: TypePath
+          Path Network
+      Param url
+        type: TypePath
+          Path Url
+    ret: TypeResult
+      TypePath
+        Path Response
+    body: Block
+      ExprStmt
+        Await
+          Call
+            Member get
+              Ident net
+            List
+              Ident url
+  FnDecl
+    attrs: -
+    mods: unsafe
+    vis: Visibility
+    recv: -
+    name: readByte
+    generics: -
+    params: List
+      Param ptr
+        type: TypePtr
+          TypePath
+            Path u8
+    ret: TypePath
+      Path u8
+    body: Block
+      ExprStmt
+        Unsafe
+          Block
+            ExprStmt
+              Call
+                Member read
+                  Ident mem
+                List
+                  Ident ptr
+  FnDecl
+    attrs: -
+    vis: -
+    recv: TypePath
+      Path Vec
+    name: length
+    generics: -
+    params: List
+      Param self
+        flags: self
+    ret: TypePath
+      Path Float
+    body: Block
+      ExprStmt
+        Member x
+          Ident self
+  FnDecl
+    attrs: -
+    vis: -
+    recv: TypePath
+      Path Vec
+    name: zero
+    generics: -
+    params: List
+    ret: TypePath
+      Path Vec
+    body: Block
+      ExprStmt
+        RecordLit
+          Ident Vec
+          List
+            FieldInit x
+              FloatLit 0.0
+  FnDecl
+    attrs: -
+    vis: -
+    recv: TypePath
+      Path ByteBuffer
+    name: push
+    generics: -
+    params: List
+      Param self
+        flags: mut self
+      Param x
+        type: TypePath
+          Path byte
+    ret: TypePath
+      Path Unit
+    body: Block
+      ExprStmt
+        Call
+          Member push
+            Member data
+              Ident self
+          List
+            Ident x
+  FnDecl
+    attrs: -
+    vis: -
+    recv: TypePath
+      Path File
+    name: drop
+    generics: -
+    params: List
+      Param self
+        flags: move self
+    ret: TypePath
+      Path Unit
+    body: Block
+  FnDecl
+    attrs: -
+    vis: -
+    recv: TypePath
+      Path Box
+      List
+        GenericParam T
+    name: value
+    generics: -
+    params: List
+      Param self
+        flags: self
+    ret: TypePath
+      Path T
+    body: Block
+      ExprStmt
+        Member inner
+          Ident self
+  FnDecl
+    attrs: -
+    mods: pure
+    vis: Visibility
+    recv: TypePath
+      Path Array
+      List
+        GenericParam T
+    name: map
+    generics: List
+      GenericParam U
+    params: List
+      Param self
+        flags: self
+      Param f
+        type: TypeFn
+          params: List
+            TypePath
+              Path T
+          ret: TypePath
+            Path U
+    ret: TypePath
+      Path Array
+      List
+        TypePath
+          Path U
+    body: Block
+      ExprStmt
+        Member inner
+          Ident self
+  FnDecl
+    attrs: -
+    mods: pure
+    vis: Visibility
+    recv: TypePath
+      Path Vec
+    name: +^
+    generics: -
+    params: List
+      Param a
+        type: TypePath
+          Path Vec
+      Param b
+        type: TypePath
+          Path Vec
+    ret: TypePath
+      Path Vec
+    body: Block
+      ExprStmt
+        Ident a
+  FnDecl
+    attrs: -
+    mods: pure
+    vis: Visibility
+    recv: TypePath
+      Path Vec
+    name: *
+    generics: -
+    params: List
+      Param a
+        type: TypePath
+          Path Float
+      Param b
+        type: TypePath
+          Path Vec
+    ret: TypePath
+      Path Vec
+    body: Block
+      ExprStmt
+        Ident b
+  FnDecl
+    attrs: -
+    vis: Visibility
+    recv: -
+    name: fold
+    generics: List
+      GenericParam A
+      GenericParam S
+    params: List
+      Param items
+        type: TypePath
+          Path list.List
+          List
+            TypePath
+              Path A
+      Param initial
+        type: TypePath
+          Path S
+      Param step
+        type: TypeFn
+          mods: pure
+          params: List
+            TypePath
+              Path S
+            TypePath
+              Path A
+          ret: TypePath
+            Path S
+    ret: TypePath
+      Path S
+    body: Block
+      ExprStmt
+        Ident initial
+  FnDecl
+    attrs: -
+    vis: -
+    recv: -
+    name: applyOnce
+    generics: List
+      GenericParam A
+      GenericParam R
+      GenericParam F
+        List
+          TypePath
+            Path FnOnce
+            List
+              TypeFn
+                params: List
+                  TypePath
+                    Path A
+                ret: TypePath
+                  Path R
+    params: List
+      Param f
+        type: TypePath
+          Path F
+      Param value
+        type: TypePath
+          Path A
+    ret: TypePath
+      Path R
+    body: Block
+      ExprStmt
+        Call
+          Ident f
+          List
+            Ident value
+  FnDecl
+    attrs: -
+    vis: Visibility
+    recv: -
+    name: command
+    generics: -
+    params: List
+      Param program
+        type: TypePath
+          Path String
+      Param args
+        flags: variadic
+        type: TypePath
+          Path String
+    ret: TypePath
+      Path Command
+    body: Block
+      ExprStmt
+        Call
+          Ident run
+          List
+            Ident program
+            Spread
+              Ident args
+  FnDecl
+    attrs: -
+    vis: Visibility module
+    recv: -
+    name: bad
+    generics: -
+    params: List
+    ret: TypePath
+      Path Unit
+    body: Block
+-- diagnostics --
+warning: duplicate modifier
+ --> decl_fn.txtar:4:6
+  |
+4 | pure pure fn g() -> Unit {}
+  |      ^^^^
+
+error: conflicting visibility modifiers
+  --> decl_fn.txtar:18:5
+   |
+18 | pub pub(module) fn bad() -> Unit {}
+   |     ^^^
+

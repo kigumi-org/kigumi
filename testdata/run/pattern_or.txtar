@@ -1,0 +1,41 @@
+-- src --
+type Shape = Circle(r: Int) | Rect(w: Int, h: Int) | Dot
+
+fn label(n: Int) -> String {
+    match n {
+        3 | 6 | 9 -> "fizz"
+        5 | 10 -> "buzz"
+        _ -> "${n}"
+    }
+}
+
+fn flat(s: Shape) -> Bool {
+    match s {
+        Circle(_) | Dot -> true
+        Rect(_, _) -> false
+    }
+}
+
+for n in Array.of(3, 5, 7, 10) {
+    print label(n)
+}
+let shapes = Array.of(Circle(1), Rect(2, 3), Dot)
+for s in &shapes {
+    print "${flat(s)}"
+}
+if shapes.get(1) is Some(Rect { w }) {
+    print "width ${w}"
+}
+if shapes.get(0) is Some(Rect(_, _) | Circle(_)) {
+    print "rect or circle"
+}
+-- stdout --
+fizz
+buzz
+7
+buzz
+true
+false
+true
+width 2
+rect or circle

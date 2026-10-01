@@ -1,0 +1,13 @@
+/// Greatest common divisor; gcd(a, 0) is a.
+pub pure fn gcd(a: Int, b: Int) -> Int {
+    if b == 0 {
+        a
+    } else {
+        gcd(b, a % b)
+    }
+}
+
+/// Least common multiple.
+pub pure fn lcm(a: Int, b: Int) -> Int {
+    a / gcd(a, b) * b
+}

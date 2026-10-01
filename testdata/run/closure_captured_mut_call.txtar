@@ -1,0 +1,29 @@
+-- src --
+type Item = {
+    pub mut count Int
+}
+
+fn Item.update(mut self, delta: Int) -> Unit {
+    self.count = self.count + delta
+}
+
+fn touchTwice() -> Int {
+    let mut item = Item { count: 0 }
+    let touch = () => { item.update(1) }
+    touch()
+    touch()
+    item.count
+}
+
+fn touchThenRead() -> Int {
+    let mut item = Item { count: 10 }
+    let touch = () => { item.update(5) }
+    touch()
+    item.count
+}
+
+print "touchTwice=${touchTwice()}"
+print "touchThenRead=${touchThenRead()}"
+-- stdout --
+touchTwice=2
+touchThenRead=15

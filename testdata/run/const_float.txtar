@@ -1,0 +1,13 @@
+-- src --
+const N = 3
+const HUGE = 1267650600228229401496703205376
+const F: f32 = 5
+
+let x: f64 = N
+let h: f64 = HUGE
+let y: f32 = N
+print "${x} ${y} ${F}"
+print "${h == 1267650600228229401496703205376.0}"
+-- stdout --
+3 3 5
+true

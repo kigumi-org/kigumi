@@ -1,0 +1,19 @@
+-- src --
+type Box = {
+    pub mut v Int
+}
+
+fn callIt(f: fn() -> Unit) -> Unit {
+    f()
+}
+
+fn setMut(r: &mut Box) -> Unit {
+    callIt(() => { r.v = 42 })
+}
+
+
+let mut b = Box { v: 7 }
+setMut(&mut b)
+print "b.v=${b.v}"
+-- stdout --
+b.v=42

@@ -1,0 +1,419 @@
+/// Square root of x; NaN for negative x.
+pub pure noalloc fn sqrt(x: Float) -> Float
+
+/// Largest integral value not greater than x.
+pub pure noalloc fn floor(x: Float) -> Float
+
+/// Smallest integral value not less than x.
+pub pure noalloc fn ceil(x: Float) -> Float
+
+/// x rounded to the nearest integral value, halfway cases away from zero.
+pub pure noalloc fn round(x: Float) -> Float
+
+/// x raised to the power y.
+pub pure noalloc fn pow(x: Float, y: Float) -> Float
+
+/// x truncated toward zero; None for NaN, an infinity or a value outside the Int range.
+pub pure noalloc fn toInt(x: Float) -> Int? {
+    x.toInt()
+}
+
+/// x as a Float (rounded above 2^53).
+pub pure noalloc fn toFloat(x: Int) -> Float {
+    x.toFloat()
+}
+
+/// The smaller of a and b.
+pub pure noalloc fn min(a: Int, b: Int) -> Int {
+    if a < b {
+        a
+    } else {
+        b
+    }
+}
+
+/// The larger of a and b.
+pub pure noalloc fn max(a: Int, b: Int) -> Int {
+    if a > b {
+        a
+    } else {
+        b
+    }
+}
+
+/// The smaller of a and b.
+pub pure noalloc fn min(a: Float, b: Float) -> Float {
+    if a < b {
+        a
+    } else {
+        b
+    }
+}
+
+/// The larger of a and b.
+pub pure noalloc fn max(a: Float, b: Float) -> Float {
+    if a > b {
+        a
+    } else {
+        b
+    }
+}
+
+/// x restricted to lo..hi; returns lo if lo > hi.
+pub pure noalloc fn clamp(x: Int, lo: Int, hi: Int) -> Int {
+    if lo > hi {
+        lo
+    } else if x < lo {
+        lo
+    } else if x > hi {
+        hi
+    } else {
+        x
+    }
+}
+
+/// x restricted to lo..hi; returns lo if lo > hi.
+pub pure noalloc fn clamp(x: Float, lo: Float, hi: Float) -> Float {
+    if lo > hi {
+        lo
+    } else if x < lo {
+        lo
+    } else if x > hi {
+        hi
+    } else {
+        x
+    }
+}
+
+/// Absolute value of x; panics with integer overflow at the minimum representable value.
+pub pure noalloc fn abs(x: Int) -> Int {
+    if x < 0 {
+        -x
+    } else {
+        x
+    }
+}
+
+/// Absolute value of x.
+pub pure noalloc fn abs(x: Float) -> Float {
+    if x < 0.0 {
+        -x
+    } else {
+        x
+    }
+}
+
+/// The smaller of a and b.
+pub pure noalloc fn min(a: i8, b: i8) -> i8 {
+    if a < b {
+        a
+    } else {
+        b
+    }
+}
+
+/// The larger of a and b.
+pub pure noalloc fn max(a: i8, b: i8) -> i8 {
+    if a > b {
+        a
+    } else {
+        b
+    }
+}
+
+/// x restricted to lo..hi; returns lo if lo > hi.
+pub pure noalloc fn clamp(x: i8, lo: i8, hi: i8) -> i8 {
+    if lo > hi {
+        lo
+    } else if x < lo {
+        lo
+    } else if x > hi {
+        hi
+    } else {
+        x
+    }
+}
+
+/// Absolute value of x; panics with integer overflow at the minimum representable value.
+pub pure noalloc fn abs(x: i8) -> i8 {
+    if x < 0 {
+        -x
+    } else {
+        x
+    }
+}
+
+/// The smaller of a and b.
+pub pure noalloc fn min(a: i16, b: i16) -> i16 {
+    if a < b {
+        a
+    } else {
+        b
+    }
+}
+
+/// The larger of a and b.
+pub pure noalloc fn max(a: i16, b: i16) -> i16 {
+    if a > b {
+        a
+    } else {
+        b
+    }
+}
+
+/// x restricted to lo..hi; returns lo if lo > hi.
+pub pure noalloc fn clamp(x: i16, lo: i16, hi: i16) -> i16 {
+    if lo > hi {
+        lo
+    } else if x < lo {
+        lo
+    } else if x > hi {
+        hi
+    } else {
+        x
+    }
+}
+
+/// Absolute value of x; panics with integer overflow at the minimum representable value.
+pub pure noalloc fn abs(x: i16) -> i16 {
+    if x < 0 {
+        -x
+    } else {
+        x
+    }
+}
+
+/// The smaller of a and b.
+pub pure noalloc fn min(a: i32, b: i32) -> i32 {
+    if a < b {
+        a
+    } else {
+        b
+    }
+}
+
+/// The larger of a and b.
+pub pure noalloc fn max(a: i32, b: i32) -> i32 {
+    if a > b {
+        a
+    } else {
+        b
+    }
+}
+
+/// x restricted to lo..hi; returns lo if lo > hi.
+pub pure noalloc fn clamp(x: i32, lo: i32, hi: i32) -> i32 {
+    if lo > hi {
+        lo
+    } else if x < lo {
+        lo
+    } else if x > hi {
+        hi
+    } else {
+        x
+    }
+}
+
+/// Absolute value of x; panics with integer overflow at the minimum representable value.
+pub pure noalloc fn abs(x: i32) -> i32 {
+    if x < 0 {
+        -x
+    } else {
+        x
+    }
+}
+
+/// The smaller of a and b.
+pub pure noalloc fn min(a: isize, b: isize) -> isize {
+    if a < b {
+        a
+    } else {
+        b
+    }
+}
+
+/// The larger of a and b.
+pub pure noalloc fn max(a: isize, b: isize) -> isize {
+    if a > b {
+        a
+    } else {
+        b
+    }
+}
+
+/// x restricted to lo..hi; returns lo if lo > hi.
+pub pure noalloc fn clamp(x: isize, lo: isize, hi: isize) -> isize {
+    if lo > hi {
+        lo
+    } else if x < lo {
+        lo
+    } else if x > hi {
+        hi
+    } else {
+        x
+    }
+}
+
+/// Absolute value of x; panics with integer overflow at the minimum representable value.
+pub pure noalloc fn abs(x: isize) -> isize {
+    if x < 0 {
+        -x
+    } else {
+        x
+    }
+}
+
+/// The smaller of a and b.
+pub pure noalloc fn min(a: u8, b: u8) -> u8 {
+    if a < b {
+        a
+    } else {
+        b
+    }
+}
+
+/// The larger of a and b.
+pub pure noalloc fn max(a: u8, b: u8) -> u8 {
+    if a > b {
+        a
+    } else {
+        b
+    }
+}
+
+/// x restricted to lo..hi; returns lo if lo > hi.
+pub pure noalloc fn clamp(x: u8, lo: u8, hi: u8) -> u8 {
+    if lo > hi {
+        lo
+    } else if x < lo {
+        lo
+    } else if x > hi {
+        hi
+    } else {
+        x
+    }
+}
+
+/// The smaller of a and b.
+pub pure noalloc fn min(a: u16, b: u16) -> u16 {
+    if a < b {
+        a
+    } else {
+        b
+    }
+}
+
+/// The larger of a and b.
+pub pure noalloc fn max(a: u16, b: u16) -> u16 {
+    if a > b {
+        a
+    } else {
+        b
+    }
+}
+
+/// x restricted to lo..hi; returns lo if lo > hi.
+pub pure noalloc fn clamp(x: u16, lo: u16, hi: u16) -> u16 {
+    if lo > hi {
+        lo
+    } else if x < lo {
+        lo
+    } else if x > hi {
+        hi
+    } else {
+        x
+    }
+}
+
+/// The smaller of a and b.
+pub pure noalloc fn min(a: u32, b: u32) -> u32 {
+    if a < b {
+        a
+    } else {
+        b
+    }
+}
+
+/// The larger of a and b.
+pub pure noalloc fn max(a: u32, b: u32) -> u32 {
+    if a > b {
+        a
+    } else {
+        b
+    }
+}
+
+/// x restricted to lo..hi; returns lo if lo > hi.
+pub pure noalloc fn clamp(x: u32, lo: u32, hi: u32) -> u32 {
+    if lo > hi {
+        lo
+    } else if x < lo {
+        lo
+    } else if x > hi {
+        hi
+    } else {
+        x
+    }
+}
+
+/// The smaller of a and b.
+pub pure noalloc fn min(a: u64, b: u64) -> u64 {
+    if a < b {
+        a
+    } else {
+        b
+    }
+}
+
+/// The larger of a and b.
+pub pure noalloc fn max(a: u64, b: u64) -> u64 {
+    if a > b {
+        a
+    } else {
+        b
+    }
+}
+
+/// x restricted to lo..hi; returns lo if lo > hi.
+pub pure noalloc fn clamp(x: u64, lo: u64, hi: u64) -> u64 {
+    if lo > hi {
+        lo
+    } else if x < lo {
+        lo
+    } else if x > hi {
+        hi
+    } else {
+        x
+    }
+}
+
+/// The smaller of a and b.
+pub pure noalloc fn min(a: usize, b: usize) -> usize {
+    if a < b {
+        a
+    } else {
+        b
+    }
+}
+
+/// The larger of a and b.
+pub pure noalloc fn max(a: usize, b: usize) -> usize {
+    if a > b {
+        a
+    } else {
+        b
+    }
+}
+
+/// x restricted to lo..hi; returns lo if lo > hi.
+pub pure noalloc fn clamp(x: usize, lo: usize, hi: usize) -> usize {
+    if lo > hi {
+        lo
+    } else if x < lo {
+        lo
+    } else if x > hi {
+        hi
+    } else {
+        x
+    }
+}

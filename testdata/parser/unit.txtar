@@ -1,0 +1,52 @@
+-- src --
+fn ok() -> Unit! {
+    return Ok(())
+}
+
+fn takesUnit(u: Unit) -> Unit {
+    let v = ()
+    takesUnit(())
+    v
+}
+-- expect --
+File
+  FnDecl
+    attrs: -
+    vis: -
+    recv: -
+    name: ok
+    generics: -
+    params: List
+    ret: TypeResult
+      TypePath
+        Path Unit
+    body: Block
+      ExprStmt
+        Return
+          Call
+            Ident Ok
+            List
+              UnitLit
+  FnDecl
+    attrs: -
+    vis: -
+    recv: -
+    name: takesUnit
+    generics: -
+    params: List
+      Param u
+        type: TypePath
+          Path Unit
+    ret: TypePath
+      Path Unit
+    body: Block
+      Let
+        pattern: PatBind v
+        init: UnitLit
+      ExprStmt
+        Call
+          Ident takesUnit
+          List
+            UnitLit
+      ExprStmt
+        Ident v

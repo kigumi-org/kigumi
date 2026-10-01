@@ -1,0 +1,20 @@
+-- src --
+fn takesUnit(u: Unit) -> Unit {
+    _ = u
+}
+
+fn ok() -> Unit! {
+    return Ok(())
+}
+
+fn main() -> Unit! {
+    let u = ()
+    takesUnit(u)
+    takesUnit(())
+    ok()?
+    print "unit=${debug(&u)}"
+    print "done"
+}
+-- stdout --
+unit=()
+done

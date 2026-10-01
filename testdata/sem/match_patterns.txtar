@@ -1,0 +1,124 @@
+-- lib/pat.kg --
+type Shape = Circle(r: Float) | Rect(w: Float, h: Float) | Dot
+
+type P = Pos(Int)
+
+fn area(s: Shape) -> Float {
+    match s {
+        Circle(r) -> r * r
+        Rect(w, h) -> w * h
+        Dot -> 0.0
+    }
+}
+
+fn bad(s: Shape, o: Int?, p: P) -> Int {
+    match s {
+        Circle(r, x) -> 1 //~ ERROR `Circle` has 1 payload, 2 patterns given
+        Rect(w, w) -> 2 //~ ERROR `w` is bound twice in one pattern
+        Some(v) -> 3 //~ ERROR `Some` is not a variant of `Shape`
+        Nope -> 4 //~ ERROR undefined constructor `Nope`
+        Rect { w, h: hh } -> 5 //~ WARNING unreachable pattern
+        Circle { r } -> 6
+        "s" -> 7 //~ ERROR literal pattern `"s"` does not fit `Shape`
+        Rect { nope } -> 8 //~ ERROR `Rect` has no field `nope`
+        _ -> 9
+    }
+    match o {
+        Some(1) -> 1
+        Some(v) -> v
+        None -> 0
+    }
+    match p {
+        Pos { v } -> 1 //~ ERROR `Pos` has positional payload
+        Pos(v) -> v
+    }
+}
+
+fn letpat(o: Int?) -> Int {
+    let Some(v) = o else { return 0 }
+    let Some(w) = o //~ ERROR refutable pattern needs `else` (`None` is not covered)
+    let x = o else { return 1 } //~ WARNING pattern is irrefutable
+    let Some(y) = o else { let q = 1 } //~ ERROR `else` block must end with `return`, `fail`, `break`, `continue` or `panic()`
+    v
+}
+
+fn isExpr(o: Int?, s: Shape) -> Bool {
+    if o is Some(v) && v > 0 { return true }
+    if s is Rect(w, _) && w > 1.0 { return true }
+    let b = s is Dot
+    b
+}
+
+fn ifLet(o: Int?) -> Int {
+    if let n = 3; n > 2 { return n }
+    0
+}
+-- expect --
+error[E803]: `Circle` has 1 payload, 2 patterns given
+  --> lib/pat.kg:15:9
+   |
+15 |         Circle(r, x) -> 1 //~ ERROR `Circle` has 1 payload, 2 patterns given
+   |         ^^^^^^^^^^^
+
+error[E809]: `w` is bound twice in one pattern
+  --> lib/pat.kg:16:17
+   |
+16 |         Rect(w, w) -> 2 //~ ERROR `w` is bound twice in one pattern
+   |                 ^
+
+error[E804]: `Some` is not a variant of `Shape`
+  --> lib/pat.kg:17:9
+   |
+17 |         Some(v) -> 3 //~ ERROR `Some` is not a variant of `Shape`
+   |         ^^^^^^
+
+error[E101]: undefined constructor `Nope`
+  --> lib/pat.kg:18:9
+   |
+18 |         Nope -> 4 //~ ERROR undefined constructor `Nope`
+   |         ^^^^
+
+warning[W801]: unreachable pattern
+  --> lib/pat.kg:19:9
+   |
+19 |         Rect { w, h: hh } -> 5 //~ WARNING unreachable pattern
+   |         ^^^^^^^^^^^^^^^
+
+error[E805]: literal pattern `"s"` does not fit `Shape`
+  --> lib/pat.kg:21:9
+   |
+21 |         "s" -> 7 //~ ERROR literal pattern `"s"` does not fit `Shape`
+   |         ^^^
+
+error[E807]: `Rect` has no field `nope`
+  --> lib/pat.kg:22:16
+   |
+22 |         Rect { nope } -> 8 //~ ERROR `Rect` has no field `nope`
+   |                ^^^^
+
+error[E806]: `Pos` has positional payload
+  --> lib/pat.kg:31:9
+   |
+31 |         Pos { v } -> 1 //~ ERROR `Pos` has positional payload
+   |         ^^^^^^^
+   = help: use `Pos(...)`
+
+error[E800]: refutable pattern needs `else` (`None` is not covered)
+  --> lib/pat.kg:38:9
+   |
+38 |     let Some(w) = o //~ ERROR refutable pattern needs `else` (`None` is not covered)
+   |         ^^^^^^
+
+warning[W800]: pattern is irrefutable
+  --> lib/pat.kg:39:9
+   |
+39 |     let x = o else { return 1 } //~ WARNING pattern is irrefutable
+   |         ^
+   = help: `else` is never taken
+
+error[E802]: `else` block must end with `return`, `fail`, `break`, `continue` or `panic()`
+  --> lib/pat.kg:40:26
+   |
+40 |     let Some(y) = o else { let q = 1 } //~ ERROR `else` block must end with `return`, `fail`, `break`, `continue` or `panic()`
+   |                          ^^^^^^^^^^^
+

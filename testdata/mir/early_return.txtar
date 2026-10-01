@@ -1,0 +1,49 @@
+-- src --
+fn g(n: Int) -> String {
+    let text = "${n}"
+    if n > 10 {
+        return text
+    }
+    text
+}
+
+print "${g(5)} ${g(20)}"
+-- expect --
+fn main.g(%n: Int) -> String {
+  b0:
+    %t1 = interp ""(%n)
+    %text = copy(%t1)
+    %t3 = const 10: Int
+    %t4 = bin >(%n, %t3)
+    branch %t4 ? b1 : b2
+  b1:
+    %t6 = copy(%text)
+    drop(%text)
+    drop(%n)
+    return %t6
+  b2:
+    %t8 = unit
+    %t5 = copy(%t8)
+    jump b3
+  b3:
+    drop(%t5)
+    %t9 = copy(%text)
+    drop(%text)
+    drop(%n)
+    return %t9
+  b4:
+    %t7 = unit
+    jump b3
+}
+fn main() -> Unit! {
+  b0:
+    %t1 = const 5: Int
+    %t2 = call g(%t1)
+    %t3 = const 20: Int
+    %t4 = call g(%t3)
+    %t0 = interp "\x00 \x00"(%t2, %t4)
+    %t5 = builtin print(%t0)
+    drop(%t5)
+    %t6 = unit
+    return %t6
+}

@@ -1,0 +1,17 @@
+/// Runs futures on the calling thread, one at a time.
+pub type Executor
+
+/// A future handed to an executor; join it to get its result.
+pub type Task[T]
+
+/// The executor of the current thread.
+pub fn local() -> Executor
+
+/// Runs the future to completion and returns its result.
+pub fn Executor.run[T](self, future: Future[T]) -> T
+
+/// Queues the future; it runs when the task is joined.
+pub fn Executor.spawn[T](self, future: Future[T]) -> Task[T]
+
+/// Waits for the task and returns its result.
+pub fn Task[T].join(move self) -> T

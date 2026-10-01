@@ -1,0 +1,38 @@
+-- lib/rec.kg --
+type Point = {
+    pub x Int
+    pub y Int
+}
+
+fn Point.withX(self, x: Int) -> Point {
+    Point { ..self, x: x }
+}
+
+fn withY(p: &Point, y: Int) -> Point {
+    Point { ..p, y: y }
+}
+
+type Res = resource {
+    pub id Int
+}
+
+fn Res.drop(move self) -> Unit {
+    _ = self
+}
+
+type Handle = {
+    pub tag Int
+    pub res Res
+}
+
+fn dup(h: &Handle) -> Handle {
+    Handle { ..h, tag: 0 } //~ ERROR cannot spread a value of type `&Handle`
+}
+
+-- expect --
+error[E822]: cannot spread a value of type `&Handle`
+  --> lib/rec.kg:28:16
+   |
+28 |     Handle { ..h, tag: 0 } //~ ERROR cannot spread a value of type `&Handle`
+   |                ^
+

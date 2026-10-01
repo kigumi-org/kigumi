@@ -1,0 +1,18 @@
+-- app/t/t.kg --
+import ffi from std/ffi
+
+fn sizeOfWrap[U](v: U) -> usize {
+    ffi.sizeOf(&v) //~ ERROR `U` cannot be passed to `sizeOf`
+}
+
+fn useWrap() -> Unit! {
+    let _ = sizeOfWrap(1)
+}
+
+-- expect --
+error[E968]: `U` cannot be passed to `sizeOf`: use a fixed-width number, `Bool`, `Char`, a pointer or a `layout(C)` record
+ --> app/t/t.kg:4:5
+  |
+4 |     ffi.sizeOf(&v) //~ ERROR `U` cannot be passed to `sizeOf`
+  |     ^^^^^^^^^^^^^
+

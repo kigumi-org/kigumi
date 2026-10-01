@@ -1,0 +1,46 @@
+-- src --
+type Handle = resource {
+    pub id Int
+}
+fn Handle.drop(move self) -> Unit {
+    print "drop ${self.id}"
+}
+fn Handle.close(move self) -> Unit {
+    print "close ${self.id}"
+}
+fn main() -> Unit! {
+    let mut h = Handle { id: 1 }
+    defer { h.close() }
+    h = Handle { id: 2 }
+}
+-- expect --
+fn main.Handle.drop(%self: Handle) -> Unit {
+  b0:
+    %t2 = field 0(%self)
+    %t1 = interp "drop \x00"(%t2)
+    %t3 = builtin print(%t1)
+    return %t3
+}
+fn main.Handle.close(%self: Handle) -> Unit {
+  b0:
+    %t2 = field 0(%self)
+    %t1 = interp "close \x00"(%t2)
+    %t3 = builtin print(%t1)
+    drop(%self)
+    return %t3
+}
+fn main.main() -> Unit! {
+  b0:
+    %t0 = const 1: Int
+    %t1 = record Handle(%t0)
+    %h = copy(%t1)
+    %t3 = const 2: Int
+    %t4 = record Handle(%t3)
+    drop(%h)
+    %h = copy(%t4)
+    %t5 = move(%h)
+    %t6 = call close(%t5)
+    %t7 = unit
+    %t8 = variant Ok(%t7)
+    return %t8
+}

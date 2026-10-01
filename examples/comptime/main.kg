@@ -1,0 +1,26 @@
+#!/usr/bin/env kigumi
+
+// A comptime block runs in the compiler's sandbox and becomes a literal:
+// consts and functions are available, runtime values and host effects are not.
+const SIZE = 8
+
+fn fib(n: Int) -> Int {
+    if n < 2 {
+        n
+    } else {
+        fib(n - 1) + fib(n - 2)
+    }
+}
+
+let table = comptime {
+    let mut s = ""
+    for i in 0..SIZE {
+        s = "${s}${fib(i)},"
+    }
+    s
+}
+let big = comptime {
+    fib(30)
+}
+print "fib table: ${table}"
+print "fib(30) = ${big}"

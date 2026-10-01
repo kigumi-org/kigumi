@@ -1,0 +1,55 @@
+-- src --
+import error from std/error
+
+type LowError = {
+    text String
+}
+
+fn LowError.message(self) -> String {
+    self.text
+}
+
+type HighError = {
+    text String
+}
+
+fn HighError.message(self) -> String {
+    self.text
+}
+
+fn low() -> Result[Int, LowError] {
+    Err(LowError { text: "disk full" })
+}
+
+fn mid() -> Int! {
+    low()?
+}
+
+fn high() -> Int! {
+    match mid() {
+        Ok(v) -> Ok(v)
+        Err(e) -> Err(error.context(e, "high failed"))
+    }
+}
+
+match high() {
+    Ok(v) -> print "ok ${v}"
+    Err(e) -> {
+        if error.as[LowError](&e) is Some(lo) {
+            print "recovered low: ${lo.text}"
+        } else {
+            print "low not found"
+        }
+        if error.as[HighError](&e) is Some(_) {
+            print "unexpected high match"
+        } else {
+            print "high not found (as expected)"
+        }
+    }
+}
+-- stdout --
+recovered low: disk full
+high not found (as expected)
+-- stderr --
+-- exit --
+0

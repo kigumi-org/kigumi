@@ -1,0 +1,25 @@
+-- app/t/t.kg --
+type Res = resource {
+    pub id Int
+}
+
+fn Res.drop(move self) -> Unit {
+    _ = self
+}
+
+fn leak(xs: Array[Res]) -> Int {
+    let r = xs.with(0, (r) => r) //~ ERROR borrow types cannot appear in return types
+    _ = r
+    0
+}
+
+fn fine(xs: Array[Res]) -> Int {
+    xs.with(0, (r) => r.id) || 0
+}
+-- expect --
+error[E220]: borrow types cannot appear in return types
+  --> app/t/t.kg:10:31
+   |
+10 |     let r = xs.with(0, (r) => r) //~ ERROR borrow types cannot appear in return types
+   |                               ^
+

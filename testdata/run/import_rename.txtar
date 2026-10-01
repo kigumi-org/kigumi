@@ -1,0 +1,12 @@
+-- src --
+import {sqrt as squareRoot, floor, toInt} from std/math
+import {min as smaller, max} from std/math
+
+let a = toInt(squareRoot(16.0)) || 0
+let b = toInt(floor(3.7)) || 0
+let c = smaller(3, 9)
+let d = toInt(smaller(3.5, 9.5)) || 0
+let e = max(3, 9)
+print "a=${a} b=${b} c=${c} d=${d} e=${e}"
+-- stdout --
+a=4 b=3 c=3 d=3 e=9

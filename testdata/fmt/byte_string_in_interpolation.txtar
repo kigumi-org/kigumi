@@ -1,0 +1,16 @@
+-- src --
+let magic = b"\x30\x82"
+print "${magic.indexOf(b"\x82") is Some(_)}"
+
+let escaped = b"\"\\"
+print "len ${escaped.len()} plain ${"abc"} byte ${b"\x41\x42"}"
+
+let nested = "${"outer ${b"\x30"} inner"}"
+-- expect --
+let magic = b"\x30\x82"
+print "${magic.indexOf(b"\x82") is Some(_)}"
+
+let escaped = b"\"\\"
+print "len ${escaped.len()} plain ${"abc"} byte ${b"\x41\x42"}"
+
+let nested = "${"outer ${b"\x30"} inner"}"

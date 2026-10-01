@@ -1,0 +1,13 @@
+-- src --
+import math from std/math
+
+let x: i32 = -2147483648
+print "start"
+let y = math.abs(x)
+print "unreachable ${y}"
+-- stdout --
+start
+-- stderr --
+panic: integer overflow
+-- exit --
+2

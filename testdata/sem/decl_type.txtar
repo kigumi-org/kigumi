@@ -1,0 +1,158 @@
+-- app/t/t.kg --
+import json from std/json
+
+type Dup = {
+    a Int
+    a String //~ ERROR duplicate field `a`
+}
+
+type DupV = X | X //~ ERROR duplicate variant `X`
+
+type Mixed = M(a: Int, String) //~ ERROR variant `M` mixes named and positional payload
+
+type Rec = { //~ ERROR `Rec` contains itself without indirection
+    next Rec
+}
+
+type Tree = Leaf | Node(kids: Array[Tree])
+
+type Opt = { //~ ERROR `Opt` contains itself without indirection
+    next Opt?
+}
+
+type Res = resource {
+    handle usize
+}
+
+fn Res.drop(move self) -> Unit {}
+
+type Plain = {
+    v Int
+}
+
+fn Plain.drop(move self) -> Unit {} //~ ERROR only `resource` types define `drop`
+
+type Res2 = resource {
+    handle usize
+}
+
+fn Res2.drop(self) -> Unit {} //~ ERROR `drop` must be `fn Res2.drop(move self) -> Unit`
+
+type Clash = {
+    name String
+}
+
+fn Clash.name(self) -> String { //~ ERROR `name` is both a field and a method of `Clash`
+    self.name
+}
+
+type Lay layout(C) = {
+    x i32
+}
+
+type LayBad layout(Foo) = { //~ ERROR unknown layout `Foo`
+    x i32
+}
+
+type LayAlias layout(C) = Int //~ ERROR `layout(...)` is only allowed on record and resource types
+
+type WithMeta = {
+    id Int {
+        json.name("id")
+        json.name("id") //~ ERROR duplicate metadata item `json.name`
+        json.omitNone()
+    }
+}
+
+type WithMetaArgs = {
+    id Int {
+        json.name("id")
+        json.name("user_id") //~ ERROR duplicate metadata item `json.name`
+    }
+}
+
+type BadMeta = {
+    id Int {
+        jsn.name("id") //~ ERROR undefined name `jsn`
+    }
+}
+-- expect --
+error[E222]: duplicate field `a`
+ --> app/t/t.kg:5:5
+  |
+5 |     a String //~ ERROR duplicate field `a`
+  |     ^^^^^^^^
+
+error[E223]: duplicate variant `X`
+ --> app/t/t.kg:8:17
+  |
+8 | type DupV = X | X //~ ERROR duplicate variant `X`
+  |                 ^
+
+error[E225]: variant `M` mixes named and positional payload
+  --> app/t/t.kg:10:14
+   |
+10 | type Mixed = M(a: Int, String) //~ ERROR variant `M` mixes named and positional payload
+   |              ^^^^^^^^^^^^^^^^
+
+error[E221]: `Rec` contains itself without indirection
+  --> app/t/t.kg:12:1
+   |
+12 | type Rec = { //~ ERROR `Rec` contains itself without indirection
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E221]: `Opt` contains itself without indirection
+  --> app/t/t.kg:18:1
+   |
+18 | type Opt = { //~ ERROR `Opt` contains itself without indirection
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E227]: only `resource` types define `drop`
+  --> app/t/t.kg:32:1
+   |
+32 | fn Plain.drop(move self) -> Unit {} //~ ERROR only `resource` types define `drop`
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E226]: `drop` must be `fn Res2.drop(move self) -> Unit`
+  --> app/t/t.kg:38:1
+   |
+38 | fn Res2.drop(self) -> Unit {} //~ ERROR `drop` must be `fn Res2.drop(move self) -> Unit`
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E224]: `name` is both a field and a method of `Clash`
+  --> app/t/t.kg:44:1
+   |
+44 | fn Clash.name(self) -> String { //~ ERROR `name` is both a field and a method of `Clash`
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E242]: unknown layout `Foo`
+  --> app/t/t.kg:52:20
+   |
+52 | type LayBad layout(Foo) = { //~ ERROR unknown layout `Foo`
+   |                    ^^^
+   = help: `C` and `packed` are known
+
+error[E241]: `layout(...)` is only allowed on record and resource types
+  --> app/t/t.kg:56:15
+   |
+56 | type LayAlias layout(C) = Int //~ ERROR `layout(...)` is only allowed on record and resource types
+   |               ^^^^^^^^
+
+error[E243]: duplicate metadata item `json.name`
+  --> app/t/t.kg:61:9
+   |
+61 |         json.name("id") //~ ERROR duplicate metadata item `json.name`
+   |         ^^^^^^^^^^^^^^
+
+error[E243]: duplicate metadata item `json.name`
+  --> app/t/t.kg:69:9
+   |
+69 |         json.name("user_id") //~ ERROR duplicate metadata item `json.name`
+   |         ^^^^^^^^^^^^^^^^^^^
+
+error[E100]: undefined name `jsn`
+  --> app/t/t.kg:75:9
+   |
+75 |         jsn.name("id") //~ ERROR undefined name `jsn`
+   |         ^^^^^^^^
+

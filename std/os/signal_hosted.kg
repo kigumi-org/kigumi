@@ -1,0 +1,44 @@
+import ffi from std/ffi
+
+/// OS signals the process can watch for.
+pub type Signal = Interrupt | Terminate | WindowChange
+
+// Signal's wire value for rt_sys_signal_*; rt_signal.c maps it to the
+// platform's SIG* macro, so no signal number needs to agree with Kigumi.
+fn Signal.code(self) -> i32 {
+    match self {
+        Interrupt -> 0
+        Terminate -> 1
+        WindowChange -> 2
+    }
+}
+
+extern(C) {
+    fn rt_sys_signal_watch(which: i32) -> i32
+    fn rt_sys_signal_pending(which: i32) -> i32
+}
+
+/// Signal delivery, obtained from `host.signals()`.
+pub type Signals
+
+/// Signal handling.
+pub fn Host.signals(self) -> Signals
+
+/// Starts watching which; a later delivery sets its pending flag until
+/// `pending` reads and clears it. The C handler only sets that flag
+/// (rt_signal.c), so it never re-enters this refcounted runtime.
+pub fn Signals.watch(self, which: Signal) -> Unit! {
+    let r = unsafe {
+        rt_sys_signal_watch(which.code())
+    }
+    if r != 0 {
+        fail ffi.lastError()
+    }
+}
+
+/// Whether which was delivered since the last call; clears the flag.
+pub fn Signals.pending(self, which: Signal) -> Bool {
+    unsafe {
+        rt_sys_signal_pending(which.code())
+    } != 0
+}

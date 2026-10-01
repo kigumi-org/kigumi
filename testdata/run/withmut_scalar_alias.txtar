@@ -1,0 +1,25 @@
+-- src --
+fn incr(x: &mut Int) -> Unit {
+    x = x + 1
+}
+
+fn setByte(x: &mut u8) -> Unit {
+    x = 250
+}
+
+let mut y = 41
+let r = &mut y
+r = 9
+print "${y}"
+
+let mut z = 41
+incr(&mut z)
+print "${z}"
+
+let mut w: u8 = 10
+setByte(&mut w)
+print "${w}"
+-- stdout --
+9
+42
+250

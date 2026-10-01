@@ -1,0 +1,14 @@
+-- src --
+fn asU64[const N: usize]() -> u64 {
+    N.toU64()
+}
+
+fn asI16[const N: i8]() -> i16 {
+    N.toI16()
+}
+
+print "${asU64[7]()}"
+print "${asI16[-3]()}"
+-- stdout --
+7
+-3

@@ -1,0 +1,11 @@
+-- src --
+import fs from std/fs
+
+let files = host.files()
+let dir = fs.Path.fromString("a/b")?
+files.mkdir(dir)?
+files.mkdir(dir)?
+files.mkdir(fs.Path.fromString("a/c")?)?
+print "ok"
+-- stdout --
+ok

@@ -1,0 +1,58 @@
+-- lib/cf.kg --
+pub interface Display {
+    fn display(self) -> String
+}
+
+pub interface Dup {
+    fn dup(self) -> Self
+}
+
+type P = {
+    pub x Int
+}
+
+fn P.display(mut self) -> String {
+    "p"
+}
+
+type Q = {
+    pub x Int
+}
+
+fn Q.dup(self) -> Q {
+    self
+}
+
+fn use(p: P, q: Q) -> Unit {
+    let d: Display = p //~ ERROR expected `Display`, found `P`
+    let e: Display = 1 //~ ERROR expected `Display`, found `Int`
+    let f: Dup = q //~ ERROR `Dup` is not object-safe
+    let g: Display = q //~ ERROR expected `Display`, found `Q`
+    let h = p.display //~ TYPE h : fn() -> String
+}
+-- expect --
+error[E400]: expected `Display`, found `P`
+  --> lib/cf.kg:26:22
+   |
+26 |     let d: Display = p //~ ERROR expected `Display`, found `P`
+   |                      ^
+
+error[E400]: expected `Display`, found `Int`
+  --> lib/cf.kg:27:22
+   |
+27 |     let e: Display = 1 //~ ERROR expected `Display`, found `Int`
+   |                      ^
+
+error[E307]: `Dup` is not object-safe (`Self` appears outside the receiver of `dup`)
+  --> lib/cf.kg:28:12
+   |
+28 |     let f: Dup = q //~ ERROR `Dup` is not object-safe
+   |            ^^^
+   = help: use it as a constraint
+
+error[E400]: expected `Display`, found `Q`
+  --> lib/cf.kg:29:22
+   |
+29 |     let g: Display = q //~ ERROR expected `Display`, found `Q`
+   |                      ^
+

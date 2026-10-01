@@ -1,0 +1,64 @@
+-- src --
+// Ledger L-181: a `for` loop whose borrowed head is a field projection
+// (`&self.items`, `&b.items`, `&mut b.items`) must retain nothing of its
+// own; the real owner still drops the elements exactly once when it goes
+// out of scope.
+type Res = resource {
+    pub id Int
+    mut tag Int
+}
+
+fn Res.drop(move self) -> Unit {
+    print "drop ${self.id}:${self.tag}"
+}
+
+type Box = {
+    mut items Array[Res]
+}
+
+fn Box.report(self) -> Unit {
+    for it in &self.items {
+        print "see ${it.id}"
+    }
+}
+
+fn reportParam(b: &Box) -> Unit {
+    for it in &b.items {
+        print "see ${it.id}"
+    }
+}
+
+fn bumpParam(b: &mut Box) -> Unit {
+    for it in &mut b.items {
+        it.tag = it.tag + 100
+    }
+}
+
+let a = Box { items: Array.of(Res { id: 1, tag: 0 }, Res { id: 2, tag: 0 }) }
+a.report()
+print "a.len=${a.items.len()}"
+
+let b = Box { items: Array.of(Res { id: 10, tag: 0 }, Res { id: 20, tag: 0 }) }
+reportParam(&b)
+print "b.len=${b.items.len()}"
+
+let mut c = Box { items: Array.of(Res { id: 100, tag: 1 }, Res { id: 200, tag: 2 }) }
+bumpParam(&mut c)
+for it in &c.items {
+    print "bumped ${it.id}:${it.tag}"
+}
+-- stdout --
+see 1
+see 2
+a.len=2
+see 10
+see 20
+b.len=2
+bumped 100:101
+bumped 200:102
+drop 200:102
+drop 100:101
+drop 20:0
+drop 10:0
+drop 2:0
+drop 1:0

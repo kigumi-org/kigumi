@@ -1,0 +1,29 @@
+/// Everything left on stdin; a bare target has no stdin.
+pub fn Stdin.readAll(self) -> String! {
+    panic()
+}
+
+/// Next line of stdin; a bare target has no stdin.
+pub fn Stdin.readLine(self) -> String?! {
+    panic()
+}
+
+/// Waits for stdin data; a bare target has no stdin.
+pub fn Stdin.readSome(self, timeoutMs: Int) -> Bytes! {
+    panic()
+}
+
+/// Reads from stdin; a bare target has no stdin.
+pub fn Stdin.read(mut self, into: &mut Array[u8], max: usize) -> usize! {
+    panic()
+}
+
+/// Writes to standard output; a bare target has no stdout.
+pub fn Stdout.write(mut self, data: Bytes) -> usize! {
+    panic()
+}
+
+/// Value of an environment variable; a bare target has no environment.
+pub fn Host.env(self, name: String) -> String? {
+    panic()
+}

@@ -1,0 +1,64 @@
+-- src --
+import task from std/task
+
+type Handle = resource {
+    pub id Int
+}
+
+fn Handle.drop(move self) -> Unit {
+    print "drop ${self.id}"
+}
+
+fn make(id: Int) -> Handle {
+    Handle { id: id }
+}
+
+async fn consume(h: Handle) -> Int {
+    print "consume ${h.id}"
+    h.id
+}
+
+fn never() -> Unit {
+    let f = consume(make(42))
+    print "created, not awaited"
+}
+
+fn awaited(ex: task.Executor) -> Unit {
+    let f = consume(make(50))
+    let _ = ex.run(f)
+    print "after await"
+}
+
+fn neverJoined(ex: task.Executor) -> Unit {
+    let t = ex.spawn(consume(make(77)))
+    print "spawned, never joined"
+}
+
+fn joined(ex: task.Executor) -> Unit {
+    let t = ex.spawn(consume(make(88)))
+    let _ = t.join()
+    print "after join"
+}
+
+never()
+print "after never"
+let ex = task.local()
+awaited(ex)
+neverJoined(ex)
+print "after neverJoined"
+joined(ex)
+print "done"
+-- stdout --
+created, not awaited
+drop 42
+after never
+consume 50
+drop 50
+after await
+spawned, never joined
+drop 77
+after neverJoined
+consume 88
+drop 88
+after join
+done

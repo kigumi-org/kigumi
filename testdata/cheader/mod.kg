@@ -1,0 +1,9 @@
+Module {
+    name: "cheader-sample"
+    kigumi: "0.1"
+}
+
+Header {
+    path: "sample.h"
+    package: "sample"
+}

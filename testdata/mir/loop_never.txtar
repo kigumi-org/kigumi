@@ -1,0 +1,61 @@
+-- src --
+fn spin(n: Int) -> Int {
+    let mut i = 0
+    for {
+        i = i + 1
+        if i > n {
+            return i
+        }
+    }
+}
+
+print "${spin(3)}"
+-- expect --
+fn main.spin(%n: Int) -> Int {
+  b0:
+    %t1 = const 0: Int
+    %i = copy(%t1)
+    jump b1
+  b1:
+    jump b2
+  b2:
+    %t3 = const 1: Int
+    %t4 = bin +(%i, %t3)
+    drop(%i)
+    %i = copy(%t4)
+    %t5 = bin >(%i, %n)
+    branch %t5 ? b5 : b6
+  b3:
+    jump b1
+  b4:
+    unreachable
+  b5:
+    %t7 = copy(%i)
+    drop(%i)
+    drop(%n)
+    return %t7
+  b6:
+    %t9 = unit
+    %t6 = copy(%t9)
+    jump b7
+  b7:
+    jump b3
+  b8:
+    %t8 = unit
+    jump b7
+  b9:
+    %t10 = unit
+    drop(%i)
+    drop(%n)
+    return %t10
+}
+fn main() -> Unit! {
+  b0:
+    %t1 = const 3: Int
+    %t2 = call spin(%t1)
+    %t0 = interp ""(%t2)
+    %t3 = builtin print(%t0)
+    drop(%t3)
+    %t4 = unit
+    return %t4
+}

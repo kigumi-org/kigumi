@@ -1,0 +1,12 @@
+/// Closes the library; a bare target has no loader.
+pub fn Handle.drop(move self) -> Unit {}
+
+/// Loads a shared library; a bare target has no dynamic loader.
+pub fn Loader.open(self, path: String) -> Library! {
+    panic()
+}
+
+/// Looks up a symbol; a bare target has no dynamic loader.
+pub fn Library.get[T](self, name: String) -> Symbol[T]! {
+    panic()
+}

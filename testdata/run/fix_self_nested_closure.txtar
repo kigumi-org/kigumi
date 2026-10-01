@@ -1,0 +1,36 @@
+-- src --
+type Counter = {
+    pub mut n Int
+}
+
+fn Counter.nested(mut self) -> Unit {
+    let outer = () => {
+        let inner = () => {
+            self.n = self.n + 1
+        }
+        inner()
+        inner()
+    }
+    outer()
+}
+
+fn Counter.nestedReset(mut self) -> Unit {
+    let outer = () => {
+        let inner = () => {
+            self = Counter { n: 42 }
+        }
+        inner()
+    }
+    outer()
+}
+
+let mut a = Counter { n: 0 }
+a.nested()
+print "nested=${a.n}"
+
+let mut b = Counter { n: 0 }
+b.nestedReset()
+print "nestedReset=${b.n}"
+-- stdout --
+nested=2
+nestedReset=42

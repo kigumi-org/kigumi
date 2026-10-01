@@ -1,0 +1,14 @@
+#!/usr/bin/env kigumi
+
+fn label(n: Int) -> String {
+    match n % 15 {
+        0 -> "FizzBuzz"
+        3 | 6 | 9 | 12 -> "Fizz"
+        5 | 10 -> "Buzz"
+        _ -> "${n}"
+    }
+}
+
+for n in 1..16 {
+    print label(n)
+}

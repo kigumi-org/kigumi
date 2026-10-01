@@ -1,0 +1,24 @@
+-- lib/peek.kg --
+// Ledger L-08/L-116: a T-typed field read through a borrowed receiver is
+// still a borrow of the caller's storage, so moving it out is rejected
+// exactly like a concrete move-only field (own_borrowed.go's moveOnly
+// used to exempt every sem.KParam local from this check).
+type Box[T] = {
+    pub value T
+}
+
+fn Box[T].peek(self) -> T {
+    self.value
+}
+-- expect --
+fn lib.Box.peek(%self: Box[T]) -> T {
+  b0:
+    %t1 = field 0(%self)
+    return %t1
+}
+error[move-from-borrow]: a value borrowed here cannot be moved out; clone it
+  --> lib/peek.kg:10:5
+   |
+10 |     self.value
+   |     ^^^^^^^^^^
+

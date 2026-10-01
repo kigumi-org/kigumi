@@ -1,0 +1,52 @@
+import ffi from std/ffi
+
+/// File system access, obtained from `host.files()`.
+pub type Files
+
+/// Validated file system path.
+pub type Path = {
+    text String
+}
+
+/// Open file for writing; close it explicitly or let the drop close it.
+pub type File = resource {
+    f *mut u8
+}
+
+/// Parses s as a path; fails when it contains a NUL byte.
+pub pure fn Path.fromString(s: String) -> Path! {
+    let b = s.bytes()
+    for i in 0..b.len() {
+        if (b.get(i) || 1) == 0 {
+            fail ffi.CError {
+                code: 0
+                text: "path contains NUL"
+            }
+        }
+    }
+    Path { text: s }
+}
+
+/// The path as text.
+pub pure noalloc fn Path.toString(self) -> String {
+    self.text
+}
+
+/// Creates or truncates the file at path and writes text into it; loops
+/// over File.write's short writes to send all of it (std/io's writeAll law).
+pub fn Files.writeText(self, path: Path, text: String) -> Unit! {
+    let mut file = self.create(path)?
+    let data = text.toBytes()
+    let mut sent: usize = 0
+    for sent < data.len() {
+        let n = file.write(data.slice(sent, data.len()).unwrap())?
+        if n == 0 {
+            fail ffi.CError {
+                code: 0
+                text: "write returned 0 with data remaining"
+            }
+        }
+        sent += n
+    }
+    file.close()
+}

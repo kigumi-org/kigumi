@@ -1,0 +1,16 @@
+-- src --
+import fs from std/fs
+import text from std/text
+
+let files = host.files()
+let p = fs.Path.fromString("log.txt")?
+files.writeText(p, "one\n")?
+let mut f = files.append(p)?
+_ = f.write("two\n".toBytes())?
+f.close()?
+let mut g = files.append(p)?
+_ = g.write("three\n".toBytes())?
+g.close()?
+print "${text.replace(files.read(p)?, "\n", "|")}"
+-- stdout --
+one|two|three|

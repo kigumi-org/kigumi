@@ -1,0 +1,18 @@
+-- src --
+import ffi from std/ffi
+
+type Counter = {
+    pub base Int
+}
+
+let pin = ffi.Pin.new(Counter { base: 42 })
+let q = pin.ptr()
+let p = pin.release()
+let viaOldPtr = unsafe { ffi.Pin.with(q, (c: &Counter) => c.base) }
+let before = unsafe { ffi.Pin.with(p, (c: &Counter) => c.base) }
+let reclaimed: ffi.Pin[Counter] = unsafe { ffi.Pin.reclaim(p) }
+let after = unsafe { ffi.Pin.with(reclaimed.ptr(), (c: &Counter) => c.base) }
+reclaimed.drop()
+print "${viaOldPtr} ${before} ${after}"
+-- stdout --
+42 42 42

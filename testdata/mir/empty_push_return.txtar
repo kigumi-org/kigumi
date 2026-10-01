@@ -1,0 +1,56 @@
+-- src --
+fn n1() -> Array[String]! {
+    let mut names: Array[String] = Array.empty()
+    names.push("b")
+    names
+}
+
+fn s(xs: Array[String]) -> usize {
+    xs.len()
+}
+
+let a = n1()?
+print "${s(a)}"
+-- expect --
+fn main.n1() -> Array[String]! {
+  b0:
+    %t0 = call empty
+    %names = copy(%t0)
+    %t2 = const "b": String
+    %t3 = borrow 1(%names)
+    %t4 = call push(%t3, %t2)
+    drop(%t4)
+    %t5 = move(%names)
+    %t6 = variant Ok(%t5)
+    nop
+    return %t6
+}
+fn main.s(%xs: Array[String]) -> usize {
+  b0:
+    %t1 = call len(%xs)
+    drop(%xs)
+    return %t1
+}
+fn main() -> Unit! {
+  b0:
+    %t0 = call n1
+    %t1 = isvariant Ok(%t0)
+    branch %t1 ? b1 : b2
+  b1:
+    %t4 = payload 0(%t0)
+    drop(%t0)
+    %a = copy(%t4)
+    %t7 = move(%a)
+    %t8 = call s(%t7)
+    %t6 = interp ""(%t8)
+    %t9 = builtin print(%t6)
+    drop(%t9)
+    nop
+    %t10 = unit
+    return %t10
+  b2:
+    %t2 = payload 0(%t0)
+    drop(%t0)
+    %t3 = variant Err(%t2)
+    return %t3
+}

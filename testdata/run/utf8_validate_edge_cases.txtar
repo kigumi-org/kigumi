@@ -1,0 +1,39 @@
+-- src --
+fn check(label: String, bs: Array[u8]) -> Unit {
+    let r = String.fromBytes(Bytes.fromArray(&bs))
+    match r {
+        Ok(s) -> print "${label}: OK len=${s.len()}"
+        Err(e) -> print "${label}: ${e.message()}"
+    }
+}
+
+check("ascii 007F", Array.of[u8](0x7F))
+check("min 2-byte 0080", Array.of[u8](0xC2, 0x80))
+check("max 2-byte 07FF", Array.of[u8](0xDF, 0xBF))
+check("min 3-byte 0800", Array.of[u8](0xE0, 0xA0, 0x80))
+check("max 3-byte FFFF", Array.of[u8](0xEF, 0xBF, 0xBF))
+check("min 4-byte 10000", Array.of[u8](0xF0, 0x90, 0x80, 0x80))
+check("max 4-byte 10FFFF", Array.of[u8](0xF4, 0x8F, 0xBF, 0xBF))
+
+check("overlong 2-byte C0 80", Array.of[u8](0xC0, 0x80))
+check("overlong 3-byte E0 80 80", Array.of[u8](0xE0, 0x80, 0x80))
+check("overlong 4-byte F0 80 80 80", Array.of[u8](0xF0, 0x80, 0x80, 0x80))
+check("surrogate ED A0 80", Array.of[u8](0xED, 0xA0, 0x80))
+check("surrogate ED BF BF", Array.of[u8](0xED, 0xBF, 0xBF))
+check("above max F4 90 80 80", Array.of[u8](0xF4, 0x90, 0x80, 0x80))
+check("lead byte too large F5 80 80 80", Array.of[u8](0xF5, 0x80, 0x80, 0x80))
+-- stdout --
+ascii 007F: OK len=1
+min 2-byte 0080: OK len=2
+max 2-byte 07FF: OK len=2
+min 3-byte 0800: OK len=3
+max 3-byte FFFF: OK len=3
+min 4-byte 10000: OK len=4
+max 4-byte 10FFFF: OK len=4
+overlong 2-byte C0 80: invalid UTF-8
+overlong 3-byte E0 80 80: invalid UTF-8
+overlong 4-byte F0 80 80 80: invalid UTF-8
+surrogate ED A0 80: invalid UTF-8
+surrogate ED BF BF: invalid UTF-8
+above max F4 90 80 80: invalid UTF-8
+lead byte too large F5 80 80 80: invalid UTF-8

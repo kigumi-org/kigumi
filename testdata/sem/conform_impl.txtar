@@ -1,0 +1,167 @@
+-- app/c/c.kg --
+pub interface Display {
+    fn display(self) -> String
+}
+
+pub interface Identified {
+    pure noalloc fn idValue(self) -> Int
+}
+
+@impl(Display, Identified)
+pub type User = {
+    pub id Int
+}
+
+pub fn User.display(self) -> String {
+    ""
+}
+
+pub pure noalloc fn User.idValue(self) -> Int {
+    self.id
+}
+
+@impl(Display) //~ ERROR `Report` does not implement `Display`: missing `fn display(self) -> String`
+pub type Report = {
+    pub total Int
+}
+
+@impl(Display) //~ ERROR `Mut` does not implement `Display`: `display` takes `mut self`, the requirement takes `self`
+pub type Mut = {
+    pub v Int
+}
+
+pub fn Mut.display(mut self) -> String {
+    ""
+}
+
+@impl(Identified) //~ ERROR `Impure` does not implement `Identified`: `idValue` is not `pure noalloc`
+pub type Impure = {
+    pub v Int
+}
+
+pub fn Impure.idValue(self) -> Int {
+    1
+}
+
+@impl(Display) //~ ERROR `Wrong` does not implement `Display`: `display` has signature `fn display(self) -> String?`, the requirement is `fn display(self) -> String`
+pub type Wrong = {
+    pub v Int
+}
+
+pub fn Wrong.display(self) -> String? {
+    None
+}
+
+@impl(Copy) //~ ERROR `Copy` is compiler-known and cannot be an `@impl` target
+pub type K = {
+    pub v Int
+}
+
+@impl(User) //~ ERROR `User` is not an interface
+pub type N = {
+    pub v Int
+}
+
+@impl(Display) //~ ERROR an alias cannot be an `@impl` target
+pub type Uid = Int
+
+@derive(Eq) //~ ERROR unknown attribute `@derive`
+pub type D = {
+    pub v Int
+}
+
+@impl(Display) //~ ERROR `@impl` applies to type declarations only
+pub fn attrFn() -> Int {
+    1
+}
+
+@impl(Display)
+pub type Gen[T] = {
+    pub v T
+}
+
+pub fn Gen[T].display(self) -> String {
+    ""
+}
+
+@impl(Display) //~ ERROR `GenBad` does not implement `Display` for every `T`: missing `fn display(self) -> String`
+pub type GenBad[T] = {
+    pub v T
+}
+
+@impl(Display, Display) //~ WARNING duplicate `@impl(Display)` after alias expansion
+pub type Twice = {
+    pub v Int
+}
+
+pub fn Twice.display(self) -> String {
+    ""
+}
+-- expect --
+error[E304]: `Report` does not implement `Display`: missing `fn display(self) -> String`
+  --> app/c/c.kg:22:7
+   |
+22 | @impl(Display) //~ ERROR `Report` does not implement `Display`: missing `fn display(self) -> String`
+   |       ^^^^^^^
+
+error[E304]: `Mut` does not implement `Display`: `display` takes `mut self`, the requirement takes `self`
+  --> app/c/c.kg:27:7
+   |
+27 | @impl(Display) //~ ERROR `Mut` does not implement `Display`: `display` takes `mut self`, the requirement takes `self`
+   |       ^^^^^^^
+
+error[E304]: `Impure` does not implement `Identified`: `idValue` is not `pure noalloc`
+  --> app/c/c.kg:36:7
+   |
+36 | @impl(Identified) //~ ERROR `Impure` does not implement `Identified`: `idValue` is not `pure noalloc`
+   |       ^^^^^^^^^^
+
+error[E304]: `Wrong` does not implement `Display`: `display` has signature `fn display(self) -> String?`, the requirement is `fn display(self) -> String`
+  --> app/c/c.kg:45:7
+   |
+45 | @impl(Display) //~ ERROR `Wrong` does not implement `Display`: `display` has signature `fn display(self) -> String?`, the requirement is `fn display(self) -> String`
+   |       ^^^^^^^
+
+error[E212]: `Copy` is compiler-known and cannot be an `@impl` target
+  --> app/c/c.kg:54:7
+   |
+54 | @impl(Copy) //~ ERROR `Copy` is compiler-known and cannot be an `@impl` target
+   |       ^^^^
+
+error[E211]: `User` is not an interface
+  --> app/c/c.kg:59:7
+   |
+59 | @impl(User) //~ ERROR `User` is not an interface
+   |       ^^^^
+
+error[E213]: an alias cannot be an `@impl` target
+  --> app/c/c.kg:64:1
+   |
+64 | @impl(Display) //~ ERROR an alias cannot be an `@impl` target
+   | ^^^^^^^^^^^^^
+
+error[E209]: unknown attribute `@derive`
+  --> app/c/c.kg:67:1
+   |
+67 | @derive(Eq) //~ ERROR unknown attribute `@derive`
+   | ^^^^^^^^^^
+   = help: bare names are compiler-known (`@impl`), metadata is dotted (`@json.name(...)`)
+
+error[E210]: `@impl` applies to type declarations only
+  --> app/c/c.kg:72:1
+   |
+72 | @impl(Display) //~ ERROR `@impl` applies to type declarations only
+   | ^^^^^^^^^^^^^
+
+error[E305]: `GenBad` does not implement `Display` for every `T`: missing `fn display(self) -> String`
+  --> app/c/c.kg:86:7
+   |
+86 | @impl(Display) //~ ERROR `GenBad` does not implement `Display` for every `T`: missing `fn display(self) -> String`
+   |       ^^^^^^^
+
+warning[W300]: duplicate `@impl(Display)` after alias expansion
+  --> app/c/c.kg:91:16
+   |
+91 | @impl(Display, Display) //~ WARNING duplicate `@impl(Display)` after alias expansion
+   |                ^^^^^^^
+

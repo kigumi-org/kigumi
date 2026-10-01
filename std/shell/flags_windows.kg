@@ -1,0 +1,10 @@
+// open(2) flag bits of this platform: mingw-w64's fcntl.h numbers these
+// like a fresh bit each (_O_CREAT 0x100, _O_TRUNC 0x200, _O_APPEND 0x8).
+fn openFlags() -> OpenFlags {
+    OpenFlags {
+        creat: 256
+        trunc: 512
+        append: 8
+        wronly: 1
+    }
+}

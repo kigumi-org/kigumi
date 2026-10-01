@@ -1,0 +1,9 @@
+/// open(2) flag bits of this platform: O_CREAT, O_TRUNC, O_APPEND, O_WRONLY.
+fn openFlags() -> OpenFlags {
+    OpenFlags {
+        creat: 64
+        trunc: 512
+        append: 1024
+        wronly: 1
+    }
+}

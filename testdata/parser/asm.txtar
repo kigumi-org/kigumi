@@ -1,0 +1,176 @@
+-- src --
+fn sysWrite(fd: usize, buf: *const u8, len: usize) -> Out[isize] {
+    unsafe {
+        asm {
+            "syscall"
+            in(rax) 1
+            in(rdi) fd
+            in(rsi) buf
+            in(rdx) len
+            value: out(rax)
+            clobber rcx, r11, abi(C)
+            options nostack, preserves_flags
+        }
+    }
+}
+
+fn spin(lock: *mut i32) -> Unit {
+    unsafe {
+        asm {
+            "1:"
+            "lock bts dword ptr [{l}], 0"
+            "jnc 2f"
+            "jmp 1b"
+            "2:"
+            l: in(reg) lock
+            n: const 4
+            h: sym handler
+            eax: inout(eax) 7
+            clobber: out(rcx)
+        }
+    }
+}
+
+type asm = {
+    x Int
+}
+
+fn make() -> asm {
+    asm { x: 1 }
+}
+-- expect --
+File
+  FnDecl
+    attrs: -
+    vis: -
+    recv: -
+    name: sysWrite
+    generics: -
+    params: List
+      Param fd
+        type: TypePath
+          Path usize
+      Param buf
+        type: TypePtr
+          TypePath
+            Path u8
+      Param len
+        type: TypePath
+          Path usize
+    ret: TypePath
+      Path Out
+      List
+        TypePath
+          Path isize
+    body: Block
+      ExprStmt
+        Unsafe
+          Block
+            ExprStmt
+              Asm
+                List
+                  AsmTemplate
+                    StringLit "syscall"
+                  AsmOperand
+                    kind: in
+                    reg: rax
+                    expr: IntLit 1
+                  AsmOperand
+                    kind: in
+                    reg: rdi
+                    expr: Ident fd
+                  AsmOperand
+                    kind: in
+                    reg: rsi
+                    expr: Ident buf
+                  AsmOperand
+                    kind: in
+                    reg: rdx
+                    expr: Ident len
+                  AsmOperand
+                    label: value
+                    kind: out
+                    reg: rax
+                  AsmClobber
+                    List
+                      Ident rcx
+                      Ident r11
+                      AsmAbi C
+                  AsmOptions
+                    List
+                      Ident nostack
+                      Ident preserves_flags
+  FnDecl
+    attrs: -
+    vis: -
+    recv: -
+    name: spin
+    generics: -
+    params: List
+      Param lock
+        type: TypePtr mut
+          TypePath
+            Path i32
+    ret: TypePath
+      Path Unit
+    body: Block
+      ExprStmt
+        Unsafe
+          Block
+            ExprStmt
+              Asm
+                List
+                  AsmTemplate
+                    StringLit "1:"
+                  AsmTemplate
+                    StringLit "lock bts dword ptr [{l}], 0"
+                  AsmTemplate
+                    StringLit "jnc 2f"
+                  AsmTemplate
+                    StringLit "jmp 1b"
+                  AsmTemplate
+                    StringLit "2:"
+                  AsmOperand
+                    label: l
+                    kind: in
+                    reg: reg
+                    expr: Ident lock
+                  AsmOperand
+                    label: n
+                    kind: const
+                    expr: IntLit 4
+                  AsmOperand
+                    label: h
+                    kind: sym
+                    expr: Ident handler
+                  AsmOperand
+                    label: eax
+                    kind: inout
+                    reg: eax
+                    expr: IntLit 7
+                  AsmOperand
+                    label: clobber
+                    kind: out
+                    reg: rcx
+  TypeDecl
+    name: asm
+    body: RecordBody
+      Field x
+        type: TypePath
+          Path Int
+  FnDecl
+    attrs: -
+    vis: -
+    recv: -
+    name: make
+    generics: -
+    params: List
+    ret: TypePath
+      Path asm
+    body: Block
+      ExprStmt
+        RecordLit
+          Ident asm
+          List
+            FieldInit x
+              IntLit 1

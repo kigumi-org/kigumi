@@ -1,0 +1,60 @@
+-- src --
+type Shape = Circle(r: Float) | Square(side: Float) | Dot
+
+fn area(s: Shape) -> Float {
+    match s {
+        Circle(r) -> 3.0 * r * r
+        Square(side) -> side * side
+        Dot -> 0.0
+    }
+}
+
+fn Shape.growCircle(mut self, r: Float) -> Unit {
+    self = Circle(r)
+}
+
+fn Shape.growViaClosure(mut self, r: Float) -> Unit {
+    let step = () => {
+        self = Circle(r)
+    }
+    step()
+}
+
+type Handle = resource {
+    pub mut id Int
+}
+
+fn Handle.drop(move self) -> Unit {
+    print "drop ${self.id}"
+}
+
+fn Handle.replace(mut self, newId: Int) -> Unit {
+    self = Handle { id: newId }
+}
+
+fn Handle.replaceViaClosure(mut self, newId: Int) -> Unit {
+    let step = () => {
+        self = Handle { id: newId }
+    }
+    step()
+}
+
+let mut s = Dot
+s.growCircle(2.0)
+print "area=${area(s)}"
+s.growViaClosure(3.0)
+print "area=${area(s)}"
+
+let mut h = Handle { id: 1 }
+h.replace(2)
+print "id=${h.id}"
+h.replaceViaClosure(3)
+print "id=${h.id}"
+-- stdout --
+area=12
+area=27
+drop 1
+id=2
+drop 2
+id=3
+drop 3

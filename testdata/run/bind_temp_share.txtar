@@ -1,0 +1,80 @@
+-- src --
+type Res = resource {
+    pub id Int
+}
+
+fn Res.drop(move self) -> Unit {
+    print "drop ${self.id}"
+}
+
+fn make(id: Int) -> Res {
+    Res { id: id }
+}
+
+fn probe(id: Int) -> Res? {
+    if id > 0 { Some(Res { id: id }) } else { None }
+}
+
+fn viaMatch(id: Int) -> Int {
+    match make(id) {
+        other -> {
+            print "matched ${other.id}"
+            other.id
+        }
+    }
+}
+
+fn viaIfLet(id: Int) -> Int {
+    if let v = make(id); v.id > 5 {
+        print "big ${v.id}"
+        v.id
+    } else {
+        print "small"
+        0
+    }
+}
+
+fn viaIs(id: Int) -> Int {
+    if make(id) is v {
+        print "is ${v.id}"
+        v.id
+    } else {
+        0
+    }
+}
+
+fn guarded(id: Int) -> String {
+    match probe(id) {
+        Some(v) if v.id > 10 -> "large ${v.id}"
+        Some(v) -> "some ${v.id}"
+        None -> "none"
+    }
+}
+
+print "r ${viaMatch(1)}"
+print "r ${viaIfLet(2)}"
+print "r ${viaIfLet(7)}"
+print "r ${viaIs(3)}"
+print guarded(4)
+print guarded(12)
+print guarded(0)
+print "done"
+-- stdout --
+matched 1
+drop 1
+r 1
+small
+drop 2
+r 0
+big 7
+drop 7
+r 7
+is 3
+drop 3
+r 3
+drop 4
+some 4
+drop 12
+large 12
+none
+done

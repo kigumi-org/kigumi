@@ -1,0 +1,43 @@
+-- src --
+type Node = Text(s: String) | Wrap(kid: Node)
+
+fn depth(n: &Node) -> Int {
+    match n {
+        Text(_) -> 0
+        Wrap(kid) -> 1 + depth(kid)
+    }
+}
+
+fn label(n: &Node) -> String {
+    match n {
+        Text(s) -> s
+        Wrap(kid) -> "(${label(kid)})"
+    }
+}
+
+type Boxed[M: Eq] = Leaf(v: M) | Nest(kid: Boxed[M])
+
+fn boxedDepth(n: &Boxed[Int]) -> Int {
+    match n {
+        Leaf(_) -> 0
+        Nest(kid) -> 1 + boxedDepth(kid)
+    }
+}
+
+let chain = Wrap(Wrap(Wrap(Text("x"))))
+print "depth=${depth(&chain)} label=${label(&chain)}"
+
+let chain2 = Wrap(Wrap(Wrap(Text("x"))))
+print "eq=${chain == chain2}"
+
+let other = Wrap(Text("y"))
+print "neq=${chain == other}"
+
+let bx: Boxed[Int] = Nest(Nest(Leaf(7)))
+let by: Boxed[Int] = Nest(Nest(Leaf(7)))
+print "boxedDepth=${boxedDepth(&bx)} boxedEq=${bx == by}"
+-- stdout --
+depth=3 label=(((x)))
+eq=true
+neq=false
+boxedDepth=2 boxedEq=true

@@ -1,0 +1,34 @@
+-- src --
+fn show(b: Bytes) -> String {
+    let mut out = ""
+    let mut i: usize = 0
+    for x in b {
+        if i > 0 {
+            out = "${out},${x}"
+        } else {
+            out = "${x}"
+        }
+        i = i + 1
+    }
+    out
+}
+
+let a = b"\x30\x82A\r\n\t\\\"\0"
+let expect = Bytes.fromArray(&Array.of[u8](0x30, 0x82, 65, 13, 10, 9, 92, 34, 0))
+print "len: ${a.len()}"
+print "bytes: ${show(a)}"
+print "matches Array.of[u8]: ${a.equals(&expect)}"
+
+let empty = b""
+print "empty len: ${empty.len()}"
+
+let hello = b"hello"
+print "hello bytes: ${show(hello)}"
+print "matches String.toBytes: ${hello.equals(&"hello".toBytes())}"
+-- stdout --
+len: 9
+bytes: 48,130,65,13,10,9,92,34,0
+matches Array.of[u8]: true
+empty len: 0
+hello bytes: 104,101,108,108,111
+matches String.toBytes: true

@@ -1,0 +1,28 @@
+-- lib/rb.kg --
+pub type Bag[T] = {
+    pub items Array[T]
+}
+
+pub fn Bag[T: Eq].has(self, item: T) -> Bool {
+    for x in self.items {
+        if x == item { return true }
+    }
+    false
+}
+
+pub fn Bag[T].count(self) -> usize {
+    self.items.len()
+}
+
+fn use(ints: Bag[Int], fns: Bag[fn(Int) -> Int]) -> Unit {
+    let a = ints.has(3) //~ TYPE a : Bool
+    let n = fns.count() //~ TYPE n : usize
+    let b = fns.has((x) => x) //~ ERROR `fn(Int) -> Int` does not satisfy `Eq`
+}
+-- expect --
+error[E300]: `fn(Int) -> Int` does not satisfy `Eq`: it cannot be derived
+  --> lib/rb.kg:19:13
+   |
+19 |     let b = fns.has((x) => x) //~ ERROR `fn(Int) -> Int` does not satisfy `Eq`
+   |             ^^^^^^^^^^^^^^^^
+

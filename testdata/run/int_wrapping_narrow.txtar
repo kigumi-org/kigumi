@@ -1,0 +1,22 @@
+-- src --
+let a: i8 = 100
+let b: i8 = 100
+let c: i8 = 3
+print "${a.wrappingAdd(b)} ${a.wrappingSub(b)} ${a.wrappingMul(b)} ${a.wrappingShiftLeft(c)} ${a.wrappingShiftRight(c)} ${a.rotateLeft(c)} ${a.rotateRight(c)}"
+
+let d: i16 = 30000
+let e: i16 = 30000
+print "${d.wrappingAdd(e)} ${d.wrappingSub(e)} ${d.wrappingMul(e)} ${d.wrappingShiftLeft(3)} ${d.wrappingShiftRight(3)} ${d.rotateLeft(3)} ${d.rotateRight(3)}"
+
+let f: u16 = 60000
+let g: u16 = 60000
+print "${f.wrappingAdd(g)} ${f.wrappingSub(g)} ${f.wrappingMul(g)} ${f.wrappingShiftLeft(3)} ${f.wrappingShiftRight(3)} ${f.rotateLeft(3)} ${f.rotateRight(3)}"
+
+let h: isize = 9223372036854775807
+let i: isize = 1
+print "${h.wrappingAdd(i)} ${h.wrappingSub(i)} ${h.wrappingMul(2)} ${h.wrappingShiftLeft(1)} ${h.wrappingShiftRight(1)} ${h.rotateLeft(1)} ${h.rotateRight(1)}"
+-- stdout --
+-56 0 16 32 12 35 -116
+-5536 0 -5888 -22144 3750 -22141 3750
+54464 0 41984 21248 7500 21255 7500
+-9223372036854775808 9223372036854775806 -2 -2 4611686018427387903 -2 -4611686018427387905

@@ -1,0 +1,93 @@
+-- src --
+let a: u8 = 3
+let b = a + 1 //~ TYPE b : u8
+let c = 1 + 2 //~ TYPE c : Int
+let d = 1.0 + 2 //~ TYPE d : Float
+let e: i32 = 1
+let f = e + a //~ ERROR `i32` and `u8` cannot be mixed
+let g = -a //~ ERROR unary `-` on unsigned `u8`
+let h = a << 2 //~ TYPE h : u8
+let i = a << e //~ ERROR shift count must be `usize`, found `i32`
+let j = a < 2 //~ TYPE j : Bool
+let k = a == 1 //~ TYPE k : Bool
+let l = "s" == "t"
+let m = "s" == 1 //~ ERROR expected `String`, found `Int`
+let n = !true
+let o = !1 //~ ERROR no operator `!` for (Int)
+let p = a & 1
+let q = a | 2 //~ TYPE q : u8
+let r = true && false
+let s = true && 1 //~ ERROR condition must be `Bool`, found `Int`
+let t = 5 % 2 //~ TYPE t : Int
+let u = -1 //~ TYPE u : Int
+let v: u8 = 300 - 45 //~ TYPE v : u8
+let v2: u8 = 200 + 100 //~ ERROR `300` does not fit `u8`
+let v3 = 1 / 0 //~ ERROR division by zero in a constant expression
+let w = a + 300 //~ ERROR `300` does not fit `u8`
+let x = 1.5 < 2.5
+let y = 'a' == 'b'
+let mut z = 1
+z += 2
+z *= "s" //~ ERROR expected `Int`, found `String`
+-- expect --
+error[E405]: `i32` and `u8` cannot be mixed
+ --> main/main.kg:6:9
+  |
+6 | let f = e + a //~ ERROR `i32` and `u8` cannot be mixed
+  |         ^^^^^
+  = help: convert explicitly
+
+error[E608]: unary `-` on unsigned `u8`
+ --> main/main.kg:7:9
+  |
+7 | let g = -a //~ ERROR unary `-` on unsigned `u8`
+  |         ^^
+
+error[E609]: shift count must be `usize`, found `i32`
+ --> main/main.kg:9:14
+  |
+9 | let i = a << e //~ ERROR shift count must be `usize`, found `i32`
+  |              ^
+
+error[E400]: expected `String`, found `Int`
+  --> main/main.kg:13:16
+   |
+13 | let m = "s" == 1 //~ ERROR expected `String`, found `Int`
+   |                ^
+
+error[E600]: no operator `!` for (Int)
+  --> main/main.kg:15:9
+   |
+15 | let o = !1 //~ ERROR no operator `!` for (Int)
+   |         ^^
+
+error[E415]: condition must be `Bool`, found `Int`
+  --> main/main.kg:19:17
+   |
+19 | let s = true && 1 //~ ERROR condition must be `Bool`, found `Int`
+   |                 ^
+
+error[E402]: `300` does not fit `u8`
+  --> main/main.kg:23:14
+   |
+23 | let v2: u8 = 200 + 100 //~ ERROR `300` does not fit `u8`
+   |              ^^^^^^^^^
+
+error[E240]: division by zero in a constant expression
+  --> main/main.kg:24:14
+   |
+24 | let v3 = 1 / 0 //~ ERROR division by zero in a constant expression
+   |              ^
+
+error[E402]: `300` does not fit `u8`
+  --> main/main.kg:25:13
+   |
+25 | let w = a + 300 //~ ERROR `300` does not fit `u8`
+   |             ^^^
+
+error[E400]: expected `Int`, found `String`
+  --> main/main.kg:30:6
+   |
+30 | z *= "s" //~ ERROR expected `Int`, found `String`
+   |      ^^^
+

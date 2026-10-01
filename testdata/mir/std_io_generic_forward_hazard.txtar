@@ -1,0 +1,127 @@
+-- lib/hazard.kg --
+// Ledger L-08/L-25/L-116: `w: W` is an interface-constrained type
+// parameter, so it is affine like any move-only type. Forwarding it into
+// io.writeAll twice moves it once and reads it again on the second call,
+// which is now a compile-time use-after-move instead of the silent
+// per-call copy this fixture used to pin (docs/limitations_v1.md). Moved
+// here from testdata/run: the program no longer builds, so it cannot
+// stay a run fixture (TestAotCorpus has no way to expect a build
+// failure).
+import io from std/io
+
+type LogWriter = {
+    mut buf Array[u8]
+}
+
+fn LogWriter.write(mut self, data: Bytes) -> usize! {
+    let mut i: usize = 0
+    for i < data.len() {
+        self.buf.push(data.get(i) || 0)
+        i += 1
+    }
+    data.len()
+}
+
+fn sendTwice[W: io.Writer](mut w: W, a: Bytes, b: Bytes) -> Unit! {
+    io.writeAll(w, a)?
+    io.writeAll(w, b)?
+}
+-- expect --
+fn lib.LogWriter.write(%self: LogWriter, %data: Bytes) -> usize! {
+  b0:
+    %t2 = const 0: usize
+    %i = copy(%t2)
+    jump b1
+  b1:
+    %t4 = call len(%data)
+    %t5 = bin <(%i, %t4)
+    branch %t5 ? b2 : b4
+  b2:
+    %t6 = copy(%i)
+    %t7 = call get(%data, %t6)
+    %t9 = isvariant Some(%t7)
+    branch %t9 ? b5 : b6
+  b3:
+    jump b1
+  b4:
+    %t19 = unit
+    drop(%t19)
+    %t20 = call len(%data)
+    %t21 = variant Ok(%t20)
+    drop(%i)
+    drop(%data)
+    return %t21
+  b5:
+    %t10 = payload 0(%t7)
+    %t8 = copy(%t10)
+    jump b7
+  b6:
+    %t11 = unit
+    %t12 = const 0: u8
+    %t8 = copy(%t12)
+    jump b7
+  b7:
+    drop(%t7)
+    %t13 = field 0(%self)
+    %t14 = borrow 1(%t13)
+    %t15 = call push(%t14, %t8)
+    drop(%t15)
+    %t16 = const 1: usize
+    %t17 = bin +(%i, %t16)
+    drop(%i)
+    %i = copy(%t17)
+    %t18 = unit
+    jump b3
+}
+fn lib.sendTwice(%w: W, %a: Bytes, %b: Bytes, %$w:W:write: fn(Bytes) -> usize!) -> Unit! {
+  b0:
+    %t4 = move(%w)
+    %t5 = copy(%a)
+    %t6 = copy(%$w:W:write)
+    %t7 = call writeAll(%t4, %t5, %t6)
+    %t8 = isvariant Ok(%t7)
+    branch %t8 ? b1 : b2
+  b1:
+    %t11 = payload 0(%t7)
+    drop(%t7)
+    drop(%t11)
+    %t12 = move(%w)
+    %t13 = copy(%b)
+    %t14 = copy(%$w:W:write)
+    %t15 = call writeAll(%t12, %t13, %t14)
+    %t16 = isvariant Ok(%t15)
+    branch %t16 ? b3 : b4
+  b2:
+    %t9 = payload 0(%t7)
+    drop(%t7)
+    drop(%$w:W:write)
+    drop(%b)
+    drop(%a)
+    nop
+    %t10 = variant Err(%t9)
+    return %t10
+  b3:
+    %t19 = payload 0(%t15)
+    drop(%t15)
+    %t20 = variant Ok(%t19)
+    drop(%$w:W:write)
+    drop(%b)
+    drop(%a)
+    nop
+    return %t20
+  b4:
+    %t17 = payload 0(%t15)
+    drop(%t15)
+    drop(%$w:W:write)
+    drop(%b)
+    drop(%a)
+    nop
+    %t18 = variant Err(%t17)
+    return %t18
+}
+error[use-after-move]: `w` was moved; it cannot be used again
+  --> lib/hazard.kg:26:17
+   |
+26 |     io.writeAll(w, b)?
+   |                 ^
+

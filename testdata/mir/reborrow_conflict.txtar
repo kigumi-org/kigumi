@@ -1,0 +1,47 @@
+-- lib/reborrow.kg --
+fn inner(out: &mut Array[u8], v: usize) -> Unit {
+    if v > 0 { out.push(1) }
+}
+
+fn outer() -> Unit {
+    let mut xs = Array.empty[u8]()
+    let r = &mut xs
+    inner(r, xs.len())
+}
+-- expect --
+fn lib.inner(%out: &mut Array[u8], %v: usize) -> Unit {
+  b0:
+    %t2 = const 0: usize
+    %t3 = bin >(%v, %t2)
+    branch %t3 ? b1 : b2
+  b1:
+    %t5 = const 1: u8
+    %t6 = borrow 1(%out)
+    %t7 = call push(%t6, %t5)
+    %t4 = copy(%t7)
+    jump b3
+  b2:
+    %t8 = unit
+    %t4 = copy(%t8)
+    jump b3
+  b3:
+    drop(%v)
+    return %t4
+}
+fn lib.outer() -> Unit {
+  b0:
+    %t0 = call empty
+    %xs = copy(%t0)
+    %t2 = borrow 1(%xs)
+    %r = copy(%t2)
+    %t4 = call len(%xs)
+    %t5 = call inner(%r, %t4)
+    drop(%xs)
+    return %t5
+}
+error[borrow-conflict]: `xs` is exclusively borrowed and cannot be used here
+ --> lib/reborrow.kg:8:14
+  |
+8 |     inner(r, xs.len())
+  |              ^^^^^^^
+

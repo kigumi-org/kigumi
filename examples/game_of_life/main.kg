@@ -1,0 +1,65 @@
+#!/usr/bin/env kigumi
+
+// Conway's Game of Life on a small torus, a few generations of a glider.
+const width: usize = 8
+const height: usize = 6
+
+fn at(cells: &Array[Bool], x: usize, y: usize) -> Bool {
+    cells.get((y % height) * width + x % width) is Some(true)
+}
+
+fn neighbours(cells: &Array[Bool], x: usize, y: usize) -> Int {
+    let deltas: Array[usize] = Array.of(0, 1, 2)
+    let mut n = 0
+    for dy in &deltas {
+        for dx in &deltas {
+            if dx == 1 && dy == 1 {
+                continue
+            }
+            if at(cells, x + width + dx - 1, y + height + dy - 1) {
+                n += 1
+            }
+        }
+    }
+    n
+}
+
+fn step(cells: &Array[Bool]) -> Array[Bool] {
+    let mut next = Array.empty[Bool]()
+    for y in 0..height {
+        for x in 0..width {
+            let n = neighbours(cells, x, y)
+            next.push(if at(cells, x, y) {
+                n == 2 || n == 3
+            } else {
+                n == 3
+            })
+        }
+    }
+    next
+}
+
+fn render(cells: &Array[Bool]) -> Unit {
+    for y in 0..height {
+        let mut row = ""
+        for x in 0..width {
+            row = row.concat(if at(cells, x, y) {
+                "#"
+            } else {
+                "."
+            })
+        }
+        print row
+    }
+}
+
+let glider: Array[usize] = Array.of(1, 2 + width, 2 * width, 1 + 2 * width, 2 + 2 * width)
+let mut cells = Array.empty[Bool]()
+for i in 0..(width * height) {
+    cells.push(glider.contains(i))
+}
+for gen in 0..3 {
+    print "generation ${gen}"
+    render(&cells)
+    cells = step(&cells)
+}

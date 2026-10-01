@@ -1,0 +1,14 @@
+-- src --
+fn applyOnce[A, R, F: FnOnce[fn(A) -> R]](f: F, value: A) -> R {
+    f(value)
+}
+
+fn applyOnceRev[F: FnOnce[fn(A) -> R], A, R](f: F, value: A) -> R {
+    f(value)
+}
+
+let a = applyOnce((x: Int) => x + 1, 41)
+let b = applyOnceRev((x: Int) => "n=${x}", 7)
+print "a=${a} b=${b}"
+-- stdout --
+a=42 b=n=7

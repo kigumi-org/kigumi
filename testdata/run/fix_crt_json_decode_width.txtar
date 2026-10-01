@@ -1,0 +1,16 @@
+-- src --
+import json from std/json
+
+let big = json.decode[i32]("5000000000")
+match big {
+    Ok(_) -> print "ok-big"
+    Err(_) -> print "err-big"
+}
+let small = json.decode[i32]("100")
+match small {
+    Ok(x) -> print "ok:${x}"
+    Err(_) -> print "err-small"
+}
+-- stdout --
+err-big
+ok:100

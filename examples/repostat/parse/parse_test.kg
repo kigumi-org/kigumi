@@ -1,0 +1,20 @@
+import test from std/test
+
+test "authorとdayを分解する" {
+    let c = parseLine(1, "Alice\t2026-08-01")?
+    test.expectEq(c.author, "Alice")?
+    test.expectEq(c.day, "2026-08-01")?
+}
+
+test "タブのない行を拒否する" {
+    if parseLine(1, "garbage") is Ok(_) {
+        // ADTへのis判定
+        fail test.failure("should not parse")
+    }
+}
+
+test "空入力はEmpty" {
+    if parseAll("") is Err(Empty) {} else {
+        fail test.failure("expected Empty")
+    }
+}

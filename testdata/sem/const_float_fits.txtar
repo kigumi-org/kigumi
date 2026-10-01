@@ -1,0 +1,11 @@
+-- app/t/t.kg --
+const OK: f32 = 16777216
+const BAD: f32 = 16777217 //~ ERROR `16777217` does not fit `f32`
+const WIDE: f64 = 16777217
+-- expect --
+error[E402]: `16777217` does not fit `f32`
+ --> app/t/t.kg:2:18
+  |
+2 | const BAD: f32 = 16777217 //~ ERROR `16777217` does not fit `f32`
+  |                  ^^^^^^^^
+

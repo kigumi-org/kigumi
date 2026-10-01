@@ -1,0 +1,63 @@
+-- src --
+import ffi from std/ffi
+
+type Inner layout(C) = {
+    pub tag u8
+    pub weight f64
+}
+
+type Point layout(C) = {
+    pub x i32
+    pub y i64
+    pub inner Inner
+}
+
+type Tight layout(packed) = {
+    pub a u8
+    pub b i32
+}
+
+// layout(C, packed) and layout(packed, C) must agree regardless of
+// attribute order: both are packed, so both size to 5, not 8 (COMP-017).
+type TightCPacked layout(C, packed) = {
+    pub a u8
+    pub b i32
+}
+
+type TightPackedC layout(packed, C) = {
+    pub a u8
+    pub b i32
+}
+
+// b sits at packed byte offset 1, unaligned for i64's natural align 8;
+// round-tripping through CValue exercises cReader/cWriter's raw
+// load/store on that misaligned field (COMP-018).
+type Wide layout(packed) = {
+    pub a u8
+    pub b i64
+}
+
+let p = Point { x: 3, y: 4, inner: Inner { tag: 1, weight: 2.5 } }
+print "${ffi.sizeOf(&p)} ${ffi.sizeOf(&Tight { a: 1, b: 2 })} ${ffi.sizeOf(&TightCPacked { a: 1, b: 2 })} ${ffi.sizeOf(&TightPackedC { a: 1, b: 2 })}"
+let cv = ffi.CValue.new(p)
+let back = cv.get()
+print "${back.x} ${back.y} ${back.inner.tag} ${back.inner.weight}"
+cv.set(&Point { x: -7, y: 9, inner: Inner { tag: 255, weight: 0.5 } })
+let again = unsafe { ffi.readRecord(ffi.toConst(cv.ptr())) }
+print "${again.x} ${again.y} ${again.inner.tag} ${again.inner.weight}"
+unsafe {
+    ffi.writeRecord(cv.ptr(), &Point { x: 1, y: 2, inner: Inner { tag: 3, weight: 4.0 } })
+}
+print "${cv.get().x} ${cv.get().inner.weight}"
+let wv = ffi.CValue.new(Wide { a: 9, b: 1234567890123 })
+let wback = wv.get()
+print "${wback.a} ${wback.b}"
+wv.set(&Wide { a: 7, b: -42 })
+print "${wv.get().a} ${wv.get().b}"
+-- stdout --
+32 5 5 5
+3 4 1 2.5
+-7 9 255 0.5
+1 4
+9 1234567890123
+7 -42

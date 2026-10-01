@@ -1,0 +1,21 @@
+-- pkga/reader.kg --
+pub type Reader = {
+    pub tag Int
+}
+-- main/main.kg --
+import {Reader} from pkga
+
+type Event = Reader(Int) | Written(Int) //~ ERROR variant `Reader` collides with the imported type `Reader`
+
+fn use() -> Unit {
+    let e = Reader { tag: 1 }
+    _ = e
+}
+-- expect --
+error[E255]: variant `Reader` collides with the imported type `Reader`
+ --> main/main.kg:3:14
+  |
+3 | type Event = Reader(Int) | Written(Int) //~ ERROR variant `Reader` collides with the imported type `Reader`
+  |              ^^^^^^^^^^
+  = help: rename it
+

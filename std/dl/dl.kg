@@ -1,0 +1,25 @@
+import alloc from std/alloc
+
+/// The dynamic loader; loading a library runs its initialisers, so the
+/// capability comes from `host.dl()` in the entry file like fs and net.
+pub type Loader
+
+/// A loaded library handle; closed when the last Library or Symbol sharing it is dropped.
+pub type Handle = resource {
+    h *mut u8
+}
+
+/// A shared library loaded with the dynamic loader; unloaded when it and
+/// every Symbol taken from it are dropped.
+pub type Library = resource {
+    lease alloc.Shared[Handle]
+}
+
+/// A function symbol of a loaded library, typed as T; keeps the library loaded.
+pub type Symbol[T] = resource {
+    lease alloc.Shared[Handle]
+    addr *const u8
+}
+
+/// Calls the symbol with T's parameters and result; the compiler lowers the call.
+pub unsafe fn Symbol[T].call(self) -> Unit

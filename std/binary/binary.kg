@@ -1,0 +1,132 @@
+/// Fixed-width and variable-width integers inside a byte string, most- or
+/// least-significant byte first. Every reader returns None rather than
+/// panicking when the range runs past the end, so a parser can decide.
+///
+/// The two bytes at `at`, most-significant first; None past the end.
+pub pure fn u16Be(data: Bytes, at: usize) -> u16? {
+    match uintBe(data, at, 2) {
+        Some(v) -> v.toU16()
+        None -> None
+    }
+}
+
+/// The four bytes at `at`, most-significant first; None past the end.
+pub pure fn u32Be(data: Bytes, at: usize) -> u32? {
+    match uintBe(data, at, 4) {
+        Some(v) -> v.toU32()
+        None -> None
+    }
+}
+
+/// The eight bytes at `at`, most-significant first; None past the end.
+pub pure fn u64Be(data: Bytes, at: usize) -> u64? {
+    uintBe(data, at, 8)
+}
+
+/// The two bytes at `at`, least-significant first; None past the end.
+pub pure fn u16Le(data: Bytes, at: usize) -> u16? {
+    match uintLe(data, at, 2) {
+        Some(v) -> v.toU16()
+        None -> None
+    }
+}
+
+/// The four bytes at `at`, least-significant first; None past the end.
+pub pure fn u32Le(data: Bytes, at: usize) -> u32? {
+    match uintLe(data, at, 4) {
+        Some(v) -> v.toU32()
+        None -> None
+    }
+}
+
+/// The eight bytes at `at`, least-significant first; None past the end.
+pub pure fn u64Le(data: Bytes, at: usize) -> u64? {
+    uintLe(data, at, 8)
+}
+
+/// `n` bytes at `at`, most-significant first; None past the end or for n > 8.
+pub pure fn uintBe(data: Bytes, at: usize, n: usize) -> u64? {
+    if n > 8 || at + n > data.len() {
+        return None
+    }
+    let mut v: u64 = 0
+    let mut i: usize = 0
+    for i < n {
+        v = (v << 8) | data[at + i].toU64()
+        i = i + 1
+    }
+    Some(v)
+}
+
+/// `n` bytes at `at`, least-significant first; None past the end or for n > 8.
+pub pure fn uintLe(data: Bytes, at: usize, n: usize) -> u64? {
+    if n > 8 || at + n > data.len() {
+        return None
+    }
+    let mut v: u64 = 0
+    let mut i: usize = 0
+    for i < n {
+        v = v | (data[at + i].toU64() << (i * 8))
+        i = i + 1
+    }
+    Some(v)
+}
+
+/// Appends the low `n` bytes of `v`, most-significant first. `n` above 8 pads
+/// with leading zeroes.
+pub pure fn putUintBe(out: &mut Array[u8], v: u64, n: usize) -> Unit {
+    let mut i: usize = 0
+    for i < n {
+        let left = n - 1 - i
+        if left >= 8 {
+            out.push(0)
+        } else {
+            out.push(((v >> (left * 8)) & 255).toU8() || 0)
+        }
+        i = i + 1
+    }
+}
+
+/// Appends the low `n` bytes of `v`, least-significant first. `n` above 8 pads
+/// with trailing zeroes.
+pub pure fn putUintLe(out: &mut Array[u8], v: u64, n: usize) -> Unit {
+    let mut i: usize = 0
+    for i < n {
+        if i >= 8 {
+            out.push(0)
+        } else {
+            out.push(((v >> (i * 8)) & 255).toU8() || 0)
+        }
+        i = i + 1
+    }
+}
+
+/// Appends `v` as two bytes, most-significant first.
+pub pure fn putU16Be(out: &mut Array[u8], v: u16) -> Unit {
+    putUintBe(out, v.toU64(), 2)
+}
+
+/// Appends `v` as four bytes, most-significant first.
+pub pure fn putU32Be(out: &mut Array[u8], v: u32) -> Unit {
+    putUintBe(out, v.toU64(), 4)
+}
+
+/// Appends `v` as eight bytes, most-significant first.
+pub pure fn putU64Be(out: &mut Array[u8], v: u64) -> Unit {
+    putUintBe(out, v, 8)
+}
+
+/// Appends `v` as two bytes, least-significant first.
+pub pure fn putU16Le(out: &mut Array[u8], v: u16) -> Unit {
+    putUintLe(out, v.toU64(), 2)
+}
+
+/// Appends `v` as four bytes, least-significant first.
+pub pure fn putU32Le(out: &mut Array[u8], v: u32) -> Unit {
+    putUintLe(out, v.toU64(), 4)
+}
+
+/// Appends `v` as eight bytes, least-significant first.
+pub pure fn putU64Le(out: &mut Array[u8], v: u64) -> Unit {
+    putUintLe(out, v, 8)
+}

@@ -1,0 +1,50 @@
+-- lib/pipe.kg --
+import shell from std/shell
+import coreutil from std/shell/coreutil
+
+type Box = {
+    pub n Int
+}
+
+fn Box.scale(self, by: Int, extra: Int) -> Int {
+    self.n * by + extra
+}
+
+fn upper(s: String, n: Int) -> Int {
+    n
+}
+
+fn normalize(s: String) -> String {
+    s
+}
+
+fn count(s: String) -> usize {
+    s.len()
+}
+
+fn count(xs: Array[Int]) -> usize {
+    xs.len()
+}
+
+fn parse(s: String, base: Int) -> Int! {
+    base
+}
+
+fn use(sh: shell.Shell) -> Unit! {
+    let a = "x" |> normalize //~ TYPE a : String
+    let b = "x" |> (v) => v.len() //~ TYPE b : usize
+    let c = "x" |> upper(3) //~ TYPE c : Int
+    let d = "x" |> count //~ TYPE d : usize
+    let f = normalize
+    let e = "x" |> f //~ TYPE e : String
+    let plan = $"git log" |> coreutil.grep("a") //~ TYPE plan : Plan
+    let captured = (plan |> shell.capture(sh))? //~ TYPE captured : Captured
+    let g = 1 |> (v) => v + 1 //~ TYPE g : Int
+    let box = Box { n: 2 }
+    let h = 3 |> box.scale(4) //~ TYPE h : Int
+    let i = "x" |> parse(10)? //~ TYPE i : Int
+    let j = 5 |> Some //~ TYPE j : Int?
+    let k = "x" |> upper 3 //~ TYPE k : Int
+    let l = "x" |> normalize |> count //~ TYPE l : usize
+}
+-- expect --

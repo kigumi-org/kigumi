@@ -1,0 +1,22 @@
+-- src --
+// Ledger L-186: a `View['a]` record stores a borrow of the `Bytes` it reads
+// from plus an offset, sliced twice without copying the backing bytes.
+type View['a] = { pub data &'a Bytes, pub off usize, pub len usize }
+
+fn View['a].sub(self, start: usize, n: usize) -> View['a] {
+    View { data: self.data, off: self.off + start, len: n }
+}
+
+fn View['a].at(self, i: usize) -> u8 {
+    self.data[self.off + i]
+}
+
+fn main() -> Unit! {
+    let buf = Bytes.fromArray(&Array.of(10, 20, 30, 40, 50, 60, 70, 80))
+    let whole = View { data: &buf, off: 0, len: buf.len() }
+    let middle = whole.sub(2, 4)
+    let last = middle.sub(1, 2)
+    print "whole=${whole.at(0)},${whole.at(7)} middle=${middle.at(0)},${middle.at(3)} last=${last.at(0)},${last.at(1)}"
+}
+-- stdout --
+whole=10,80 middle=30,60 last=40,50

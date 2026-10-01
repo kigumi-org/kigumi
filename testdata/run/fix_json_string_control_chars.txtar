@@ -1,0 +1,19 @@
+-- src --
+import json from std/json
+
+match json.decode[String]("\"a\tb\"") {
+    Ok(_) -> print "raw-tab: unexpected"
+    Err(e) -> print "raw-tab: ${e.message()}"
+}
+match json.decode[String]("\"a\nb\"") {
+    Ok(_) -> print "raw-newline: unexpected"
+    Err(e) -> print "raw-newline: ${e.message()}"
+}
+let a = json.decode[String]("\"a\\tb\"")?
+let b = json.decode[String]("\"a\\nb\"")?
+print "escaped ok: ${a} / ${b}"
+-- stdout --
+raw-tab: invalid JSON
+raw-newline: invalid JSON
+escaped ok: a	b / a
+b

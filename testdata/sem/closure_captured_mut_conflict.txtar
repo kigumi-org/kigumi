@@ -1,0 +1,55 @@
+-- app/t/t.kg --
+type Item = {
+    pub mut count Int
+}
+
+fn Item.update(mut self, delta: Int) -> Unit {
+    self.count = self.count + delta
+}
+
+fn conflict() -> Unit {
+    let mut item = Item { count: 0 }
+    let touch = () => { item.update(1) }
+    item.update(1) //~ ERROR a `mut self` call on `item` conflicts
+    touch()
+}
+
+fn conflictViaReassign() -> Unit {
+    let mut item = Item { count: 0 }
+    let reset = () => { item = Item { count: 0 } }
+    item.update(1) //~ ERROR a `mut self` call on `item` conflicts
+    reset()
+}
+
+fn onlyThroughClosure() -> Unit {
+    let mut item = Item { count: 0 }
+    let touch = () => { item.update(1) }
+    touch()
+    touch()
+}
+
+fn noCapture() -> Unit {
+    let mut item = Item { count: 0 }
+    item.update(1)
+    item.update(1)
+}
+
+fn readOnlyCapture() -> Unit {
+    let mut item = Item { count: 0 }
+    let peek = () => item.count
+    item.update(1)
+    let _ = peek()
+}
+-- expect --
+error[E980]: a `mut self` call on `item` conflicts with a closure that shares its identity cell (ledger L-152)
+  --> app/t/t.kg:12:5
+   |
+12 |     item.update(1) //~ ERROR a `mut self` call on `item` conflicts
+   |     ^^^^
+
+error[E980]: a `mut self` call on `item` conflicts with a closure that shares its identity cell (ledger L-152)
+  --> app/t/t.kg:19:5
+   |
+19 |     item.update(1) //~ ERROR a `mut self` call on `item` conflicts
+   |     ^^^^
+

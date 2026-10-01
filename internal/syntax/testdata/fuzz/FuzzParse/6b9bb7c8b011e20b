@@ -1,0 +1,2 @@
+go test fuzz v1
+string("fn f(a:t -> Int \x10\x00a + 1 }\n")

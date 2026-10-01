@@ -1,0 +1,60 @@
+-- lib/ov.kg --
+fn show(x: Int) -> String {
+    "int"
+}
+
+fn show(x: String) -> String {
+    "str"
+}
+
+fn show(x: Int, y: Int) -> Bool {
+    true
+}
+
+fn opt(x: Int) -> Int {
+    1
+}
+
+fn opt(x: Int?) -> String {
+    "opt"
+}
+
+fn gen[T](x: T) -> Float {
+    1.0
+}
+
+fn gen(x: String) -> Int {
+    4
+}
+
+fn use() -> Unit {
+    let a = show(1) //~ TYPE a : String
+    let b = show("s") //~ TYPE b : String
+    let c = show(1, 2) //~ TYPE c : Bool
+    let d = opt(1) //~ TYPE d : Int
+    let e: Int? = None
+    let f = opt(e) //~ TYPE f : String
+    let g = gen("s") //~ TYPE g : Int
+    let h = gen(1.5) //~ TYPE h : Float
+    let k: fn(Int) -> String = show
+    let m = k(1) //~ TYPE m : String
+    let n: fn(String) -> String = show
+}
+
+type Box = {
+    pub v Int
+}
+
+fn Box.get(self) -> Int {
+    self.v
+}
+
+fn Box.get(self, d: Int) -> String {
+    "d"
+}
+
+fn methods(b: Box) -> Unit {
+    let x = b.get() //~ TYPE x : Int
+    let y = b.get(1) //~ TYPE y : String
+}
+-- expect --

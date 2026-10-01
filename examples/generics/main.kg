@@ -1,0 +1,68 @@
+#!/usr/bin/env kigumi
+
+import map from std/map
+
+interface Shape {
+    fn area(self) -> Float
+    fn name(self) -> String
+}
+
+type Square = {
+    pub side Float
+}
+
+type Circle = {
+    pub radius Float
+}
+
+fn Square.area(self) -> Float {
+    self.side * self.side
+}
+
+fn Square.name(self) -> String {
+    "square"
+}
+
+fn Circle.area(self) -> Float {
+    3.14159 * self.radius * self.radius
+}
+
+fn Circle.name(self) -> String {
+    "circle"
+}
+
+fn describe[T: Shape](s: T) -> String {
+    "${s.name()} with area ${s.area()}"
+}
+
+fn largest(shapes: Array[Shape]) -> Shape? {
+    let mut best: Shape? = None
+    let mut bestArea = -1.0
+    for s in shapes {
+        let a = s.area()
+        if a > bestArea {
+            bestArea = a
+            best = Some(s)
+        }
+    }
+    best
+}
+
+fn tally[K: Eq + Hash](items: Array[K]) -> map.Map[K, Int] {
+    let mut counts = map.empty[K, Int]()
+    for item in items {
+        let count = (counts.get(&item) || 0) + 1
+        counts.set(item, count)
+    }
+    counts
+}
+
+print describe(Square { side: 2.0 })
+print describe(Circle { radius: 1.0 })
+let shapes = Array.of[Shape](Square { side: 2.0 }, Circle { radius: 1.0 }, Square { side: 1.0 })
+if largest(shapes) is Some(s) {
+    print "largest: ${s.name()}"
+}
+for e in tally(Array.of("a", "b", "a")).entries() {
+    print "${e.key} x${e.value}"
+}

@@ -1,0 +1,18 @@
+-- src --
+type App = {
+    pub view pure? fn(Int) -> Int
+}
+
+pure fn pureView(x: Int) -> Int {
+    x + 1
+}
+
+fn plainView(x: Int) -> Int {
+    x * 2
+}
+
+let a = App { view: pureView }
+let b = App { view: plainView }
+print "a=${a.view(10)} b=${b.view(10)}"
+-- stdout --
+a=11 b=20

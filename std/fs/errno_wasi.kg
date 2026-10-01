@@ -1,0 +1,11 @@
+/// errno(3) EEXIST on this platform: wasi-libc's __errno_values.h maps
+/// EEXIST to __WASI_ERRNO_EXIST (wasi/api.h), 20, not musl/Linux's 17.
+fn eexist() -> i32 {
+    20
+}
+
+/// errno(3) EINTR on this platform: wasi-libc's __errno_values.h maps
+/// EINTR to __WASI_ERRNO_INTR (wasi/api.h), 27, not musl/Linux's 4.
+fn eintr() -> i32 {
+    27
+}

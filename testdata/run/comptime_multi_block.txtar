@@ -1,0 +1,19 @@
+-- src --
+let a = comptime {
+    1 == 1
+}
+print "a: ${a}"
+
+let b = comptime {
+    42
+}
+print "b: ${b}"
+
+let c = comptime {
+    "hi"
+}
+print "c: ${c}"
+-- stdout --
+a: true
+b: 42
+c: hi

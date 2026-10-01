@@ -1,0 +1,21 @@
+-- src --
+let mut total = 0
+for i in 0..3 {
+    for j in 0..3 {
+        total = total + (i + j)
+    }
+}
+print "${total}"
+
+let mut matches = 0
+for i in 0..3 {
+    for j in 0..3 {
+        if i == j {
+            matches = matches + 1
+        }
+    }
+}
+print "${matches}"
+-- stdout --
+18
+3

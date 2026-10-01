@@ -1,0 +1,14 @@
+-- src --
+fn helper() -> Unit! {
+    let x = 1
+}
+-- expect --
+fn main.helper() -> Unit! {
+  b0:
+    %t0 = const 1: Int
+    %x = copy(%t0)
+    drop(%x)
+    %t2 = unit
+    %t3 = variant Ok(%t2)
+    return %t3
+}

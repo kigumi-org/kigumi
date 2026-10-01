@@ -1,0 +1,16 @@
+#!/usr/bin/env kigumi
+
+// Calling C from Kigumi: declare the signatures in an extern block and call
+// them inside unsafe. This needs `kigumi build`; the interpreter has no FFI.
+extern(C) {
+    fn abs(x: i32) -> i32
+    fn labs(x: i64) -> i64
+}
+
+let a = unsafe {
+    abs(-3)
+}
+let b = unsafe {
+    labs(-40)
+}
+print "abs=${a} labs=${b}"

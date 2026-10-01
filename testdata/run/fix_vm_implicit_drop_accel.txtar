@@ -1,0 +1,22 @@
+-- src --
+import fs from std/fs
+
+fn writeAndDrop(files: fs.Files, path: fs.Path) -> Unit! {
+    let mut f = files.create(path)?
+    _ = f.write("hi".toBytes())?
+    // f drops implicitly here; no explicit close() or drop().
+}
+
+fn fdCount(files: fs.Files) -> usize! {
+    let entries = files.list(fs.Path.fromString("/proc/self/fd")?)?
+    entries.len()
+}
+
+let files = host.files()
+let path = fs.Path.fromString("drop_fd_test.txt")?
+let before = fdCount(files)?
+writeAndDrop(files, path)?
+let after = fdCount(files)?
+print "closed=${before == after}"
+-- stdout --
+closed=true

@@ -1,0 +1,20 @@
+-- src --
+fn ok() -> Unit! {
+    return Ok(())
+}
+
+fn takesUnit(u: Unit) -> Unit {
+    let v=()
+    takesUnit(())
+    v
+}
+-- expect --
+fn ok() -> Unit! {
+    return Ok(())
+}
+
+fn takesUnit(u: Unit) -> Unit {
+    let v = ()
+    takesUnit(())
+    v
+}

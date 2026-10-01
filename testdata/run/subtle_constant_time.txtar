@@ -1,0 +1,22 @@
+-- src --
+import subtle from std/crypto/subtle
+
+let a = Bytes.fromArray(&Array.of[u8](1, 2, 3, 4))
+let b = Bytes.fromArray(&Array.of[u8](1, 2, 3, 4))
+let c = Bytes.fromArray(&Array.of[u8](1, 2, 9, 4))
+let d = Bytes.fromArray(&Array.of[u8](1, 2, 3))
+let empty = Bytes.zeros(0)
+
+print "equal: ${subtle.constantTimeEq(a, b)}"
+print "unequal same length: ${subtle.constantTimeEq(a, c)}"
+print "different lengths: ${subtle.constantTimeEq(a, d)}"
+print "empty vs empty: ${subtle.constantTimeEq(empty, Bytes.zeros(0))}"
+print "empty vs nonempty: ${subtle.constantTimeEq(empty, a)}"
+print "same value twice: ${subtle.constantTimeEq(a, a)}"
+-- stdout --
+equal: true
+unequal same length: false
+different lengths: false
+empty vs empty: true
+empty vs nonempty: false
+same value twice: true

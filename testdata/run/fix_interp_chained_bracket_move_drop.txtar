@@ -1,0 +1,44 @@
+-- src --
+// Ledger L-172 (追記 2026-09-27): the bracket-indexing fix only resolved the
+// moved place when the access chain had exactly one `[...]` hop; a chain
+// with two or more (nested, or a bracket on both sides of a field access)
+// still fell through to no-op and double-dropped under --engine interp.
+type Res = resource {
+    pub id Int
+}
+
+type Row = {
+    pub cells Array[Res]
+}
+
+fn Res.drop(move self) -> Unit {
+    print "drop ${self.id}"
+}
+
+fn consume(x: Res) -> Unit {
+    print "consume ${x.id}"
+}
+
+fn byNestedIndex() -> Unit {
+    let mut xs = Array.of(Array.of(Res { id: 1 }, Res { id: 2 }))
+    consume(xs[0][1])
+}
+
+fn byIndexFieldIndex() -> Unit {
+    let mut rows = Array.of(Row { cells: Array.of(Res { id: 3 }) })
+    let r: usize = 0
+    consume(rows[r].cells[0])
+}
+
+byNestedIndex()
+print "nested"
+byIndexFieldIndex()
+print "index field index"
+-- stdout --
+consume 2
+drop 2
+drop 1
+nested
+consume 3
+drop 3
+index field index

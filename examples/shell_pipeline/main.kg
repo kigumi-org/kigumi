@@ -1,0 +1,16 @@
+#!/usr/bin/env kigumi
+
+import shell from std/shell
+import {grep} from std/shell/coreutil
+import text from std/text
+
+// A $"..." literal builds a plan; nothing runs until it is piped into a sink.
+let sh = host.shell()
+let plan = $"printf 'apple\\nbanana\\navocado\\n'" |> grep("^a")
+let captured = (plan |> shell.capture(sh))?
+for line in text.lines(String.fromBytes(captured.stdout)?) {
+    print "match: ${line}"
+}
+let status = ($"true" |> shell.run(sh))?
+shell.check(status)?
+print "pipeline ok"

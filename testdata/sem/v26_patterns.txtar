@@ -1,0 +1,56 @@
+-- lib/pat.kg --
+type Shape = Circle(r: Float) | Dot
+
+type P = {
+    pub x Int
+}
+
+type TimeoutError = {
+    pub url String
+}
+
+fn TimeoutError.message(self) -> String {
+    self.url
+}
+
+fn use(x: Int?, s: Shape, p: P, xs: Array[Int?], e: Error) -> Int {
+    let Some(v) = x //~ ERROR refutable pattern needs `else` (`None` is not covered)
+    for Some(w) in xs {} //~ ERROR refutable pattern needs `else` (`None` is not covered)
+    let P { x: px } = p
+    let Circle(r) = s else { return 0 }
+    let q = p else { return 1 } //~ WARNING pattern is irrefutable
+    let Some(a) = x else { return 2 }
+    let b = a + 1 //~ TYPE b : Int
+    if e is TimeoutError(t) {
+        let u = t.url //~ TYPE u : String
+    }
+    if e is TimeoutError { return 3 }
+    if s is Circle(rr) { return 4 } //~ WARNING `s` is already known to be `Circle`
+    px
+}
+-- expect --
+error[E800]: refutable pattern needs `else` (`None` is not covered)
+  --> lib/pat.kg:16:9
+   |
+16 |     let Some(v) = x //~ ERROR refutable pattern needs `else` (`None` is not covered)
+   |         ^^^^^^
+
+error[E800]: refutable pattern needs `else` (`None` is not covered)
+  --> lib/pat.kg:17:9
+   |
+17 |     for Some(w) in xs {} //~ ERROR refutable pattern needs `else` (`None` is not covered)
+   |         ^^^^^^
+
+warning[W800]: pattern is irrefutable
+  --> lib/pat.kg:20:9
+   |
+20 |     let q = p else { return 1 } //~ WARNING pattern is irrefutable
+   |         ^
+   = help: `else` is never taken
+
+warning[W802]: `s` is already known to be `Circle`
+  --> lib/pat.kg:27:8
+   |
+27 |     if s is Circle(rr) { return 4 } //~ WARNING `s` is already known to be `Circle`
+   |        ^^^^^^^^^^^^^^
+

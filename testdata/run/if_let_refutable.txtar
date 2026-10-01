@@ -1,0 +1,72 @@
+-- src --
+type Res = resource {
+    pub id Int
+}
+
+fn Res.drop(move self) -> Unit {
+    print "drop ${self.id}"
+}
+
+type Shape = Circle(r: Int) | Square(s: Int)
+
+fn describe(x: Shape) -> String {
+    if let Circle(r) = x {
+        "circle ${r}"
+    } else {
+        "square"
+    }
+}
+
+fn bigCircle(x: Shape) -> Bool {
+    if let Circle(r) = x; r > 10 {
+        true
+    } else {
+        false
+    }
+}
+
+fn probe(id: Int) -> Res? {
+    if id > 0 { Some(Res { id: id }) } else { None }
+}
+
+fn take(id: Int) -> Int {
+    if let Some(r) = probe(id) {
+        r.id
+    } else {
+        0
+    }
+}
+
+fn firstOr(o: &Int?) -> Int {
+    if let Some(v) = o {
+        v
+    } else {
+        -1
+    }
+}
+
+fn maybeLog(o: Int?) -> Unit {
+    if let Some(v) = o {
+        print "got ${v}"
+    }
+}
+
+print describe(Circle(5))
+print describe(Square(9))
+print "${bigCircle(Circle(20))} ${bigCircle(Circle(3))}"
+print "${take(1)} ${take(0)}"
+let some: Int? = Some(7)
+let none: Int? = None
+print "${firstOr(&some)} ${firstOr(&none)}"
+maybeLog(Some(9))
+maybeLog(None)
+print "done"
+-- stdout --
+circle 5
+square
+true false
+drop 1
+1 0
+7 -1
+got 9
+done

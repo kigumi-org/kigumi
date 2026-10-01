@@ -1,0 +1,18 @@
+extern(C) {
+    fn _errno() -> *mut i32
+}
+
+/// The C errno of the calling thread.
+pub fn errno() -> i32 {
+    unsafe {
+        readI32(toConst(_errno()))
+    }
+}
+
+/// Sets errno to 0; call before a C function that reports failure by
+/// clearing errno and leaving it clear, e.g. readdir(3) at end of stream.
+pub fn clearErrno() -> Unit {
+    unsafe {
+        writeI32(_errno(), 0)
+    }
+}

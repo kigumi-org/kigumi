@@ -1,0 +1,89 @@
+-- src --
+import json from std/json
+import map from std/map
+
+type Money = resource {
+    pub cents Int
+}
+
+fn Money.drop(move self) -> Unit {
+    print "drop ${self.cents}"
+}
+
+type Pair[T] = {
+    pub first T
+    pub second T
+}
+
+type Author = {
+    pub name String
+    pub tags Array[String]
+    pub alias String?
+}
+
+type Shape = Circle(r: Float) | Rect(w: Int, h: Int) | Dot
+
+type Wrapper = {
+    pub secret Int
+}
+
+fn Wrapper.toJson(self) -> json.Value {
+    json.Value.Text("hidden")
+}
+
+fn Wrapper.fromJson(value: json.Value) -> Wrapper! {
+    Ok(Wrapper { secret: 42 })
+}
+
+type Sheet = {
+    pub owners map.Map[String, Author]
+    pub shapes Array[Shape]
+    pub pair Pair[Int]
+    pub wrapped Wrapper
+    pub byte u8
+    pub letter Char
+}
+
+let sheet = Sheet {
+    owners: map.empty[String, Author]()
+    shapes: Array.of(Circle(1.5), Rect(2, 3), Dot)
+    pair: Pair { first: 1, second: 2 }
+    wrapped: Wrapper { secret: 7 }
+    byte: 200
+    letter: 'k'
+}
+let text = json.encode(sheet)?
+print text
+let back = json.decode[Sheet](text)?
+print "shapes=${back.shapes.len()} pair=${back.pair.first + back.pair.second} wrapped=${back.wrapped.secret} byte=${back.byte} letter=${back.letter}"
+let author = json.decode[Author]("{\"name\": \"amy\", \"tags\": [\"a\", \"b\"]}")?
+print "${author.name} ${author.tags.len()} ${author.alias is None}"
+match json.decode[Shape]("{\"Rect\": [1]}") {
+    Ok(_) -> print "unexpected"
+    Err(e) -> print "error: ${e.message()}"
+}
+match json.decode[Shape]("\"Blob\"") {
+    Ok(_) -> print "unexpected"
+    Err(e) -> print "error: ${e.message()}"
+}
+match json.decode[u8]("300") {
+    Ok(_) -> print "unexpected"
+    Err(e) -> print "error: ${e.message()}"
+}
+let zero: Float = 0.0
+match json.encode(zero / zero) {
+    Ok(_) -> print "unexpected"
+    Err(e) -> print "error: ${e.message()}"
+}
+let money = Money { cents: 5 }
+print json.encode(money)?
+-- stdout --
+{"owners":{},"shapes":[{"Circle":[1.5]},{"Rect":[2,3]},"Dot"],"pair":{"first":1,"second":2},"wrapped":"hidden","byte":200,"letter":"k"}
+shapes=3 pair=3 wrapped=42 byte=200 letter=k
+amy 2 true
+error: `Rect` takes 2 payload value(s), found 1
+error: `Blob` is not a variant of Shape
+error: 300 does not fit u8
+error: cannot encode non-finite float NaN as JSON
+drop 5
+{"cents":5}

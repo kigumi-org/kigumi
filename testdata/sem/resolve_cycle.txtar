@@ -1,0 +1,58 @@
+-- module --
+deps: lib
+-- app/a/a.kg --
+import b from app/b //~ WARNING unused import `b`
+import ext from lib/ext //~ ERROR import cycle between modules: app/a -> app/b -> lib/ext //~ WARNING unused import `ext`
+
+pub type A = {
+    pub b Int
+}
+-- app/b/b.kg --
+import a from app/a //~ WARNING unused import `a`
+
+pub type B = {
+    pub a Int
+}
+-- lib/ext/e.kg --
+import a from app/a //~ ERROR import cycle between modules: app/a -> app/b -> lib/ext //~ WARNING unused import `a`
+
+pub fn e() -> Int {
+    1
+}
+-- expect --
+warning[W100]: unused import `b`
+ --> app/a/a.kg:1:8
+  |
+1 | import b from app/b //~ WARNING unused import `b`
+  |        ^
+
+error[E113]: import cycle between modules: app/a -> app/b -> lib/ext
+ --> app/a/a.kg:2:1
+  |
+2 | import ext from lib/ext //~ ERROR import cycle between modules: app/a -> app/b -> lib/ext //~ WARNING unused import `ext`
+  | ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning[W100]: unused import `ext`
+ --> app/a/a.kg:2:8
+  |
+2 | import ext from lib/ext //~ ERROR import cycle between modules: app/a -> app/b -> lib/ext //~ WARNING unused import `ext`
+  |        ^^^
+
+warning[W100]: unused import `a`
+ --> app/b/b.kg:1:8
+  |
+1 | import a from app/a //~ WARNING unused import `a`
+  |        ^
+
+error[E113]: import cycle between modules: app/a -> app/b -> lib/ext
+ --> lib/ext/e.kg:1:1
+  |
+1 | import a from app/a //~ ERROR import cycle between modules: app/a -> app/b -> lib/ext //~ WARNING unused import `a`
+  | ^^^^^^^^^^^^^^^^^^^
+
+warning[W100]: unused import `a`
+ --> lib/ext/e.kg:1:8
+  |
+1 | import a from app/a //~ ERROR import cycle between modules: app/a -> app/b -> lib/ext //~ WARNING unused import `a`
+  |        ^
+

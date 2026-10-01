@@ -1,0 +1,8 @@
+-- src --
+fn place(order: Int, into: String) -> Unit {
+    place(order:1,into:"box")
+}
+-- expect --
+fn place(order: Int, into: String) -> Unit {
+    place(order: 1, into: "box")
+}

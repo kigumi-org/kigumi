@@ -1,0 +1,59 @@
+-- src --
+fn add(a: Int, b: Int) -> Int {
+    a + b
+}
+
+fn pick(flag: Bool, x: Int?) -> Int {
+    if flag { x || 0 } else { 1 }
+}
+
+let total = add(1, 2)
+print "total=${total}"
+-- expect --
+fn main.add(%a: Int, %b: Int) -> Int {
+  b0:
+    %t2 = bin +(%a, %b)
+    drop(%b)
+    drop(%a)
+    return %t2
+}
+fn main.pick(%flag: Bool, %x: Int?) -> Int {
+  b0:
+    branch %flag ? b1 : b2
+  b1:
+    %t4 = isvariant Some(%x)
+    branch %t4 ? b4 : b5
+  b2:
+    %t8 = const 1: Int
+    %t2 = copy(%t8)
+    jump b3
+  b3:
+    drop(%x)
+    drop(%flag)
+    return %t2
+  b4:
+    %t5 = payload 0(%x)
+    %t3 = copy(%t5)
+    jump b6
+  b5:
+    %t6 = unit
+    %t7 = const 0: Int
+    %t3 = copy(%t7)
+    jump b6
+  b6:
+    %t2 = copy(%t3)
+    jump b3
+}
+fn main() -> Unit! {
+  b0:
+    %t0 = const 1: Int
+    %t1 = const 2: Int
+    %t2 = call add(%t0, %t1)
+    %total = copy(%t2)
+    %t4 = interp "total=\x00"(%total)
+    %t5 = builtin print(%t4)
+    drop(%t5)
+    drop(%total)
+    %t6 = unit
+    return %t6
+}

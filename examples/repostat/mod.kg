@@ -1,0 +1,4 @@
+Module {
+    name: "repostat"
+    kigumi: "0.1"
+}

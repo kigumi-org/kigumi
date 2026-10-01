@@ -1,0 +1,12 @@
+/// Text of a C errno value; a bare target has no message table.
+pub fn errorText(code: i32) -> String {
+    "errno ${code}"
+}
+
+/// The C errno of the calling thread; a bare target has none.
+pub fn errno() -> i32 {
+    0
+}
+
+/// Sets errno to 0; a bare target has none.
+pub fn clearErrno() -> Unit {}

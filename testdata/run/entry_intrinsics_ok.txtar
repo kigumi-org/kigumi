@@ -1,0 +1,15 @@
+-- src --
+const Greeting = "hello"
+
+type Box = {
+    value Int
+}
+
+fn describe(b: Box) -> String {
+    "value=${b.value}"
+}
+
+let b = Box { value: 42 }
+print "${Greeting}, ${describe(b)}"
+-- stdout --
+hello, value=42

@@ -1,0 +1,36 @@
+-- app/t/t.kg --
+type A = {
+    pub bs Array[B]
+    pub f fn(Int) -> Int
+}
+
+type B = {
+    pub as_ Array[A]
+}
+
+type Node = {
+    pub children Array[Node]
+    pub value Int
+}
+
+fn needsSend[T: Send](x: &T) -> Unit {}
+
+fn use(a: A, b: B, node: Node) -> Unit {
+    needsSend(&a) //~ ERROR `A` does not satisfy `Send`: it cannot move to another thread
+    needsSend(&b) //~ ERROR `B` does not satisfy `Send`: it cannot move to another thread
+    needsSend(&node)
+}
+
+-- expect --
+error[E300]: `A` does not satisfy `Send`: it cannot move to another thread
+  --> app/t/t.kg:18:5
+   |
+18 |     needsSend(&a) //~ ERROR `A` does not satisfy `Send`: it cannot move to another thread
+   |     ^^^^^^^^^^^^
+
+error[E300]: `B` does not satisfy `Send`: it cannot move to another thread
+  --> app/t/t.kg:19:5
+   |
+19 |     needsSend(&b) //~ ERROR `B` does not satisfy `Send`: it cannot move to another thread
+   |     ^^^^^^^^^^^^
+

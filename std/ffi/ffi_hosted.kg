@@ -1,0 +1,10 @@
+extern(C) {
+    fn strerror(code: i32) -> *const u8
+}
+
+/// Text of a C errno value.
+pub fn errorText(code: i32) -> String {
+    unsafe {
+        string(strerror(code))
+    }
+}

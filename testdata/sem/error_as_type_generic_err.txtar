@@ -1,0 +1,18 @@
+-- app/t/t.kg --
+import error from std/error
+
+fn useVar[T](e: &Error) -> T? {
+    error.as[T](e) //~ ERROR `T` cannot be `std/error.as`'s type argument
+}
+
+fn useIt(e: &Error) -> Unit! {
+    let _ = useVar[String](e)
+}
+
+-- expect --
+error[E970]: `T` cannot be `std/error.as`'s type argument: it must be a concrete type that implements `Error`
+ --> app/t/t.kg:4:5
+  |
+4 |     error.as[T](e) //~ ERROR `T` cannot be `std/error.as`'s type argument
+  |     ^^^^^^^^^^^^^
+

@@ -1,0 +1,39 @@
+-- src --
+// Ledger L-172: passing a value straight out of `Array.takeAt` (through
+// `Option.unwrap`, whose body matches on `move self`) or straight out of a
+// `move self` field dropped it twice under --engine interp: the match's
+// bound clone and the untouched self both thought they owned it.
+type Res = resource {
+    pub id Int
+}
+
+fn Res.drop(move self) -> Unit {
+    print "drop ${self.id}"
+}
+
+type Wrapper = {
+    pub inner Res
+}
+
+fn consume(x: Res) -> Unit {
+    print "consume ${x.id}"
+}
+
+fn Wrapper.give(move self) -> Unit {
+    consume(self.inner)
+}
+
+let mut xs = Array.of(Res { id: 1 })
+consume(xs.takeAt(0).unwrap())
+print "took"
+
+let w = Wrapper { inner: Res { id: 2 } }
+w.give()
+print "gave"
+-- stdout --
+consume 1
+drop 1
+took
+consume 2
+drop 2
+gave

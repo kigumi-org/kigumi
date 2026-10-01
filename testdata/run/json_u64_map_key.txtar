@@ -1,0 +1,16 @@
+-- src --
+import json from std/json
+import map from std/map
+
+let mut m = map.empty[u64, String]()
+m.set(18446744073709551615, "big")
+m.set(7, "small")
+print "size=${m.len()}"
+let encoded = json.encode(m)?
+let back = json.decode[map.Map[u64, String]](encoded)?
+print "back-big=${back.get(&18446744073709551615) || "missing"}"
+print "back-small=${back.get(&7) || "missing"}"
+-- stdout --
+size=2
+back-big=big
+back-small=small

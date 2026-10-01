@@ -1,0 +1,26 @@
+-- src --
+type Counter = {
+    mut n usize
+}
+
+fn bump(c: &mut Counter) -> Unit {
+    c.n = c.n + 1
+}
+
+fn bumpArr(a: &mut Array[Int]) -> Unit {
+    a[0] = a[0] + 1
+}
+
+let mut ctr = Counter { n: 0 }
+bump(&mut ctr)
+print "n=${ctr.n}"
+bump(&mut ctr)
+print "n=${ctr.n}"
+
+let mut arr = Array.of(10, 20, 30)
+bumpArr(&mut arr)
+print "arr0=${arr[0]}"
+-- stdout --
+n=1
+n=2
+arr0=11

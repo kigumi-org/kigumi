@@ -1,0 +1,67 @@
+-- src --
+type ParseError = BadLine(line: Int) | Empty
+
+fn ParseError.message(self) -> String {
+    match self {
+        BadLine(line) -> "bad line ${line}"
+        Empty -> "empty input"
+    }
+}
+
+fn parse(s: String) -> Result[usize, ParseError] {
+    if s.len() == 0 { fail Empty }
+    if s[0] == 120 { fail BadLine(1) }
+    s.len()
+}
+
+fn find(xs: Array[Int], want: Int) -> Int? {
+    for x in xs {
+        if x == want { return x }
+    }
+    None
+}
+
+fn total(inputs: Array[String]) -> Result[usize, ParseError] {
+    let mut sum: usize = 0
+    for s in inputs {
+        sum += parse(s)?
+    }
+    sum
+}
+
+fn widen(s: String) -> Unit! {
+    let n = parse(s)?
+    print "widened ${n}"
+}
+
+print "found=${find(Array.of(1, 2, 3), 2) || -1} missing=${find(Array.of(1), 9) || -1}"
+match total(Array.of("ab", "cde")) {
+    Ok(n) -> print "sum=${n}"
+    Err(e) -> print "err=${e.message()}"
+}
+match total(Array.of("ab", "")) {
+    Ok(n) -> print "sum=${n}"
+    Err(e) -> print "err=${e.message()}"
+}
+let fallback = parse("x") || (e) => {
+    print "handled ${e.message()}"
+    0
+}
+print "fallback=${fallback}"
+widen("ok")?
+let r: Result[usize, ParseError] = parse("zz")
+if r is Ok(v) { print "v=${v}" }
+widen("xyz")?
+print "unreachable"
+-- stdout --
+found=2 missing=-1
+sum=5
+err=empty input
+handled bad line 1
+fallback=0
+widened 2
+v=2
+-- stderr --
+error: bad line 1
+-- exit --
+1

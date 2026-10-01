@@ -1,0 +1,13 @@
+-- lib/lib.kg --
+pub type Point = {
+    pub x Int
+    pub y Int
+}
+
+pub pure fn origin() -> Point {
+    Point {
+        x: 0
+        y: 0
+    }
+}
+-- expect --

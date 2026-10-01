@@ -1,0 +1,71 @@
+-- lib/cl.kg --
+import fs from std/fs
+
+fn write(files: fs.Files, path: fs.Path) -> Unit! {
+    let mut f = files.create(path)?
+    errdefer _ = files.remove(path)
+    defer _ = files.remove(path)
+    defer {
+        _ = files.remove(path)
+    }
+    _ = f.write("x".toBytes())?
+    f.close()?
+}
+
+fn bad(files: fs.Files, path: fs.Path) -> Unit! {
+    defer files.remove(path)? //~ ERROR `?` is not allowed in a cleanup body
+    defer files.remove(path) //~ ERROR unused `Unit!`
+    defer return //~ ERROR `return` is not allowed in a cleanup body
+    errdefer fail Empty //~ ERROR `fail` is not allowed in a cleanup body //~ ERROR undefined name `Empty`
+    for i in 0..3 {
+        defer break //~ ERROR `break` is not allowed in a cleanup body
+    }
+}
+
+fn noFail() -> Unit {
+    errdefer _ = 1 //~ ERROR `errdefer` in a function that cannot fail
+}
+-- expect --
+error[E715]: `?` is not allowed in a cleanup body
+  --> lib/cl.kg:15:11
+   |
+15 |     defer files.remove(path)? //~ ERROR `?` is not allowed in a cleanup body
+   |           ^^^^^^^^^^^^^^^^^^^
+
+error[E700]: unused `Unit!`
+  --> lib/cl.kg:16:11
+   |
+16 |     defer files.remove(path) //~ ERROR unused `Unit!`
+   |           ^^^^^^^^^^^^^^^^^
+   = help: use `?`, `||`, or `_ =`
+
+error[E715]: `return` is not allowed in a cleanup body
+  --> lib/cl.kg:17:11
+   |
+17 |     defer return //~ ERROR `return` is not allowed in a cleanup body
+   |           ^^^^^^
+
+error[E715]: `fail` is not allowed in a cleanup body
+  --> lib/cl.kg:18:14
+   |
+18 |     errdefer fail Empty //~ ERROR `fail` is not allowed in a cleanup body //~ ERROR undefined name `Empty`
+   |              ^^^^^^^^^^
+
+error[E100]: undefined name `Empty`
+  --> lib/cl.kg:18:19
+   |
+18 |     errdefer fail Empty //~ ERROR `fail` is not allowed in a cleanup body //~ ERROR undefined name `Empty`
+   |                   ^^^^^
+
+error[E715]: `break` is not allowed in a cleanup body
+  --> lib/cl.kg:20:15
+   |
+20 |         defer break //~ ERROR `break` is not allowed in a cleanup body
+   |               ^^^^^
+
+error[E716]: `errdefer` in a function that cannot fail
+  --> lib/cl.kg:25:5
+   |
+25 |     errdefer _ = 1 //~ ERROR `errdefer` in a function that cannot fail
+   |     ^^^^^^^^^^^^^^
+

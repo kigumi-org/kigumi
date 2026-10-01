@@ -1,0 +1,37 @@
+-- src --
+import json from std/json
+import random from std/random
+import time from std/time
+
+type Shape = Circle(r: Float) | Rect(w: Float, h: Float) | Dot
+
+fn describe(s: Shape) -> String {
+    match s {
+        Circle(r) -> "circle ${r}"
+        Rect(w, h) -> "rect ${w}x${h}"
+        Dot -> "dot"
+    }
+}
+
+let shapes = Array.of(Circle(1.5), Dot, Rect(2.0, 3.0))
+let text = json.encode(shapes)?
+print text
+let back = json.decode[Array[Shape]](text)?
+for s in back {
+    print describe(s)
+}
+match json.decode[Shape]("{\"Circle\": []}") {
+    Ok(_) -> print "unexpected"
+    Err(e) -> print "error: ${e.message()}"
+}
+let mut rng = random.seeded(42)
+print "rng=${rng.nextInt(100)} ${rng.nextInt(100)} ${rng.nextInt(100)} unit=${rng.nextFloat() < 1.0}"
+print "epoch=${time.fromUnixMillis(0).utc()} later=${time.fromUnixMillis(1757116923000).utc()}"
+-- stdout --
+[{"Circle":[1.5]},"Dot",{"Rect":[2.0,3.0]}]
+circle 1.5
+dot
+rect 2x3
+error: `Circle` takes 1 payload value(s), found 0
+rng=13 91 58 unit=true
+epoch=1970-01-01T00:00:00Z later=2025-09-06T00:02:03Z

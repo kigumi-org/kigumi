@@ -1,0 +1,4 @@
+Module {
+    name: "word_count"
+    kigumi: "0.1"
+}

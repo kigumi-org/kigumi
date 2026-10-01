@@ -1,0 +1,72 @@
+-- app/t/t.kg --
+type Vec = {
+    pub x Int
+    pub y Int
+}
+
+pure fn Vec.equals(self, other: &Vec) -> Bool {
+    self.x == other.x
+}
+
+pure fn Vec.compareTo(self, other: &Vec) -> Ordering {
+    self.x.compareTo(&other.x)
+}
+
+pure fn Vec.hash(self) -> u64 {
+    self.x.hash()
+}
+
+fn Vec.equalsIgnoringY(self, other: Vec) -> Bool {
+    self.x == other.x
+}
+
+fn Vec.==(a: Vec, b: Vec) -> Bool { //~ ERROR `Vec.==` cannot be defined
+    a.x == b.x
+}
+
+fn Vec.<(a: Vec, b: Vec) -> Bool { //~ ERROR `Vec.<` cannot be defined
+    a.x < b.x
+}
+
+fn impure(v: Vec) -> Vec {
+    v
+}
+
+type Loud = {
+    pub n Int
+}
+
+fn Loud.equals(self, other: &Loud) -> Bool {
+    self.n == other.n
+}
+
+fn useAll(a: Vec, b: &Vec, l: Loud, m: &Loud) -> Bool {
+    a == b && a < b && a != b && l == m //~ ERROR `Loud` defines `equals` but it does not satisfy `Eq`
+}
+
+interface Same {
+    fn equals(self, other: Self) -> Bool
+}
+
+-- expect --
+error[E962]: `Vec.==` cannot be defined: the comparison operators call the `Eq` protocol
+  --> app/t/t.kg:22:1
+   |
+22 | fn Vec.==(a: Vec, b: Vec) -> Bool { //~ ERROR `Vec.==` cannot be defined
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   = help: implement that instead
+
+error[E962]: `Vec.<` cannot be defined: the comparison operators call the `Ord` protocol
+  --> app/t/t.kg:26:1
+   |
+26 | fn Vec.<(a: Vec, b: Vec) -> Bool { //~ ERROR `Vec.<` cannot be defined
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   = help: implement that instead
+
+error[E965]: `Loud` defines `equals` but it does not satisfy `Eq`: `equals` is not `pure`
+  --> app/t/t.kg:43:34
+   |
+43 |     a == b && a < b && a != b && l == m //~ ERROR `Loud` defines `equals` but it does not satisfy `Eq`
+   |                                  ^^^^^^
+   = help: nothing is derived over it
+

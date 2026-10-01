@@ -1,0 +1,209 @@
+-- lib/own_await.kg --
+async fn work() -> Int {
+    1
+}
+
+async fn awaitOnce() -> Int {
+    let f = work()
+    await f
+}
+
+async fn awaitTwice() -> Int {
+    let f = work()
+    let a = await f
+    let b = await f
+    a + b
+}
+
+async fn awaitValueTwice() -> Int {
+    let g = work
+    let f = g()
+    let a = await f
+    let b = await f
+    a + b
+}
+
+type Box = {
+    fut Future[Int]
+}
+
+async fn awaitField(b: Box) -> Int {
+    let x = await b.fut
+    let y = await b.fut
+    x + y
+}
+
+async fn awaitParam(f: Future[Int]) -> Int {
+    let a = await f
+    let b = await f
+    a + b
+}
+
+async fn awaitLoop() -> Int {
+    let f = work()
+    let mut total = 0
+    for i in 0..3 {
+        total = total + await f
+    }
+    total
+}
+-- expect --
+fn lib.work() -> Int {
+  b0:
+    %t0 = const 1: Int
+    return %t0
+}
+fn lib.awaitOnce() -> Int {
+  b0:
+    %t0 = fnitem work
+    %t1 = builtin future(%t0)
+    %f = copy(%t1)
+    %t3 = move(%f)
+    %t4 = builtin await(%t3)
+    nop
+    return %t4
+}
+fn lib.awaitTwice() -> Int {
+  b0:
+    %t0 = fnitem work
+    %t1 = builtin future(%t0)
+    %f = copy(%t1)
+    %t3 = move(%f)
+    %t4 = builtin await(%t3)
+    %a = copy(%t4)
+    %t6 = move(%f)
+    %t7 = builtin await(%t6)
+    %b = copy(%t7)
+    %t9 = bin +(%a, %b)
+    drop(%b)
+    drop(%a)
+    nop
+    return %t9
+}
+fn lib.awaitValueTwice() -> Int {
+  b0:
+    %t0 = fnitem work async
+    %g = copy(%t0)
+    %t2 = callv(%g)
+    %f = copy(%t2)
+    %t4 = move(%f)
+    %t5 = builtin await(%t4)
+    %a = copy(%t5)
+    %t7 = move(%f)
+    %t8 = builtin await(%t7)
+    %b = copy(%t8)
+    %t10 = bin +(%a, %b)
+    drop(%b)
+    drop(%a)
+    nop
+    drop(%g)
+    return %t10
+}
+fn lib.awaitField(%b: Box) -> Int {
+  b0:
+    %t1 = field 0(%b)
+    %t2 = builtin await(%t1)
+    %x = copy(%t2)
+    %t4 = field 0(%b)
+    %t5 = builtin await(%t4)
+    %y = copy(%t5)
+    %t7 = bin +(%x, %y)
+    drop(%y)
+    drop(%x)
+    drop(%b)
+    return %t7
+}
+fn lib.awaitParam(%f: Future[Int]) -> Int {
+  b0:
+    %t1 = move(%f)
+    %t2 = builtin await(%t1)
+    %a = copy(%t2)
+    %t4 = move(%f)
+    %t5 = builtin await(%t4)
+    %b = copy(%t5)
+    %t7 = bin +(%a, %b)
+    drop(%b)
+    drop(%a)
+    nop
+    return %t7
+}
+fn lib.awaitLoop() -> Int {
+  b0:
+    %t0 = fnitem work
+    %t1 = builtin future(%t0)
+    %f = copy(%t1)
+    %t3 = const 0: Int
+    %total = copy(%t3)
+    %t5 = const 0: Int
+    %t6 = const 3: Int
+    %t7 = bin ..(%t5, %t6)
+    %t8 = const 0: usize
+    %t9 = builtin iter.len(%t7)
+    jump b1
+  b1:
+    %t10 = bin <(%t8, %t9)
+    branch %t10 ? b2 : b4
+  b2:
+    %t11 = builtin iter.at(%t7, %t8)
+    %i = copy(%t11)
+    %t13 = move(%f)
+    %t14 = builtin await(%t13)
+    %t15 = bin +(%total, %t14)
+    drop(%total)
+    %total = copy(%t15)
+    %t16 = unit
+    drop(%i)
+    jump b3
+  b3:
+    %t17 = const 1: usize
+    %t18 = bin +(%t8, %t17)
+    drop(%t8)
+    %t8 = copy(%t18)
+    jump b1
+  b4:
+    drop(%t9)
+    drop(%t8)
+    drop(%t7)
+    %t19 = unit
+    drop(%t19)
+    %t20 = copy(%total)
+    drop(%total)
+    drop(%f)
+    return %t20
+}
+error[use-after-move]: `f` was moved; it cannot be used again
+  --> lib/own_await.kg:13:19
+   |
+13 |     let b = await f
+   |                   ^
+
+error[use-after-move]: `f` was moved; it cannot be used again
+  --> lib/own_await.kg:21:19
+   |
+21 |     let b = await f
+   |                   ^
+
+error[use-after-move]: `b.fut` was moved; it cannot be used again
+  --> lib/own_await.kg:31:19
+   |
+31 |     let y = await b.fut
+   |                   ^^^^^
+
+error[use-after-move]: `b.fut` was moved; it cannot be used again
+  --> lib/own_await.kg:31:13
+   |
+31 |     let y = await b.fut
+   |             ^^^^^^^^^^^
+
+error[use-after-move]: `f` was moved; it cannot be used again
+  --> lib/own_await.kg:37:19
+   |
+37 |     let b = await f
+   |                   ^
+
+error[move-join-mismatch]: `f` is moved on some paths but not others
+  --> lib/own_await.kg:45:31
+   |
+45 |         total = total + await f
+   |                               ^
+

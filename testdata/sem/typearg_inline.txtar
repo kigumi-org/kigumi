@@ -1,0 +1,19 @@
+-- app/t/t.kg --
+type Cb = extern(C) fn(i32) -> i32
+
+fn use() -> Unit {
+    let cbs = Array.empty[extern(C) fn(i32) -> i32]()
+    let ptrs = Array.empty[*const u8]()
+    let same: Array[Cb] = cbs
+    _ = ptrs
+    _ = same
+    _ = ptrs[*const u8] //~ ERROR a type cannot be used as a value here
+}
+
+-- expect --
+error[E958]: a type cannot be used as a value here
+ --> app/t/t.kg:9:14
+  |
+9 |     _ = ptrs[*const u8] //~ ERROR a type cannot be used as a value here
+  |              ^^^^^^^^^
+

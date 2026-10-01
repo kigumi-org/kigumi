@@ -1,0 +1,242 @@
+-- src --
+import json from std/json
+import {decode, encode} from std/json
+import coreutil from std/shell/coreutil
+pub import {User, UserId} from app/model
+pub(module) import {decodeInternal} from app/codec
+import {
+    Map
+    Entry
+} from std/map
+const PI = 3.14159
+pub const MAX: u32 = 1 << 20
+pub interface Display {
+    fn display(self) -> String
+}
+pub interface Iterator[Item] {
+    fn next(mut self) -> Item?
+}
+pub interface Hash {
+    pure noalloc fn hash(self) -> u64
+}
+test "authorとdayを分解する" {
+    let c = parseLine(1, "Alice\t2026-08-01")?
+    test.expectEq(c.author, "Alice")?
+}
+extern(C) {
+    type CFile
+    fn strlen(text: *const u8) -> usize
+    fn printf(format: *const u8, ...) -> i32
+}
+extern(C, noalloc) {
+    fn close(fd: i32) -> i32
+}
+export(C) {
+    pub fn pluginVersion() -> u32 { 1 }
+}
+export(component) {
+    instantiate IntList = List[i64]
+}
+pub(in app.core) fn helper() -> Unit {}
+-- expect --
+File
+  ImportDecl
+    binding: Ident json
+    path: Path std.json
+  ImportDecl
+    binding: List
+      Ident decode
+      Ident encode
+    path: Path std.json
+  ImportDecl
+    binding: Ident coreutil
+    path: Path std.shell.coreutil
+  ImportDecl
+    vis: Visibility
+    binding: List
+      Ident User
+      Ident UserId
+    path: Path app.model
+  ImportDecl
+    vis: Visibility module
+    binding: List
+      Ident decodeInternal
+    path: Path app.codec
+  ImportDecl
+    binding: List
+      Ident Map
+      Ident Entry
+    path: Path std.map
+  ConstDecl
+    name: PI
+    value: FloatLit 3.14159
+  ConstDecl
+    vis: Visibility
+    name: MAX
+    type: TypePath
+      Path u32
+    value: Binary <<
+      IntLit 1
+      IntLit 20
+  InterfaceDecl
+    vis: Visibility
+    name: Display
+    members: List
+      FnDecl
+        attrs: -
+        vis: -
+        recv: -
+        name: display
+        generics: -
+        params: List
+          Param self
+            flags: self
+        ret: TypePath
+          Path String
+        body: -
+  InterfaceDecl
+    vis: Visibility
+    name: Iterator
+    generics: List
+      GenericParam Item
+    members: List
+      FnDecl
+        attrs: -
+        vis: -
+        recv: -
+        name: next
+        generics: -
+        params: List
+          Param self
+            flags: mut self
+        ret: TypeOptional
+          TypePath
+            Path Item
+        body: -
+  InterfaceDecl
+    vis: Visibility
+    name: Hash
+    members: List
+      FnDecl
+        attrs: -
+        mods: pure noalloc
+        vis: -
+        recv: -
+        name: hash
+        generics: -
+        params: List
+          Param self
+            flags: self
+        ret: TypePath
+          Path u64
+        body: -
+  TestDecl "authorとdayを分解する"
+    Block
+      Let
+        pattern: PatBind c
+        init: Try
+          Call
+            Ident parseLine
+            List
+              IntLit 1
+              StringLit "Alice\t2026-08-01"
+      ExprStmt
+        Try
+          Call
+            Member expectEq
+              Ident test
+            List
+              Member author
+                Ident c
+              StringLit "Alice"
+  AbiBlock extern
+    List
+      Ident C
+    List
+      TypeDecl
+        name: CFile
+      FnDecl
+        attrs: -
+        vis: -
+        recv: -
+        name: strlen
+        generics: -
+        params: List
+          Param text
+            type: TypePtr
+              TypePath
+                Path u8
+        ret: TypePath
+          Path usize
+        body: -
+      FnDecl
+        attrs: -
+        vis: -
+        recv: -
+        name: printf
+        generics: -
+        params: List
+          Param format
+            type: TypePtr
+              TypePath
+                Path u8
+          Param ...
+            flags: variadic
+        ret: TypePath
+          Path i32
+        body: -
+  AbiBlock extern
+    List
+      Ident C
+      Ident noalloc
+    List
+      FnDecl
+        attrs: -
+        vis: -
+        recv: -
+        name: close
+        generics: -
+        params: List
+          Param fd
+            type: TypePath
+              Path i32
+        ret: TypePath
+          Path i32
+        body: -
+  AbiBlock export
+    List
+      Ident C
+    List
+      FnDecl
+        attrs: -
+        vis: Visibility
+        recv: -
+        name: pluginVersion
+        generics: -
+        params: List
+        ret: TypePath
+          Path u32
+        body: Block
+          ExprStmt
+            IntLit 1
+  AbiBlock export
+    List
+      Ident component
+    List
+      Instantiate IntList
+        TypePath
+          Path List
+          List
+            TypePath
+              Path i64
+  FnDecl
+    attrs: -
+    vis: Visibility in
+      Path app.core
+    recv: -
+    name: helper
+    generics: -
+    params: List
+    ret: TypePath
+      Path Unit
+    body: Block

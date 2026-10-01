@@ -1,0 +1,30 @@
+-- src --
+type Block[const N: usize] = { pub bytes FixedArray[u8, N] }
+type Fixed = { pub tag u8, pub bytes FixedArray[u8, 16] }
+fn filled[T: Copy, const N: usize](v: T) -> FixedArray[T, N] { FixedArray.filled[T, N](v) }
+fn len[T, const N: usize](a: &FixedArray[T, N]) -> usize { N }
+fn asFlag(a: &FixedArray[Bool, true]) -> usize { 0 }
+let x: FixedArray[u8, 4] = FixedArray.filled[u8, 4](0)
+-- expect --
+type Block[const N: usize] = {
+    pub bytes FixedArray[u8, N]
+}
+
+type Fixed = {
+    pub tag u8
+    pub bytes FixedArray[u8, 16]
+}
+
+fn filled[T: Copy, const N: usize](v: T) -> FixedArray[T, N] {
+    FixedArray.filled[T, N](v)
+}
+
+fn len[T, const N: usize](a: &FixedArray[T, N]) -> usize {
+    N
+}
+
+fn asFlag(a: &FixedArray[Bool, true]) -> usize {
+    0
+}
+
+let x: FixedArray[u8, 4] = FixedArray.filled[u8, 4](0)

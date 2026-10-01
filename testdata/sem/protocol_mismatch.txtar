@@ -1,0 +1,31 @@
+-- app/t/t.kg --
+type P = {
+    pub x Int
+}
+
+fn P.equals(self, other: &P) -> Bool {
+    self.x == other.x
+}
+
+fn same(a: P, b: &P) -> Bool {
+    a == b //~ ERROR `P` defines `equals` but it does not satisfy `Eq`
+}
+
+fn sameAll(a: Array[P], b: &Array[P]) -> Bool {
+    a == b //~ ERROR `P` defines `equals` but it does not satisfy `Eq`
+}
+-- expect --
+error[E965]: `P` defines `equals` but it does not satisfy `Eq`: `equals` is not `pure`
+  --> app/t/t.kg:10:5
+   |
+10 |     a == b //~ ERROR `P` defines `equals` but it does not satisfy `Eq`
+   |     ^^^^^^
+   = help: nothing is derived over it
+
+error[E965]: `P` defines `equals` but it does not satisfy `Eq`: `equals` is not `pure`
+  --> app/t/t.kg:14:5
+   |
+14 |     a == b //~ ERROR `P` defines `equals` but it does not satisfy `Eq`
+   |     ^^^^^^
+   = help: nothing is derived over it
+

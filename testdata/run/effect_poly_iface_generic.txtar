@@ -1,0 +1,36 @@
+-- src --
+interface Viewer {
+    pure? fn view(self, x: Int) -> Int
+}
+
+@impl(Viewer)
+type PureV = {
+    pub tag Int
+}
+
+pure fn PureV.view(self, x: Int) -> Int {
+    x + self.tag
+}
+
+@impl(Viewer)
+type ImpureV = {
+    pub tag Int
+}
+
+fn ImpureV.view(self, x: Int) -> Int {
+    x * self.tag
+}
+
+fn callViewGeneric[T: Viewer](t: T, x: Int) -> Int {
+    t.view(x)
+}
+
+pure fn viaPure(x: Int) -> Int {
+    callViewGeneric(PureV { tag: 1 }, x)
+}
+
+let p = PureV { tag: 1 }
+let q = ImpureV { tag: 2 }
+print "pure=${viaPure(3)} direct_p=${callViewGeneric(p, 3)} direct_q=${callViewGeneric(q, 3)}"
+-- stdout --
+pure=4 direct_p=4 direct_q=6

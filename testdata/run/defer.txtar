@@ -1,0 +1,36 @@
+-- src --
+import test from std/test
+
+fn work(fail_it: Bool) -> Unit! {
+    defer print "defer 1"
+    errdefer print "errdefer"
+    defer {
+        print "defer 2"
+    }
+    if fail_it {
+        fail test.failure("boom")
+    }
+    print "body done"
+}
+
+fn nested() -> Int {
+    let mut n = 0
+    for i in 0..3 {
+        defer n += 1
+        if i == 1 { continue }
+    }
+    n
+}
+
+work(false) || (e) => print "err ${e.message()}"
+work(true) || (e) => print "err ${e.message()}"
+print "nested=${nested()}"
+-- stdout --
+body done
+defer 2
+defer 1
+defer 2
+errdefer
+defer 1
+err boom
+nested=3

@@ -1,0 +1,34 @@
+-- lib/fb.kg --
+type Miss = {
+    pub why String
+}
+
+fn find(id: Int) -> Int? {
+    None
+}
+
+fn load(id: Int) -> Result[Int, Miss] {
+    Err(Miss { why: "x" })
+}
+
+fn use(flag: Bool) -> Result[Int, Miss] {
+    let a = find(1) || 0 //~ TYPE a : Int
+    let b = find(1) || return Ok(0) //~ TYPE b : Int
+    let c = load(1) || 0 //~ TYPE c : Int
+    let d = load(1) || (e) => 0 //~ TYPE d : Int
+    let e = load(1) || (err) => fail err //~ TYPE e : Int
+    let f: Int? = load(1) || (e) => None //~ TYPE f : Int?
+    let g = flag || false //~ TYPE g : Bool
+    let h = find(1) || fail Miss { why: "none" } //~ TYPE h : Int
+    let i = load(1) || (e: Miss) => {
+        let why = e.why //~ TYPE why : String
+        0
+    }
+    let j: Int? = find(1) || None //~ TYPE j : Int?
+    let k = load(1) || (e) => return Err(e)
+    for x in Array.of(1) {
+        let m = find(x) || continue
+    }
+    Ok(a)
+}
+-- expect --

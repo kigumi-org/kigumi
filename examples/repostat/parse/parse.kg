@@ -1,0 +1,50 @@
+import map from std/map
+import text from std/text
+
+pub type Commit = {
+    pub author String
+    pub day String
+}
+
+pub type ParseError = BadLine(line: Int) | Empty
+
+pub fn ParseError.message(self) -> String {
+    match self {
+        BadLine(line) -> "bad line ${line}"
+        Empty -> "empty input"
+    }
+}
+
+pub pure fn parseLine(no: Int, line: String) -> Result[Commit, ParseError] {
+    let tab = text.indexOf(line, '\t') || fail BadLine(no)
+    // タブはASCIIなので両側とも文字境界。バイト範囲スライスが安全に使える
+    Commit {
+        author: line[0..tab]
+        day: line[(tab + 1)..line.len()]
+    }
+}
+
+pub pure fn parseAll(input: String) -> Result[Array[Commit], ParseError] {
+    if let n = input.len(); n == 0 {
+        fail Empty
+    }
+
+    // if-init(反駁不能束縛)
+    let mut commits = Array.empty[Commit]()
+    let mut no = 1
+    for line in text.lines(input) {
+        commits.push(parseLine(no, line)?)
+        no += 1
+    }
+    commits
+}
+
+pub pure fn tally[K: Eq + Hash](keys: Array[K]) -> map.Map[K, Int] {
+    let mut counts = map.empty[K, Int]()
+    for k in keys {
+        let count = (counts.get(&k) || 0) + 1
+        counts.set(k, count)
+    }
+    // 「無い」はT?、既定値は||
+    counts
+}

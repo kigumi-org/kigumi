@@ -1,0 +1,125 @@
+-- src --
+let x = 
+fn broken( -> Unit {}
+let ok = 1
+static fn User.anonymous() -> User { User { name: "?" } }
+impl User { }
+type T = { a Int,, b Int }
+fn f() -> Unit {
+    let y = (1 +
+    let z = 2
+}
+let after = 3
+}
+let tail = 4
+-- expect --
+File
+  Let
+    pattern: PatBind x
+  FnDecl
+    attrs: -
+    vis: -
+    recv: -
+    name: broken
+    generics: -
+    params: List
+      Param ->
+    ret: -
+    body: -
+  FnDecl
+    attrs: -
+    vis: -
+    recv: TypePath
+      Path User
+    name: anonymous
+    generics: -
+    params: List
+    ret: TypePath
+      Path User
+    body: Block
+      ExprStmt
+        RecordLit
+          Ident User
+          List
+            FieldInit name
+              StringLit "?"
+  TypeDecl
+    name: T
+    body: RecordBody
+      Field a
+        type: TypePath
+          Path Int
+      Field b
+        type: TypePath
+          Path Int
+  FnDecl
+    attrs: -
+    vis: -
+    recv: -
+    name: f
+    generics: -
+    params: List
+    ret: TypePath
+      Path Unit
+    body: Block
+      Let
+        pattern: PatBind y
+        init: Paren
+          Binary +
+            IntLit 1
+            -
+  Let
+    pattern: PatBind after
+    init: IntLit 3
+  Let
+    pattern: PatBind tail
+    init: IntLit 4
+-- diagnostics --
+error: expected expression, found end of line
+ --> errors_recovery.txtar:1:9
+  |
+1 | let x = 
+  |         ^
+
+error: expected identifier, found `->`
+ --> errors_recovery.txtar:2:12
+  |
+2 | fn broken( -> Unit {}
+  |            ^^
+
+error: expected ), found `let`
+ --> errors_recovery.txtar:3:1
+  |
+3 | let ok = 1
+  | ^^^
+
+error: `static fn` does not exist; an associated function is `fn Type.name(...)` without `self` (§5.1)
+ --> errors_recovery.txtar:4:1
+  |
+4 | static fn User.anonymous() -> User { User { name: "?" } }
+  | ^^^^^^
+
+error: `impl` blocks do not exist; write `fn Type.name(self)` at top level and use `@impl(Interface)` on the type (§5.1)
+ --> errors_recovery.txtar:5:1
+  |
+5 | impl User { }
+  | ^^^^
+
+error: empty list entry
+ --> errors_recovery.txtar:6:18
+  |
+6 | type T = { a Int,, b Int }
+  |                  ^
+
+error: expected expression, found `let`
+ --> errors_recovery.txtar:9:5
+  |
+9 |     let z = 2
+  |     ^^^
+
+error: expected expression, found `}`
+  --> errors_recovery.txtar:12:1
+   |
+12 | }
+   | ^
+

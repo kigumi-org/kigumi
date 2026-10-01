@@ -1,0 +1,42 @@
+-- src --
+fn zeroLen[const N: usize]() -> usize {
+    N
+}
+
+fn len[T, const N: usize](a: &FixedArray[T, N]) -> usize {
+    N
+}
+
+const K: usize = 6
+
+fn atK[const N: usize]() -> usize {
+    N
+}
+
+fn compareLen[const N: usize, const M: usize]() -> Bool {
+    N == M
+}
+
+fn forward[const N: usize](a: &FixedArray[i32, N]) -> usize {
+    atK[N]()
+}
+
+fn asI8[const N: i8]() -> i8 {
+    N
+}
+
+let explicit = zeroLen[5]()
+let a = FixedArray.filled[i32, 4](0)
+let inferred = len(&a)
+let fromConstDecl = atK[K]()
+let forwarded = forward(&a)
+let negated = asI8[-5]()
+let positive = asI8[5]()
+
+print "${explicit} ${inferred} ${fromConstDecl} ${forwarded}"
+print "${compareLen[4, 4]()} ${compareLen[4, 7]()}"
+print "${negated} ${positive}"
+-- stdout --
+5 4 6 4
+true false
+-5 5

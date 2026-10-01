@@ -1,0 +1,48 @@
+-- src --
+import net from std/net
+import io from std/io
+
+fn writeGeneric[W: io.Writer](mut w: W, data: Bytes) -> usize! {
+    w.write(data)
+}
+
+fn readExistential(mut r: io.Reader, max: usize) -> Bytes! {
+    let mut buf = Array.empty[u8]()
+    let n = r.read(&mut buf, max)?
+    Bytes.fromArray(&buf)
+}
+
+type Sink = {
+    mut buf Array[u8]
+}
+
+fn Sink.write(mut self, data: Bytes) -> usize! {
+    let mut i: usize = 0
+    for i < data.len() {
+        self.buf.push(data.get(i) || 0)
+        i += 1
+    }
+    print "sink wrote: ${String.fromBytes(data) || "?"}"
+    data.len()
+}
+
+let n = host.net()
+let mut l = n.listen("127.0.0.1", 0)?
+let port = l.port()
+
+let mut client1 = n.connect("127.0.0.1", port)?
+let sent1 = writeGeneric(client1, "hello, kigumi".toBytes())?
+let mut server1 = l.accept()?
+let data1 = readExistential(server1, 64)?
+print "generic write / existential read: sent=${sent1} data=${String.fromBytes(data1) || "?"}"
+
+let mut client2 = n.connect("127.0.0.1", port)?
+let sent2 = writeGeneric(client2, "via io.copy".toBytes())?
+let mut server2 = l.accept()?
+let mut sink = Sink { buf: Array.empty[u8]() }
+let copied = io.copy(server2, sink)?
+print "io.copy: sent=${sent2} copied=${copied}"
+-- stdout --
+generic write / existential read: sent=13 data=hello, kigumi
+sink wrote: via io.copy
+io.copy: sent=11 copied=11

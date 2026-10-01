@@ -1,0 +1,11 @@
+-- src --
+let s = "h\u{e9}llo"
+print "len=${s.len()}"
+let t = s[0..2]
+print "unreachable ${t}"
+-- stdout --
+len=6
+-- stderr --
+is not on character boundaries
+-- exit --
+2

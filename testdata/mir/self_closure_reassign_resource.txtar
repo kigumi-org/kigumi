@@ -1,0 +1,30 @@
+-- src --
+type Handle = resource {
+    pub mut id Int
+}
+
+fn Handle.replace(mut self) -> Unit {
+    let step = () => {
+        self = Handle { id: 99 }
+    }
+    step()
+}
+-- expect --
+fn main.Handle.replace.closure1(%self: Handle) -> Unit {
+  b0:
+    %t1 = const 99: Int
+    %t2 = record Handle(%t1)
+    %t3 = cellget(%self)
+    boxreplace(%t3, %t2)
+    %t4 = unit
+    return %t4
+}
+fn main.Handle.replace(%t0: Handle) -> Unit {
+  b0:
+    %self = newcell(%t0)
+    %t2 = closure closure(%self)
+    %step = copy(%t2)
+    %t4 = callv(%step)
+    drop(%step)
+    return %t4
+}

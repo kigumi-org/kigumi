@@ -1,0 +1,110 @@
+-- lib/res.kg --
+type ParseError = BadLine(line: Int) | Empty
+
+type Silent = {
+    pub code Int
+}
+
+fn parse(s: String) -> Result[Int, ParseError] {
+    1
+}
+
+fn silent() -> Result[Int, Silent] {
+    1
+}
+
+fn noResult() -> Int {
+    fail Empty //~ ERROR `fail` requires a `Result` return type
+}
+
+fn noTry() -> Int {
+    parse("x")? //~ ERROR `?` requires a `Result` return type
+}
+
+fn notResult() -> Unit! {
+    let v = 1? //~ ERROR `?` needs a `Result`, found `Int`
+}
+
+fn wrongErr() -> Result[Int, Silent] {
+    parse("x")? //~ ERROR cannot propagate `ParseError` from a function returning `Result[_, Silent]`
+}
+
+fn noMessage() -> Unit! {
+    let v = parse("x")? //~ ERROR cannot propagate `ParseError` from a function returning `Result[_, Error]`
+}
+
+fn failNoMessage() -> Unit! {
+    fail Silent { code: 1 } //~ ERROR `Silent` does not conform to `Error` (no `fn message(self) -> String`)
+}
+
+fn failInt() -> Unit! {
+    fail 5 //~ ERROR `Int` does not conform to `Error`
+}
+
+fn unused() -> Unit! {
+    parse("x") //~ ERROR unused `Result[Int, ParseError]`
+    _ = parse("y")
+    let r = parse("z")
+}
+
+fn missing() -> Unit! {
+    fail //~ ERROR `return` needs a value of type `Error`
+}
+-- expect --
+error[E709]: `fail` requires a `Result` return type
+  --> lib/res.kg:16:5
+   |
+16 |     fail Empty //~ ERROR `fail` requires a `Result` return type
+   |     ^^^^^^^^^^
+   = help: this returns `Int`
+
+error[E712]: `?` requires a `Result` return type
+  --> lib/res.kg:20:5
+   |
+20 |     parse("x")? //~ ERROR `?` requires a `Result` return type
+   |     ^^^^^^^^^^^
+   = help: this returns `Int`
+
+error[E711]: `?` needs a `Result`, found `Int`
+  --> lib/res.kg:24:13
+   |
+24 |     let v = 1? //~ ERROR `?` needs a `Result`, found `Int`
+   |             ^^
+
+error[E713]: cannot propagate `ParseError` from a function returning `Result[_, Silent]`
+  --> lib/res.kg:28:5
+   |
+28 |     parse("x")? //~ ERROR cannot propagate `ParseError` from a function returning `Result[_, Silent]`
+   |     ^^^^^^^^^^^
+
+error[E713]: cannot propagate `ParseError` from a function returning `Result[_, Error]`
+  --> lib/res.kg:32:13
+   |
+32 |     let v = parse("x")? //~ ERROR cannot propagate `ParseError` from a function returning `Result[_, Error]`
+   |             ^^^^^^^^^^^
+
+error[E425]: `Silent` does not conform to `Error` (no `fn message(self) -> String`)
+  --> lib/res.kg:36:10
+   |
+36 |     fail Silent { code: 1 } //~ ERROR `Silent` does not conform to `Error` (no `fn message(self) -> String`)
+   |          ^^^^^^^^^^^^^^^^
+
+error[E425]: `Int` does not conform to `Error` (no `fn message(self) -> String`)
+  --> lib/res.kg:40:10
+   |
+40 |     fail 5 //~ ERROR `Int` does not conform to `Error`
+   |          ^
+
+error[E700]: unused `Result[Int, ParseError]`
+  --> lib/res.kg:44:5
+   |
+44 |     parse("x") //~ ERROR unused `Result[Int, ParseError]`
+   |     ^^^^^^^^^
+   = help: use `?`, `||`, or `_ =`
+
+error[E704]: `return` needs a value of type `Error`
+  --> lib/res.kg:50:5
+   |
+50 |     fail //~ ERROR `return` needs a value of type `Error`
+   |     ^^^^
+

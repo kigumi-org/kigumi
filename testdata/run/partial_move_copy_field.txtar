@@ -1,0 +1,15 @@
+-- src --
+type Pair = { mut a Int, mut n Int }
+
+fn takeCopy(mut p: Pair) -> Int {
+    let n = move p.a
+    print "moved=${n}"
+    let again = p.a
+    again
+}
+
+let r = takeCopy(Pair { a: 42, n: 0 })
+print "r=${r}"
+-- stdout --
+moved=42
+r=42

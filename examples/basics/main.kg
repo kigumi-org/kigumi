@@ -1,0 +1,47 @@
+#!/usr/bin/env kigumi
+
+// Bindings are immutable unless marked mut; types are inferred.
+let greeting = "Kigumi"
+let mut count = 0
+count += 2
+print "${greeting} has ${greeting.len()} bytes, count=${count}"
+
+// Integers default to Int (i64); other widths are explicit.
+let small: u8 = 200
+let ratio = 7.0 / 2.0
+print "small=${small} ratio=${ratio}"
+
+// if is an expression; match must be exhaustive.
+fn describe(n: Int) -> String {
+    match n {
+        0 -> "zero"
+        1 -> "one"
+        _ -> if n < 0 {
+            "negative"
+        } else {
+            "many"
+        }
+    }
+}
+
+for n in Array.of(-3, 0, 1, 42) {
+    print "${n}: ${describe(n)}"
+}
+
+// Ranges are half-open; break and continue work as usual.
+let limit = 10
+let mut odds = Array.empty[Int]()
+for i in 0..limit {
+    if i % 2 == 0 {
+        continue
+    }
+    if i > 7 {
+        break
+    }
+    odds.push(i)
+}
+print "odds=${odds.len()} first=${odds.first() || -1} last=${odds.last() || -1}"
+
+// Strings
+let word = "  Hello, World  "
+print "[${word.trim()}] upper=${word.trim().toUpper()} parts=${word.trim().split(", ").len()}"

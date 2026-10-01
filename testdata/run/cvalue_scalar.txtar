@@ -1,0 +1,52 @@
+-- src --
+import ffi from std/ffi
+
+let iv = ffi.CValue.new[i64](7)
+print "${iv.get() + 1}"
+iv.set(&(-5))
+print "${iv.get()}"
+
+let uv = ffi.CValue.new[u32](3)
+print "${uv.get() + 1}"
+uv.set(&4000000000)
+print "${uv.get()}"
+
+let bv = ffi.CValue.new[u8](5)
+print "${bv.get() + 1}"
+bv.set(&250)
+print "${bv.get()}"
+
+let fv = ffi.CValue.new[f64](1.5)
+print "${fv.get() + 1.0}"
+fv.set(&(-3.5))
+print "${fv.get()}"
+
+let boolv = ffi.CValue.new[Bool](true)
+print "${boolv.get()}"
+boolv.set(&false)
+print "${boolv.get()}"
+
+let cv = ffi.CValue.new[Char]('k')
+print "${cv.get()}"
+cv.set(&'z')
+print "${cv.get()}"
+
+let pv = ffi.CValue.new[*const u8](ffi.null[u8]())
+print "${ffi.isNull(pv.get())}"
+pv.set(&ffi.toConst(bv.ptr()))
+print "${ffi.isNull(pv.get())}"
+-- stdout --
+8
+-5
+4
+4000000000
+6
+250
+2.5
+-3.5
+true
+false
+k
+z
+true
+false

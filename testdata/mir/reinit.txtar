@@ -1,0 +1,62 @@
+-- lib/reinit.kg --
+type Box = { pub v Array[Int] }
+
+fn make(v: Int) -> Box {
+    Box { v: Array.of(v) }
+}
+
+fn reinit(x: Int) -> Box {
+    let mut b = make(x)
+    b = make(x + 1)
+    b
+}
+
+fn genuine(x: Int) -> Box {
+    let b = make(x)
+    let c = b
+    b
+}
+-- expect --
+fn lib.make(%v: Int) -> Box {
+  b0:
+    %t1 = copy(%v)
+    %t2 = array(%t1)
+    %t3 = call of(%t2)
+    %t4 = record Box(%t3)
+    drop(%v)
+    return %t4
+}
+fn lib.reinit(%x: Int) -> Box {
+  b0:
+    %t1 = copy(%x)
+    %t2 = call make(%t1)
+    %b = copy(%t2)
+    %t4 = const 1: Int
+    %t5 = bin +(%x, %t4)
+    %t6 = call make(%t5)
+    drop(%b)
+    %b = copy(%t6)
+    %t7 = move(%b)
+    nop
+    drop(%x)
+    return %t7
+}
+fn lib.genuine(%x: Int) -> Box {
+  b0:
+    %t1 = copy(%x)
+    %t2 = call make(%t1)
+    %b = copy(%t2)
+    %t4 = move(%b)
+    %c = copy(%t4)
+    %t6 = move(%b)
+    drop(%c)
+    nop
+    drop(%x)
+    return %t6
+}
+error[use-after-move]: `b` was moved; it cannot be used again
+  --> lib/reinit.kg:16:5
+   |
+16 |     b
+   |     ^
+

@@ -1,0 +1,43 @@
+-- app/t/t.kg --
+fn Speak() -> Int { 0 }
+
+type Node = Speak(Int) | Leaf(Int) //~ ERROR variant `Speak` collides with the declared function `Speak`
+
+const Pi: Int = 3
+
+type Circle = Pi(Int) | Origin //~ ERROR variant `Pi` collides with the declared const `Pi`
+
+// An overload set collides the same way a single fn does, since both bind
+// Set != 0 in the package scope.
+fn Greet(x: Int) -> Int { x }
+fn Greet(x: Int, y: Int) -> Int { x + y }
+
+type Hello = Greet(Int) | Bye //~ ERROR variant `Greet` collides with the declared function `Greet`
+
+// Not a collision: two ADTs of the same package sharing a variant name is
+// the existing variant-ambiguity rule (r.variantNames), unrelated to this
+// check.
+type Shape = Spin(Int) | Square(Int)
+type Sign = Spin(Int) | Triangle(Int)
+-- expect --
+error[E255]: variant `Speak` collides with the declared function `Speak`
+ --> app/t/t.kg:3:13
+  |
+3 | type Node = Speak(Int) | Leaf(Int) //~ ERROR variant `Speak` collides with the declared function `Speak`
+  |             ^^^^^^^^^
+  = help: rename it
+
+error[E255]: variant `Pi` collides with the declared const `Pi`
+ --> app/t/t.kg:7:15
+  |
+7 | type Circle = Pi(Int) | Origin //~ ERROR variant `Pi` collides with the declared const `Pi`
+  |               ^^^^^^
+  = help: rename it
+
+error[E255]: variant `Greet` collides with the declared function `Greet`
+  --> app/t/t.kg:14:14
+   |
+14 | type Hello = Greet(Int) | Bye //~ ERROR variant `Greet` collides with the declared function `Greet`
+   |              ^^^^^^^^^
+   = help: rename it
+

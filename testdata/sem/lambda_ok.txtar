@@ -1,0 +1,47 @@
+-- lib/lam.kg --
+fn apply(f: fn(Int) -> Int, x: Int) -> Int {
+    f(x)
+}
+
+fn mapper[T, U](xs: Array[T], f: fn(&T) -> U) -> Array[U] {
+    xs.map(f)
+}
+
+fn double(x: Int) -> Int {
+    x * 2
+}
+
+fn use() -> Unit {
+    let k = 10
+    let a = apply((x) => x + k, 1) //~ TYPE a : Int
+    let b = apply((x: Int) => x * 2, 2) //~ TYPE b : Int
+    let ys = mapper(Array.of(1, 2), (x) => x > 1) //~ TYPE ys : Array[Bool]
+    let zs = mapper(Array.of("a"), (s) => s.len()) //~ TYPE zs : Array[usize]
+    let f = (x: Int) => x + 1
+    let c = f(1) //~ TYPE c : Int
+    let g: fn(Int) -> Int = (x) => x
+    let h = (x: Int) => {
+        return x + 1
+    }
+    let d = h(2) //~ TYPE d : Int
+    let mut n = 0
+    let inc = () => {
+        n += 1
+    }
+    inc()
+    let e = apply(double, 3) //~ TYPE e : Int
+    let dd = double
+    let ee = dd(1) //~ TYPE ee : Int
+    let opt = (x: Int) => {
+        if x > 0 {
+            return Some(x)
+        }
+        None
+    }
+    let o = opt(1) //~ TYPE o : Int?
+    let unit = () => {}
+    unit()
+    let lit = () => 1
+    let l = lit() //~ TYPE l : Int
+}
+-- expect --

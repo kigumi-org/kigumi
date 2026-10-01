@@ -1,0 +1,18 @@
+-- src --
+fn f(a: Bool, b: Bool, c: Bool) -> Bool {
+    let x = a &&
+        b &&
+        c
+    let y = a ||
+        b
+    x || y
+}
+-- expect --
+fn f(a: Bool, b: Bool, c: Bool) -> Bool {
+    let x = a
+        && b
+        && c
+    let y = a
+        || b
+    x || y
+}

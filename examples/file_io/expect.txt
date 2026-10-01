@@ -1,0 +1,5 @@
+notes/a.txt: 1 line(s)
+notes/b.txt: 2 line(s)
+exists=false
+read failed as expected
+left=0

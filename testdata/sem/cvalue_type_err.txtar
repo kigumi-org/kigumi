@@ -1,0 +1,34 @@
+-- app/t/t.kg --
+import ffi from std/ffi
+
+fn useNew() -> Unit! {
+    let cv = ffi.CValue.new("hi") //~ ERROR `String` cannot be a `CValue` element
+}
+
+fn useGet(cv: &ffi.CValue[String]) -> Unit! {
+    let v = cv.get() //~ ERROR `String` cannot be a `CValue` element
+}
+
+fn useSet(cv: &ffi.CValue[String]) -> Unit! {
+    cv.set(&"bye") //~ ERROR `String` cannot be a `CValue` element
+}
+
+-- expect --
+error[E967]: `String` cannot be a `CValue` element: use a fixed-width number, `Bool`, `Char`, a pointer or a `layout(C)` record
+ --> app/t/t.kg:4:14
+  |
+4 |     let cv = ffi.CValue.new("hi") //~ ERROR `String` cannot be a `CValue` element
+  |              ^^^^^^^^^^^^^^^^^^^
+
+error[E967]: `String` cannot be a `CValue` element: use a fixed-width number, `Bool`, `Char`, a pointer or a `layout(C)` record
+ --> app/t/t.kg:8:13
+  |
+8 |     let v = cv.get() //~ ERROR `String` cannot be a `CValue` element
+  |             ^^^^^^^
+
+error[E967]: `String` cannot be a `CValue` element: use a fixed-width number, `Bool`, `Char`, a pointer or a `layout(C)` record
+  --> app/t/t.kg:12:5
+   |
+12 |     cv.set(&"bye") //~ ERROR `String` cannot be a `CValue` element
+   |     ^^^^^^^^^^^^^
+

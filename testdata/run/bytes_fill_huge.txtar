@@ -1,0 +1,13 @@
+-- src --
+let zero: usize = 0
+let one: usize = 1
+let n: usize = zero.wrappingSub(one)
+print "start"
+let b = Bytes.fill(0, n)
+print "unreachable ${b.len()}"
+-- stdout --
+start
+-- stderr --
+panic: out of memory
+-- exit --
+2

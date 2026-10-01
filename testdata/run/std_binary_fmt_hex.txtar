@@ -1,0 +1,52 @@
+-- src --
+import binary from std/binary
+import fmt from std/fmt
+import hex from std/encoding/hex
+
+let mut out = Array.empty[u8]()
+binary.putU16Be(&mut out, 0x0102)
+binary.putU32Be(&mut out, 0x03040506)
+binary.putU64Be(&mut out, 0x0708090A0B0C0D0E)
+let be = Bytes.fromArray(&out)
+print "be=${hex.encode(be)}"
+print "read=${binary.u16Be(be, 0) || 0},${binary.u32Be(be, 2) || 0},${binary.u64Be(be, 6) || 0}"
+
+let mut le = Array.empty[u8]()
+binary.putU16Le(&mut le, 0x0102)
+binary.putU32Le(&mut le, 0x03040506)
+binary.putU64Le(&mut le, 0x0708090A0B0C0D0E)
+binary.putUintLe(&mut le, 0xABCDEF, 3)
+let lb = Bytes.fromArray(&le)
+print "le=${hex.encode(lb)}"
+print "read=${binary.u16Le(lb, 0) || 0},${binary.u32Le(lb, 2) || 0},${binary.u64Le(lb, 6) || 0},${binary.uintLe(lb, 14, 3) || 0}"
+
+print "short=${binary.u32Be(be, 12) is None},${binary.uintBe(be, 0, 9) is None},${binary.uintLe(be, 0, 0) || 7}"
+
+let mut wide = Array.empty[u8]()
+binary.putUintBe(&mut wide, 0xFF, 10)
+print "wide=${hex.encode(Bytes.fromArray(&wide))}"
+
+print "hex=${fmt.hex(255, 4)},${fmt.hex(0, 0)},${fmt.hex(4886718345, 0)}"
+print "uint=${fmt.uint(255, 2, 12)},${fmt.uint(35, 36, 0)},${fmt.uint(7, 1, 0)}"
+print "int=${fmt.int(-42, 5)},${fmt.int(42, 5)},${fmt.int(0, 3)},${fmt.int(-9223372036854775808, 0)}"
+print "pad=[${fmt.padLeft("x", 4, '.')}][${fmt.padRight("y", 3, '-')}][${fmt.padLeft("toolong", 2, '.')}]"
+
+print "roundtrip=${hex.encode(hex.decode("00ff10Ab").unwrap())}"
+print "empty=${hex.encode("".toBytes())},${hex.decode("").unwrap().len()}"
+let odd = hex.decode("abc")
+let bad = hex.decode("zz")
+print "errors=${odd is Err(_)},${bad is Err(_)}"
+-- stdout --
+be=0102030405060708090a0b0c0d0e
+read=258,50595078,506664896818842894
+le=0201060504030e0d0c0b0a090807efcdab
+read=258,50595078,506664896818842894,11259375
+short=true,true,0
+wide=000000000000000000ff
+hex=00ff,0,123456789
+uint=000011111111,z,7
+int=-00042,00042,000,-9223372036854775808
+pad=[...x][y--][toolong]
+roundtrip=00ff10ab
+empty=,0
+errors=true,true

@@ -1,0 +1,29 @@
+-- src --
+type Counter = {
+    pub mut n Int
+}
+
+fn Counter.bumpAfterSnapshot(mut self) -> Unit {
+    let old = self
+    self.n = self.n + 100
+    print "field old=${old.n} self=${self.n}"
+}
+
+fn Counter.replaceAfterSnapshot(mut self) -> Unit {
+    let old = self
+    self = Counter { n: self.n + 100 }
+    print "whole old=${old.n} self=${self.n}"
+}
+
+let mut a = Counter { n: 1 }
+a.bumpAfterSnapshot()
+print "after=${a.n}"
+
+let mut b = Counter { n: 1 }
+b.replaceAfterSnapshot()
+print "after=${b.n}"
+-- stdout --
+field old=1 self=101
+after=101
+whole old=1 self=101
+after=101

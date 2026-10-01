@@ -1,0 +1,12 @@
+-- src --
+import shell from std/shell
+
+let sh = host.shell()
+let plan = $"sh -c 'printf b\\\\na\\\\nc\\\\n' | sh -c 'sort' | sh -c 'tr a-z A-Z'"
+let captured = (plan |> shell.capture(sh))?
+print "out=${String.fromBytes(captured.stdout)?}"
+-- stdout --
+out=A
+B
+C
+

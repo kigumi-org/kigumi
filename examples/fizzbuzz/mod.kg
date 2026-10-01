@@ -1,0 +1,4 @@
+Module {
+    name: "fizzbuzz"
+    kigumi: "0.1"
+}

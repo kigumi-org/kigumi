@@ -1,0 +1,67 @@
+-- src --
+import map from std/map
+
+interface Display {
+    fn display(self) -> String
+}
+
+type Cat = {
+    pub name String
+}
+
+type Dog = {
+    pub name String
+    pub age Int
+}
+
+fn Cat.display(self) -> String {
+    "cat ${self.name}"
+}
+
+fn Dog.display(self) -> String {
+    "dog ${self.name} (${self.age})"
+}
+
+fn show[T: Display](x: T) -> String {
+    x.display()
+}
+
+fn showAll(xs: Array[Display]) -> Unit {
+    for x in xs {
+        print x.display()
+    }
+}
+
+fn tally[K: Eq + Hash](keys: Array[K]) -> map.Map[K, Int] {
+    let mut counts = map.empty[K, Int]()
+    for k in keys {
+        let count = (counts.get(&k) || 0) + 1
+        counts.set(k, count)
+    }
+    counts
+}
+
+let c = Cat { name: "Tama" }
+let d = Dog { name: "Pochi", age: 3 }
+print show(c)
+print show(d)
+showAll(Array.of[Display](c, d))
+let counts = tally(Array.of("a", "b", "a", "c", "a"))
+for e in counts.entries() {
+    print "${e.key}=${e.value}"
+}
+let boxed: Display = d
+if boxed is Dog(dog) {
+    print "unboxed ${dog.age}"
+}
+if boxed is Cat { print "not a cat" } else { print "still a dog" }
+-- stdout --
+cat Tama
+dog Pochi (3)
+cat Tama
+dog Pochi (3)
+a=3
+b=1
+c=1
+unboxed 3
+still a dog

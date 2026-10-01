@@ -1,0 +1,32 @@
+-- src --
+// Ledger L-186: a view returned through two calls, stored in a record that
+// shares its owner's `'a`, dropped inside a nested scope. Regression for a
+// refcount imbalance found by the native RC checker (-DKIGUMI_RC_CHECK):
+// releasing the record used to release its `&'a Bytes` field too, as if
+// the record owned it, double-releasing the same Bytes the owner still held.
+type View['a] = { pub data &'a Bytes, pub off usize }
+type Holder['a] = { pub v View['a] }
+
+fn head['a](b: &'a Bytes) -> View['a] {
+    View { data: b, off: 0 }
+}
+
+fn identity['a](v: View['a]) -> View['a] {
+    v
+}
+
+fn wrap['a](v: View['a]) -> Holder['a] {
+    Holder { v: v }
+}
+
+fn main() -> Unit! {
+    let buf = Bytes.fromArray(&Array.of(9, 8, 7, 6))
+    let byte = {
+        let v = identity(head(&buf))
+        let h = wrap(v)
+        h.v.data[h.v.off + 2]
+    }
+    print "${byte}"
+}
+-- stdout --
+7

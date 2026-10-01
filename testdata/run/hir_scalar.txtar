@@ -1,0 +1,40 @@
+-- src --
+fn fib(n: Int) -> Int {
+    if n < 2 { n } else { fib(n - 1) + fib(n - 2) }
+}
+
+fn clamp(x: Int, lo: Int, hi: Int) -> Int {
+    if x < lo {
+        return lo
+    }
+    if x > hi { hi } else { x }
+}
+
+fn sumTo(n: Int) -> Int {
+    let mut i = 0
+    let mut acc = 0
+    for i < n {
+        i += 1
+        acc = acc + i
+    }
+    acc
+}
+
+fn describe(n: Int) -> String {
+    if n % 2 == 0 && n > 0 {
+        "even"
+    } else if n < 0 {
+        "negative"
+    } else {
+        "odd"
+    }
+}
+
+let a = fib(10)
+print "fib ${a} ${clamp(15, 0, 10)} ${clamp(-3, 0, 10)}"
+print "sum ${sumTo(100)} ${describe(4)} ${describe(-1)} ${describe(7)}"
+print "${!(a > 100) || false} ${-a} ${a == 55}"
+-- stdout --
+fib 55 10 0
+sum 5050 even negative odd
+true -55 true

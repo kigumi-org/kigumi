@@ -1,0 +1,28 @@
+-- src --
+fn f(fd: usize) -> Out[isize] {
+    unsafe {
+        asm {
+            "syscall"   // trap
+            in(rax)   1
+            in(rdi) fd
+            value:   out(rax)
+            clobber rcx,r11,abi(C)
+
+            options nostack,preserves_flags
+        }
+    }
+}
+-- expect --
+fn f(fd: usize) -> Out[isize] {
+    unsafe {
+        asm {
+            "syscall" // trap
+            in(rax) 1
+            in(rdi) fd
+            value: out(rax)
+            clobber rcx, r11, abi(C)
+
+            options nostack, preserves_flags
+        }
+    }
+}

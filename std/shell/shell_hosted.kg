@@ -1,0 +1,697 @@
+import ffi from std/ffi
+
+type OpenFlags = {
+    creat i32
+    trunc i32
+    append i32
+    wronly i32
+}
+
+extern(C) {
+    fn fork() -> i32
+    fn pipe(fds: *mut u8) -> i32
+    fn dup2(from: i32, to: i32) -> i32
+    fn close(fd: i32) -> i32
+    fn read(fd: i32, buf: *mut u8, n: usize) -> isize
+    fn write(fd: i32, buf: *const u8, n: usize) -> isize
+    fn open(path: *const u8, flags: i32, ...) -> i32
+    fn execvp(file: *const u8, argv: *const u8) -> i32
+    fn _exit(code: i32) -> Never
+    fn waitpid(pid: i32, status: *mut u8, options: i32) -> i32
+    fn kill(pid: i32, sig: i32) -> i32
+    fn poll(fds: *mut u8, n: usize, timeout: i32) -> i32
+    fn fcntl(fd: i32, cmd: i32, ...) -> i32
+    fn malloc(n: usize) -> *mut u8
+    fn free(p: *mut u8) -> Unit
+    fn regcomp(re: *mut u8, pattern: *const u8, flags: i32) -> i32
+    fn regexec(re: *const u8, s: *const u8, nmatch: usize, m: *mut u8, flags: i32) -> i32
+}
+
+type Pollfd layout(C) = {
+    pub fd i32
+    pub events i16
+    pub revents i16
+}
+
+type Run = {
+    stdout Bytes
+    stderr Bytes
+    statuses Array[Int]
+}
+
+/// Runs the plan and collects its stdout and stderr (`plan |> capture(sh)`);
+/// fails when a command cannot start.
+pub fn capture(plan: Plan, sh: Shell) -> Captured! {
+    let r = runPlan(&plan)?
+    Captured {
+        stdout: r.stdout
+        stderr: r.stderr
+    }
+}
+
+/// Runs the plan with inherited stdout and stderr (`plan |> run(sh)`) and
+/// returns the exit statuses; fails when a command cannot start.
+pub fn run(plan: Plan, sh: Shell) -> PipelineResult! {
+    let r = runPlan(&plan)?
+    writeAll(1, r.stdout)
+    writeAll(2, r.stderr)
+    PipelineResult { statuses: r.statuses }
+}
+
+fn writeAll(fd: i32, data: Bytes) -> Unit {
+    let n = data.len()
+    let mut off: usize = 0
+    for off < n {
+        let w = unsafe {
+            write(fd, ffi.offset(ffi.bytesPtr(&data), off.toInt() || 0), n - off)
+        }
+        if w <= 0 {
+            if w < 0 && ffi.errno() == eintr() {
+                continue
+            }
+            return
+        }
+        off = off + (w.toUsize() || 0)
+    }
+}
+
+fn readAll(fd: i32) -> Bytes {
+    let buf = unsafe {
+        malloc(4096)
+    }
+    let mut acc = "".toBytes()
+    for true {
+        let got = unsafe {
+            read(fd, buf, 4096)
+        }
+        if got <= 0 {
+            if got < 0 && ffi.errno() == eintr() {
+                continue
+            }
+            break
+        }
+        acc = acc.concat(unsafe {
+            ffi.bytesFrom(ffi.toConst(buf), got.toUsize() || 0)
+        })
+    }
+    unsafe {
+        free(buf)
+    }
+    acc
+}
+
+fn readSome(fd: i32) -> Bytes? {
+    let buf = unsafe {
+        malloc(4096)
+    }
+    let mut got: isize = -1
+    for got < 0 {
+        got = unsafe {
+            read(fd, buf, 4096)
+        }
+        if got < 0 && ffi.errno() != eintr() {
+            break
+        }
+    }
+    let out = if got > 0 {
+        Some(unsafe {
+            ffi.bytesFrom(ffi.toConst(buf), got.toUsize() || 0)
+        })
+    } else {
+        None
+    }
+    unsafe {
+        free(buf)
+    }
+    out
+}
+
+fn makePipe() -> Array[i32]! {
+    let fds = unsafe {
+        malloc(8)
+    }
+    if unsafe {
+        pipe(fds)
+    } != 0 {
+        unsafe {
+            free(fds)
+        }
+        fail Failure { text: "pipe: ${ffi.errorText(ffi.errno())}" }
+    }
+    let rd = unsafe {
+        ffi.readI32(ffi.cast[i32](ffi.toConst(fds)))
+    }
+    let wr = unsafe {
+        ffi.readI32(ffi.cast[i32](ffi.offset(ffi.toConst(fds), 4)))
+    }
+    unsafe {
+        free(fds)
+    }
+    Array.of(rd, wr)
+}
+
+// A pipe failing partway through setup must not strand the pipes already
+// made for earlier stages; devnull is not open yet at this point, so -1.
+fn makePipeOrClean(linkRd: &Array[i32], linkWr: &Array[i32], errRd: &Array[i32], errWr: &Array[i32], stRd: &Array[i32], stWr: &Array[i32]) -> Array[i32]! {
+    let r = makePipe()
+    if r is Err(_) {
+        closeAllPipes(linkRd, linkWr, errRd, errWr, stRd, stWr, -1)
+    }
+    r
+}
+
+fn fdAt(fds: &Array[i32], i: usize) -> i32 {
+    fds.get(i) || -1
+}
+
+fn parseFd(text: String) -> Int? {
+    let b = text.bytes()
+    if b.len() == 0 {
+        return None
+    }
+    let mut n = 0
+    for i in 0..b.len() {
+        let d = (b.get(i) || 0).toInt()
+        if d < 48 || d > 57 {
+            return None
+        }
+        n = n * 10 + (d - 48)
+    }
+    Some(n)
+}
+
+fn hasNul(s: String) -> Bool {
+    let b = s.bytes()
+    for i in 0..b.len() {
+        if (b.get(i) || 1) == 0 {
+            return true
+        }
+    }
+    false
+}
+
+// Redirects run after the pipeline's own dup2s and in source order, so
+// `2>&1 >out` sends stderr to the pipe and stdout to the file while
+// `>out 2>&1` sends both to the file.
+fn applyRedirs(redirs: &Array[Redir], statusfd: i32) -> Bool {
+    let flags = openFlags()
+    for r in redirs {
+        if r.fd < 0 {
+            report(statusfd, "invalid redirect file descriptor")
+            return false
+        }
+        if r.op == 4 || r.op == 5 {
+            let n = parseFd(r.target) || -1
+            if n < 0 || unsafe {
+                dup2(n.toI32() || -1, r.fd.toI32() || -1)
+            } < 0 {
+                report(statusfd, "`${r.target}` is not a file descriptor that can be duplicated")
+                return false
+            }
+            continue
+        }
+        let mode = if r.op == 1 {
+            0
+        } else if r.op == 3 {
+            flags.wronly | flags.creat | flags.append
+        } else {
+            flags.wronly | flags.creat | flags.trunc
+        }
+        let c = match ffi.CString.new(&r.target) {
+            Ok(v) -> v
+            Err(_) -> {
+                report(statusfd, "cannot open redirect target: it contains a NUL byte")
+                return false
+            }
+        }
+        let fd = unsafe {
+            open(c.ptr(), mode, 420)
+        }
+        if fd < 0 {
+            report(statusfd, "cannot open ${r.target}: ${ffi.errorText(ffi.errno())}")
+            return false
+        }
+        let want = r.fd.toI32() || -1
+        if fd != want && unsafe {
+            dup2(fd, want)
+        } < 0 {
+            report(statusfd, "cannot duplicate descriptor for ${r.target}: ${ffi.errorText(ffi.errno())}")
+            _ = unsafe {
+                close(fd)
+            }
+            return false
+        }
+        if fd != want {
+            _ = unsafe {
+                close(fd)
+            }
+        }
+    }
+    true
+}
+
+fn report(statusfd: i32, message: String) -> Unit {
+    writeAll(statusfd, message.toBytes())
+}
+
+fn dupOnto(from: i32, to: i32, what: String, statusfd: i32) -> Bool {
+    if unsafe {
+        dup2(from, to)
+    } < 0 {
+        report(statusfd, "dup2 ${what}: ${ffi.errorText(ffi.errno())}")
+        return false
+    }
+    _ = unsafe {
+        close(from)
+    }
+    true
+}
+
+// Runs one pipeline stage in a just-forked child: an external command
+// execs, a grep filters in-process. Either way it reports a startup
+// failure (bad exec, bad regex, bad redirect) through statusfd instead of
+// aborting.
+fn runChild(st: &Stage, infd: i32, outfd: i32, errfd: i32, statusfd: i32) -> Never {
+    if infd != 0 && !dupOnto(infd, 0, "stdin", statusfd) {
+        unsafe {
+            _exit(126)
+        }
+    }
+    if outfd != 1 && !dupOnto(outfd, 1, "stdout", statusfd) {
+        unsafe {
+            _exit(126)
+        }
+    }
+    if errfd != 2 && !dupOnto(errfd, 2, "stderr", statusfd) {
+        unsafe {
+            _exit(126)
+        }
+    }
+    if !applyRedirs(&st.redirs, statusfd) {
+        unsafe {
+            _exit(126)
+        }
+    }
+    if st.grep is Some(pattern) {
+        let re = unsafe {
+            malloc(512)
+        }
+        let c = match ffi.CString.new(&pattern) {
+            Ok(v) -> v
+            Err(_) -> {
+                report(statusfd, "invalid grep pattern")
+                unsafe {
+                    _exit(1)
+                }
+            }
+        }
+        if unsafe {
+            regcomp(re, c.ptr(), 1)
+        } != 0 {
+            report(statusfd, "invalid grep pattern")
+            unsafe {
+                _exit(1)
+            }
+        }
+        _ = unsafe {
+            close(statusfd)
+        }
+        let input = readAll(0)
+        let text = String.fromBytes(input) || ""
+        let body = if text.endsWith("\n") {
+            text.sliceBytes(0, text.len() - 1) || text
+        } else {
+            text
+        }
+        let mut out = "".toBytes()
+        for line in body.split("\n") {
+            let lc = match ffi.CString.new(&line) {
+                Ok(v) -> v
+                // A NUL byte can't survive a C-string match; such a line
+                // never matches rather than matching on a truncated prefix.
+                Err(_) -> continue
+            }
+            if unsafe {
+                regexec(ffi.toConst(re), lc.ptr(), 0, ffi.toMut(ffi.null[u8]()), 0)
+            } == 0 {
+                out = out.concat("${line}\n".toBytes())
+            }
+        }
+        writeAll(1, out)
+        unsafe {
+            _exit(0)
+        }
+    }
+    let n = st.argv.len()
+    let nullPtr = ffi.null[u8]()
+    let ptrSize = ffi.sizeOf(&nullPtr)
+    let argv = unsafe {
+        malloc((n + 1) * ptrSize)
+    }
+    let mut keep: Array[ffi.CString] = Array.empty()
+    for i in 0..n {
+        let arg = st.argv.get(i) || ""
+        // runPlan already rejected a NUL anywhere in argv before forking.
+        let c = ffi.CString.new(&arg).unwrap()
+        unsafe {
+            ffi.writePtr(ffi.toMut(ffi.offset(ffi.toConst(argv), (i * ptrSize).toInt() || 0)), c.ptr())
+        }
+        keep.push(c)
+    }
+    unsafe {
+        ffi.writePtr(ffi.toMut(ffi.offset(ffi.toConst(argv), (n * ptrSize).toInt() || 0)), ffi.null[u8]())
+    }
+    _ = unsafe {
+        execvp(ffi.readPtr(ffi.toConst(argv)), ffi.toConst(argv))
+    }
+    report(statusfd, "exec: ${ffi.errorText(ffi.errno())}")
+    unsafe {
+        _exit(127)
+    }
+}
+
+fn closeAll(fds: &Array[i32]) -> Unit {
+    for fd in fds {
+        if fd >= 0 {
+            _ = unsafe {
+                close(fd)
+            }
+        }
+    }
+}
+
+// Closes every descriptor runPlan created for the whole plan, for the
+// paths (pipe setup failure, devnull open failure, fork failure) that bail
+// out before the per-stage children exist to inherit and close them.
+fn closeAllPipes(linkRd: &Array[i32], linkWr: &Array[i32], errRd: &Array[i32], errWr: &Array[i32], stRd: &Array[i32], stWr: &Array[i32], devnull: i32) -> Unit {
+    closeAll(linkRd)
+    closeAll(linkWr)
+    closeAll(errRd)
+    closeAll(errWr)
+    closeAll(stRd)
+    closeAll(stWr)
+    if devnull >= 0 {
+        _ = unsafe {
+            close(devnull)
+        }
+    }
+}
+
+fn exitStatus(pid: i32) -> Int {
+    let st = unsafe {
+        malloc(4)
+    }
+    _ = unsafe {
+        waitpid(pid, st, 0)
+    }
+    let code = unsafe {
+        ffi.readI32(ffi.cast[i32](ffi.toConst(st)))
+    }
+    unsafe {
+        free(st)
+    }
+    if (code & 127) == 0 {
+        ((code >> 8) & 255).toInt()
+    } else {
+        1
+    }
+}
+
+fn pollfdAt(pfds: *mut u8, k: usize) -> *mut Pollfd {
+    unsafe {
+        ffi.toMut(ffi.cast[Pollfd](ffi.offset(ffi.toConst(pfds), (k * 8).toInt() || 0)))
+    }
+}
+
+// Every `|`-connected stage starts immediately, wired stage-to-stage
+// through real pipes and drained concurrently, so one stage can't stall
+// behind another's full pipe buffer or behind a downstream stage that
+// hasn't run yet. A stage that fails to start (bad exec, bad regex) reports
+// through its own close-on-exec status pipe instead of turning into a fake
+// exit status.
+fn runPlan(plan: &Plan) -> Run! {
+    let stages = stages(plan)
+    let n = stages.len()
+    if n == 0 {
+        return Run {
+            stdout: "".toBytes()
+            stderr: "".toBytes()
+            statuses: Array.empty()
+        }
+    }
+    for st in &stages {
+        for a in st.argv {
+            if hasNul(a) {
+                fail Failure { text: "argument contains a NUL byte" }
+            }
+        }
+    }
+    // linkRd[i] / linkWr[i] join stage i-1 to stage i; index n is the final stdout.
+    let mut linkRd: Array[i32] = Array.of(-1)
+    let mut linkWr: Array[i32] = Array.of(-1)
+    let mut errRd: Array[i32] = Array.empty()
+    let mut errWr: Array[i32] = Array.empty()
+    let mut stRd: Array[i32] = Array.empty()
+    let mut stWr: Array[i32] = Array.empty()
+    for i in 0..n {
+        let link = makePipeOrClean(&linkRd, &linkWr, &errRd, &errWr, &stRd, &stWr)?
+        linkRd.push(fdAt(&link, 0))
+        linkWr.push(fdAt(&link, 1))
+        let err = makePipeOrClean(&linkRd, &linkWr, &errRd, &errWr, &stRd, &stWr)?
+        errRd.push(fdAt(&err, 0))
+        errWr.push(fdAt(&err, 1))
+        let status = makePipeOrClean(&linkRd, &linkWr, &errRd, &errWr, &stRd, &stWr)?
+        stRd.push(fdAt(&status, 0))
+        stWr.push(fdAt(&status, 1))
+        _ = unsafe {
+            fcntl(fdAt(&status, 1), 2, 1)
+        }
+    }
+    let nullPath = "/dev/null"
+    let nullC = ffi.CString.new(&nullPath)?
+    let devnull = unsafe {
+        open(nullC.ptr(), 0)
+    }
+    if devnull < 0 {
+        let text = "cannot open /dev/null: ${ffi.errorText(ffi.errno())}"
+        closeAllPipes(&linkRd, &linkWr, &errRd, &errWr, &stRd, &stWr, -1)
+        fail Failure { text: text }
+    }
+    let mut pids: Array[i32] = Array.empty()
+    let mut i: usize = 0
+    for st in stages {
+        let infd = if i == 0 {
+            devnull
+        } else {
+            fdAt(&linkRd, i)
+        }
+        let outfd = if i + 1 == n {
+            fdAt(&linkWr, n)
+        } else {
+            fdAt(&linkWr, i + 1)
+        }
+        let pid = unsafe {
+            fork()
+        }
+        if pid < 0 {
+            let text = "process startup failed: ${ffi.errorText(ffi.errno())}"
+            for p in pids {
+                _ = unsafe {
+                    kill(p, 9)
+                }
+                _ = exitStatus(p)
+            }
+            closeAllPipes(&linkRd, &linkWr, &errRd, &errWr, &stRd, &stWr, devnull)
+            fail Failure { text: text }
+        }
+        if pid == 0 {
+            for j in 1..(n + 1) {
+                if fdAt(&linkRd, j) != infd {
+                    _ = unsafe {
+                        close(fdAt(&linkRd, j))
+                    }
+                }
+                if fdAt(&linkWr, j) != outfd {
+                    _ = unsafe {
+                        close(fdAt(&linkWr, j))
+                    }
+                }
+            }
+            if devnull >= 0 && devnull != infd {
+                _ = unsafe {
+                    close(devnull)
+                }
+            }
+            for j in 0..n {
+                if j != i {
+                    _ = unsafe {
+                        close(fdAt(&errWr, j))
+                    }
+                    _ = unsafe {
+                        close(fdAt(&stWr, j))
+                    }
+                }
+                _ = unsafe {
+                    close(fdAt(&errRd, j))
+                }
+                _ = unsafe {
+                    close(fdAt(&stRd, j))
+                }
+            }
+            runChild(&st, infd, outfd, fdAt(&errWr, i), fdAt(&stWr, i))
+        }
+        pids.push(pid)
+        i = i + 1
+    }
+    if devnull >= 0 {
+        _ = unsafe {
+            close(devnull)
+        }
+    }
+    for j in 1..(n + 1) {
+        _ = unsafe {
+            close(fdAt(&linkWr, j))
+        }
+        if j < n {
+            _ = unsafe {
+                close(fdAt(&linkRd, j))
+            }
+        }
+    }
+    closeAll(&errWr)
+    closeAll(&stWr)
+    drain(&linkRd, &errRd, &stRd, &pids, n)
+}
+
+// drain reads the final stdout, every stage's stderr and every status pipe
+// until all are closed, then reaps the stages in order so stage 1's stderr
+// precedes stage 2's whatever the timing.
+fn drain(linkRd: &Array[i32], errRd: &Array[i32], stRd: &Array[i32], pids: &Array[i32], n: usize) -> Run! {
+    let outfd = fdAt(linkRd, n)
+    let mut outOpen = true
+    let mut errOpen: Array[Bool] = Array.empty()
+    let mut stOpen: Array[Bool] = Array.empty()
+    let mut stageErr: Array[Bytes] = Array.empty()
+    for j in 0..n {
+        errOpen.push(true)
+        stOpen.push(true)
+        stageErr.push("".toBytes())
+    }
+    let mut openLeft = 2 * n
+    let mut stdout = "".toBytes()
+    let mut failure: String? = None
+    let pfds = unsafe {
+        malloc((2 * n + 1) * 8)
+    }
+    for outOpen || openLeft > 0 {
+        // Slots: 0 is the final stdout, 1..n the stderr pipes, n+1..2n the status pipes.
+        let mut slots: Array[usize] = Array.empty()
+        if outOpen {
+            unsafe {
+                ffi.writeRecord(pollfdAt(pfds, slots.len()), &Pollfd {
+                    fd: outfd
+                    events: 1
+                    revents: 0
+                })
+            }
+            slots.push(0)
+        }
+        for j in 0..n {
+            if errOpen[j] {
+                unsafe {
+                    ffi.writeRecord(pollfdAt(pfds, slots.len()), &Pollfd {
+                        fd: fdAt(errRd, j)
+                        events: 1
+                        revents: 0
+                    })
+                }
+                slots.push(j + 1)
+            }
+        }
+        for j in 0..n {
+            if stOpen[j] {
+                unsafe {
+                    ffi.writeRecord(pollfdAt(pfds, slots.len()), &Pollfd {
+                        fd: fdAt(stRd, j)
+                        events: 1
+                        revents: 0
+                    })
+                }
+                slots.push(n + 1 + j)
+            }
+        }
+        if unsafe {
+            poll(pfds, slots.len(), -1)
+        } < 0 {
+            if ffi.errno() == eintr() {
+                continue
+            }
+            break
+        }
+        for k in 0..slots.len() {
+            let pf = unsafe {
+                ffi.readRecord(ffi.toConst(pollfdAt(pfds, k)))
+            }
+            if pf.revents == 0 {
+                continue
+            }
+            let slot = slots[k]
+            if slot == 0 {
+                match readSome(outfd) {
+                    Some(b) -> {
+                        stdout = stdout.concat(b)
+                    }
+                    None -> {
+                        outOpen = false
+                    }
+                }
+            } else if slot <= n {
+                let j = slot - 1
+                match readSome(fdAt(errRd, j)) {
+                    Some(b) -> {
+                        stageErr[j] = stageErr[j].concat(b)
+                    }
+                    None -> {
+                        errOpen[j] = false
+                        openLeft = openLeft - 1
+                    }
+                }
+            } else {
+                let j = slot - n - 1
+                match readSome(fdAt(stRd, j)) {
+                    Some(b) -> {
+                        if failure is None {
+                            failure = Some(String.fromBytes(b) || "process startup failed")
+                        }
+                    }
+                    None -> {
+                        stOpen[j] = false
+                        openLeft = openLeft - 1
+                    }
+                }
+            }
+        }
+    }
+    unsafe {
+        free(pfds)
+    }
+    _ = unsafe {
+        close(outfd)
+    }
+    closeAll(errRd)
+    closeAll(stRd)
+    let mut stderr = "".toBytes()
+    let mut statuses: Array[Int] = Array.empty()
+    for j in 0..n {
+        statuses.push(exitStatus(fdAt(pids, j)))
+        stderr = stderr.concat(stageErr[j])
+    }
+    if failure is Some(text) {
+        fail Failure { text: text }
+    }
+    Run {
+        stdout: stdout
+        stderr: stderr
+        statuses: statuses
+    }
+}

@@ -1,0 +1,40 @@
+-- src --
+fn fib(n: Int) -> Int {
+    if n < 2 { n } else { fib(n - 1) + fib(n - 2) }
+}
+
+fn classify(n: Int) -> String {
+    match n {
+        0 -> "zero"
+        1 -> "one"
+        _ -> if n % 2 == 0 { "even" } else { "odd" }
+    }
+}
+
+let mut total = 0
+for i in 0..10 {
+    if i == 7 { break }
+    if i % 2 == 0 { continue }
+    total += i
+}
+print "total=${total}"
+print "fib=${fib(15)}"
+for k in Array.of(0, 1, 4, 9) {
+    print "${k}: ${classify(k)}"
+}
+let mut count = 0
+for count < 3 {
+    count += 1
+}
+print "count=${count}"
+let label = if total > 5 { "big" } else { "small" }
+print label
+-- stdout --
+total=9
+fib=610
+0: zero
+1: one
+4: even
+9: odd
+count=3
+big

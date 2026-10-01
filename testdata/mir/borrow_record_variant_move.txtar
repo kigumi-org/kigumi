@@ -1,0 +1,60 @@
+-- lib/field.kg --
+type Inner = resource {
+    pub id Int
+}
+
+fn Inner.drop(move self) -> Unit {
+    _ = self
+}
+
+type Outer = {
+    pub inner Inner
+    pub n Int
+}
+
+type Wrap = {
+    pub inner Inner
+}
+
+type Box = Wrapped(Inner)
+
+fn record(o: &Outer) -> Wrap {
+    Wrap { inner: o.inner }
+}
+
+fn variant(o: &Outer) -> Box {
+    Wrapped(o.inner)
+}
+
+-- expect --
+fn lib.Inner.drop(%self: Inner) -> Unit {
+  b0:
+    %t1 = move(%self)
+    drop(%t1)
+    %t2 = unit
+    return %t2
+}
+fn lib.record(%o: &Outer) -> Wrap {
+  b0:
+    %t1 = field 0(%o)
+    %t2 = record Wrap(%t1)
+    return %t2
+}
+fn lib.variant(%o: &Outer) -> Box {
+  b0:
+    %t1 = field 0(%o)
+    %t2 = variant Wrapped(%t1)
+    return %t2
+}
+error[move-from-borrow]: a value borrowed here cannot be moved out; clone it
+  --> lib/field.kg:21:5
+   |
+21 |     Wrap { inner: o.inner }
+   |     ^^^^^^^^^^^^^^^^^^^^^
+
+error[move-from-borrow]: a value borrowed here cannot be moved out; clone it
+  --> lib/field.kg:25:5
+   |
+25 |     Wrapped(o.inner)
+   |     ^^^^^^^^^^^^^^^
+

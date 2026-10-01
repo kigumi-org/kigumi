@@ -1,0 +1,39 @@
+-- src --
+import array from std/array
+import map from std/map
+import text from std/text
+
+let s = "  Hello, World  "
+let t = s.trim()
+print "trim=[${t}] upper=${t.toUpper()} lower=${t.toLower()}"
+print "contains=${t.contains("World")} starts=${t.startsWith("Hello")} ends=${t.endsWith("!")}"
+let parts = t.split(", ")
+print "parts=${parts.len()} first=${parts.first() || "?"} last=${parts.last() || "?"}"
+print "joined=${array.join(&parts, "+")} concat=${"ab".concat("cd")} repeat=${"na".repeat(3)}"
+let mut count: u8 = 0
+for b in "abc".bytes() {
+    if b > 97 { count += 1 }
+}
+print "bytes=${count} chars=${"héllo".chars().len()} len=${"héllo".len()}"
+let xs = Array.of(5, 3, 8, 1)
+let evens = xs.filter((x) => x % 2 == 0)
+let sum = xs.fold(0, (acc, x) => acc + x)
+print "evens=${evens.len()} sum=${sum} has3=${xs.contains(3)} has9=${xs.contains(9)}"
+let rev = xs.reverse()
+print "rev=${rev.get(0) || 0} empty=${Array.empty[Int]().isEmpty()} cat=${xs.concat(rev).len()}"
+let mut m = map.empty[String, Int]()
+m.set("a", 1)
+m.set("b", 2)
+m.remove(&"a")
+print "keys=${m.keys().len()} values=${m.values().get(0) || 0} hasA=${m.contains(&"a")} hasB=${m.contains(&"b")}"
+print "parse=${text.parseInt(" 42 ") || -1} bad=${text.parseInt("x") || -1} char=${text.fromChar('z')}"
+-- stdout --
+trim=[Hello, World] upper=HELLO, WORLD lower=hello, world
+contains=true starts=true ends=false
+parts=2 first=Hello last=World
+joined=Hello+World concat=abcd repeat=nanana
+bytes=2 chars=5 len=6
+evens=1 sum=17 has3=true has9=false
+rev=1 empty=true cat=8
+keys=1 values=2 hasA=false hasB=true
+parse=42 bad=-1 char=z

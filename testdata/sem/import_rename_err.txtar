@@ -1,0 +1,33 @@
+-- src --
+import {sqrt as squareRoot} from std/math
+import {floor as squareRoot} from std/math //~ ERROR `squareRoot` is already bound in this file
+import {nonexistent as ghost} from std/math //~ ERROR has no visible `nonexistent`
+
+fn use() -> Unit {
+    let a = sqrt(4.0) //~ ERROR undefined name `sqrt`
+    let b = squareRoot(9.0)
+}
+-- expect --
+error[E105]: `squareRoot` is already bound in this file
+ --> main/main.kg:2:18
+  |
+2 | import {floor as squareRoot} from std/math //~ ERROR `squareRoot` is already bound in this file
+  |                  ^^^^^^^^^^
+note: `squareRoot` was bound here
+ --> main/main.kg:1:17
+  |
+1 | import {sqrt as squareRoot} from std/math
+  |                 ^^^^^^^^^^
+
+error[E103]: package `std/math` has no visible `nonexistent`
+ --> main/main.kg:3:9
+  |
+3 | import {nonexistent as ghost} from std/math //~ ERROR has no visible `nonexistent`
+  |         ^^^^^^^^^^^
+
+error[E100]: undefined name `sqrt`
+ --> main/main.kg:6:13
+  |
+6 |     let a = sqrt(4.0) //~ ERROR undefined name `sqrt`
+  |             ^^^^
+

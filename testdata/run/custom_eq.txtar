@@ -1,0 +1,49 @@
+-- src --
+import map from std/map
+import test from std/test
+
+type Money = {
+    pub cents Int
+}
+
+pure fn Money.equals(self, other: &Money) -> Bool {
+    self.cents / 100 == other.cents / 100
+}
+
+pure fn Money.hash(self) -> u64 {
+    (self.cents / 100).hash()
+}
+
+type P = {
+    pub x Int
+    pub name String
+}
+
+type Shape = Circle(r: Int) | Empty
+
+type Wrap[T] = {
+    pub inner T
+}
+
+fn same[T: Eq](a: T, b: &T) -> Bool {
+    a == b
+}
+
+fn less[T: Ord](a: T, b: &T) -> Bool {
+    a < b
+}
+
+let p = P { x: 1, name: "a" }
+let q = P { x: 1, name: "a" }
+print "${p == q} ${p != P { x: 2, name: "a" }} ${Shape.Circle(1) == Shape.Circle(1)} ${Shape.Circle(1) == Shape.Empty} ${Some(3) == Some(3)} ${Some(3) != Some(4)}"
+print "${Money { cents: 105 } == Money { cents: 199 }} ${same(Money { cents: 105 }, &Money { cents: 199 })} ${same(2, &2)} ${same("x", &"y")} ${same(Wrap { inner: p }, &Wrap { inner: q })}"
+print "${less(1, &2)} ${less("b", &"a")} ${hash(&p) == hash(&q)} ${hash(&1) == hash(&1)} ${hash(&Shape.Empty) == hash(&Shape.Empty)}"
+let mut m = map.empty[Money, Int]()
+m.set(Money { cents: 105 }, 1)
+m.set(Money { cents: 199 }, 2)
+print "${m.get(&(Money { cents: 150 })) || 0} ${m.len()} ${test.expectEq(Shape.Circle(2), Shape.Circle(2)) is Ok(_)} ${test.expectEq(p, P { x: 3, name: "b" }) is Err(_)}"
+-- stdout --
+true true true false true true
+true true true false true
+true false true true true
+2 1 true true

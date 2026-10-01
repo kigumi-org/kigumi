@@ -1,0 +1,27 @@
+-- lib/fb.kg --
+type Res = resource {
+    pub id Int
+}
+
+fn consume(x: Res) -> Int {
+    x.id
+}
+
+// Ledger L-181: `for x in xs` over a borrowed head binds x: &T, so moving
+// it into an owning parameter is the existing "expected T, found &T"
+// mismatch. The other two own/borrow rejections (use of xs after an owned
+// loop, mutation of xs inside a &xs loop) are MIR-level, not sem-level —
+// sem.Check has no flow-sensitive move tracking — and are pinned in
+// testdata/mir/for_borrow_move_err.txtar.
+fn drain(xs: &Array[Res]) -> Unit {
+    for x in xs {
+        _ = consume(x) //~ ERROR expected `Res`, found `&Res`
+    }
+}
+-- expect --
+error[E400]: expected `Res`, found `&Res`
+  --> lib/fb.kg:17:21
+   |
+17 |         _ = consume(x) //~ ERROR expected `Res`, found `&Res`
+   |                     ^
+

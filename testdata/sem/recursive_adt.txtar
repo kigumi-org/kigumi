@@ -1,0 +1,23 @@
+-- app/t/t.kg --
+type Node[M] = Text(s: String) | Wrap(kid: Node[M])
+
+type Chain = Leaf | Link(next: Chain)
+
+type Mutual = Base | Cont(other: OtherAdt)
+
+type OtherAdt = Stop | Back(m: Mutual)
+
+type Rec = { //~ ERROR `Rec` contains itself without indirection
+    next Rec
+}
+
+type ThroughAdt = {
+    n Node[Int]
+}
+-- expect --
+error[E221]: `Rec` contains itself without indirection
+ --> app/t/t.kg:9:1
+  |
+9 | type Rec = { //~ ERROR `Rec` contains itself without indirection
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+

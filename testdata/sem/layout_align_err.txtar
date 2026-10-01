@@ -1,0 +1,46 @@
+-- app/t/t.kg --
+type Fine layout(C, align: 4) = {
+    pub x u8
+}
+
+type Zero layout(C, align: 0) = { //~ ERROR `layout(C, align: N)`'s alignment must be a power of two no greater than 8, found `0`
+    pub x u8
+}
+
+type NotPow2 layout(C, align: 3) = { //~ ERROR `layout(C, align: N)`'s alignment must be a power of two no greater than 8, found `3`
+    pub x u8
+}
+
+type TooBig layout(C, align: 16) = { //~ ERROR `layout(C, align: N)`'s alignment must be a power of two no greater than 8, found `16`
+    pub x u8
+}
+
+type Negative layout(C, align: -2) = { //~ ERROR `layout(C, align: N)`'s alignment must be a power of two no greater than 8, found `-2`
+    pub x u8
+}
+
+-- expect --
+error[E974]: `layout(C, align: N)`'s alignment must be a power of two no greater than 8, found `0`
+ --> app/t/t.kg:5:28
+  |
+5 | type Zero layout(C, align: 0) = { //~ ERROR `layout(C, align: N)`'s alignment must be a power of two no greater than 8, found `0`
+  |                            ^
+
+error[E974]: `layout(C, align: N)`'s alignment must be a power of two no greater than 8, found `3`
+ --> app/t/t.kg:9:31
+  |
+9 | type NotPow2 layout(C, align: 3) = { //~ ERROR `layout(C, align: N)`'s alignment must be a power of two no greater than 8, found `3`
+  |                               ^
+
+error[E974]: `layout(C, align: N)`'s alignment must be a power of two no greater than 8, found `16`
+  --> app/t/t.kg:13:30
+   |
+13 | type TooBig layout(C, align: 16) = { //~ ERROR `layout(C, align: N)`'s alignment must be a power of two no greater than 8, found `16`
+   |                              ^^
+
+error[E974]: `layout(C, align: N)`'s alignment must be a power of two no greater than 8, found `-2`
+  --> app/t/t.kg:17:32
+   |
+17 | type Negative layout(C, align: -2) = { //~ ERROR `layout(C, align: N)`'s alignment must be a power of two no greater than 8, found `-2`
+   |                                ^^
+

@@ -1,0 +1,19 @@
+-- src --
+type Counter = {
+    mut n usize
+}
+
+fn nextIdx(c: &mut Counter) -> usize {
+    let cur = c.n
+    c.n = cur + 1
+    print "nextIdx-> ${cur}"
+    cur
+}
+
+let mut arr = Array.of(100, 200, 300)
+let mut ctr = Counter { n: 0 }
+arr[nextIdx(&mut ctr)] += 1
+print "${arr[0]} ${arr[1]} ${arr[2]}"
+-- stdout --
+nextIdx-> 0
+101 200 300

@@ -1,0 +1,25 @@
+-- src --
+import map from std/map
+
+type Point = {
+    pub x Int
+    pub y Int
+}
+
+let big = 300
+let neg = -1
+let small = 200
+print "usize=${neg.toUsize() || 99} ${big.toUsize() || 99} u8=${big.toU8() || 0} ${small.toU8() || 0} i32=${big.toI32() || 0}"
+let n: usize = 7
+let b: u8 = 9
+let w: i32 = -5
+print "back=${n.toInt() || -1} ${b.toInt()} ${w.toInt()}"
+let mut seen = map.empty[Point, String]()
+seen.set(Point { x: 1, y: 2 }, "a")
+seen.set(Point { x: 1, y: 2 }, "b")
+seen.set(Point { x: 3, y: 4 }, "c")
+print "points=${seen.len()} at12=${seen.get(&(Point { x: 1, y: 2 })) || "?"} eq=${Point { x: 1, y: 2 } == Point { x: 1, y: 2 }}"
+-- stdout --
+usize=99 300 u8=0 200 i32=300
+back=7 9 -5
+points=2 at12=b eq=true

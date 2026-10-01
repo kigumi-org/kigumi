@@ -1,0 +1,16 @@
+-- src --
+import map from std/map
+import test from std/test
+
+let mut a = map.empty[i64, i64]()
+a.set(1, 10)
+a.set(2, 20)
+let mut b = map.empty[i64, i64]()
+b.set(2, 20)
+b.set(1, 10)
+let mut c = map.empty[i64, i64]()
+c.set(1, 10)
+c.set(2, 21)
+print "${a == b} ${hash(&a) == hash(&b)} ${a == c} ${a != c} ${test.expectEq(a, b) is Ok(_)}"
+-- stdout --
+true true false true true

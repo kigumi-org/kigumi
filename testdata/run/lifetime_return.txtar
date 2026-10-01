@@ -1,0 +1,22 @@
+-- src --
+// Ledger L-186: a `&'a T` return borrows from a parameter tagged `'a`, one
+// or two of them; the elision rule (§2.8) requires the two-parameter form
+// to write the return's lifetime explicitly.
+fn first['a](x: &'a Int) -> &Int {
+    x
+}
+
+fn larger['a](x: &'a Int, y: &'a Int) -> &'a Int {
+    if x > y { x } else { y }
+}
+
+fn main() -> Unit! {
+    let a = 3
+    let b = 7
+    let f = first(&a)
+    let g = larger(&a, &b)
+    let h = larger(&b, &a)
+    print "f=${f} g=${g} h=${h}"
+}
+-- stdout --
+f=3 g=7 h=7

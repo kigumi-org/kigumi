@@ -1,0 +1,4 @@
+/// Byte offset of d_name in this platform's struct dirent.
+fn direntNameOffset() -> Int {
+    8
+}

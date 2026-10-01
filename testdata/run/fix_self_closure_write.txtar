@@ -1,0 +1,115 @@
+-- src --
+type Counter = {
+    pub mut n Int
+}
+
+fn Counter.bumpTwice(mut self) -> Unit {
+    let step = () => {
+        self.n = self.n + 1
+    }
+    step()
+}
+
+fn Counter.bumpCompound(mut self) -> Unit {
+    let step = () => {
+        self.n += 1
+    }
+    step()
+}
+
+fn Counter.bumpLoop(mut self) -> Unit {
+    let step = () => {
+        self.n = self.n + 1
+    }
+    let mut i = 0
+    for i < 3 {
+        step()
+        i = i + 1
+    }
+}
+
+fn Counter.bumpThenRead(mut self) -> Int {
+    let step = () => {
+        self.n = self.n + 1
+    }
+    step()
+    self.n
+}
+
+fn Counter.peekTwice(mut self) -> Int {
+    let peek = () => self.n
+    peek() + peek()
+}
+
+fn Counter.reset(mut self) -> Unit {
+    let step = () => {
+        self = Counter { n: 99 }
+    }
+    step()
+}
+
+fn Counter.resetDirect(mut self) -> Unit {
+    self = Counter { n: 100 }
+}
+
+fn plainClosureBump() -> Int {
+    let mut c = Counter { n: 0 }
+    let step = () => {
+        c.n = c.n + 1
+    }
+    step()
+    c.n
+}
+
+type Bag = {
+    pub mut items Array[Int]
+}
+
+fn Bag.bumpFirst(mut self) -> Unit {
+    let step = () => {
+        self.items[0] = self.items[0] + 1
+    }
+    step()
+}
+
+let mut a = Counter { n: 0 }
+a.bumpTwice()
+print "bumpTwice=${a.n}"
+
+let mut b = Counter { n: 0 }
+b.bumpCompound()
+print "bumpCompound=${b.n}"
+
+let mut c = Counter { n: 0 }
+c.bumpLoop()
+print "bumpLoop=${c.n}"
+
+let mut d = Counter { n: 0 }
+print "bumpThenRead=${d.bumpThenRead()} after=${d.n}"
+
+let mut e = Counter { n: 5 }
+print "peekTwice=${e.peekTwice()}"
+
+let mut f = Counter { n: 0 }
+f.reset()
+print "reset=${f.n}"
+
+let mut g = Counter { n: 0 }
+g.resetDirect()
+print "resetDirect=${g.n}"
+
+print "plainClosureBump=${plainClosureBump()}"
+
+let mut h = Bag { items: Array.of(10, 20) }
+h.bumpFirst()
+print "bumpFirst=${h.items[0]}"
+-- stdout --
+bumpTwice=1
+bumpCompound=1
+bumpLoop=3
+bumpThenRead=1 after=1
+peekTwice=10
+reset=99
+resetDirect=100
+plainClosureBump=1
+bumpFirst=11

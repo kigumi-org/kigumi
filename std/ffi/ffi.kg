@@ -1,0 +1,165 @@
+/// Owned NUL-terminated copy of a String for passing to C; freed on drop.
+pub type CString = resource {
+    handle Int
+}
+
+/// Copies text into a NUL-terminated buffer; fails when text contains an
+/// embedded NUL byte, since a C string can't represent one.
+pub fn CString.new(text: &String) -> CString!
+
+/// Pointer to the buffer; valid while the CString lives.
+pub fn CString.ptr(self) -> *const u8
+
+/// Frees the buffer.
+pub fn CString.drop(move self) -> Unit
+
+/// The null pointer.
+pub pure fn null[T]() -> *const T
+
+/// Whether p is null.
+pub pure fn isNull[T](p: *const T) -> Bool
+
+/// Drops mutability from a pointer.
+pub pure fn toConst[T](p: *mut T) -> *const T
+
+/// Adds mutability to a pointer; writing through it is the caller's responsibility.
+pub unsafe fn toMut[T](p: *const T) -> *mut T
+
+/// p moved by bytes.
+pub unsafe fn offset[T](p: *const T, bytes: Int) -> *const T
+
+/// Copies the NUL-terminated text at p into a String; null gives "".
+pub unsafe fn string(p: *const u8) -> String
+
+/// Like `string`, but None instead of a String that fails the UTF-8
+/// invariant; null still gives Some("").
+pub unsafe fn stringChecked(p: *const u8) -> String?
+
+/// Like `string`, but invalid UTF-8 becomes U+FFFD (replacement character)
+/// byte by byte instead of failing, for OS-controlled text that must stay
+/// usable regardless of encoding. The result cannot be converted back to
+/// the original bytes, so a name round-tripped this way may not refer to
+/// the same file on reopen.
+pub unsafe fn stringLossy(p: *const u8) -> String
+
+/// Reads the value at p.
+pub unsafe fn readU8(p: *const u8) -> u8
+
+/// Reads the value at p.
+pub unsafe fn readI32(p: *const i32) -> i32
+
+/// Reads the value at p.
+pub unsafe fn readI64(p: *const i64) -> i64
+
+/// Reads the value at p.
+pub unsafe fn readF64(p: *const f64) -> f64
+
+/// Stores value at p.
+pub unsafe fn writeU8(p: *mut u8, value: u8) -> Unit
+
+/// Stores value at p.
+pub unsafe fn writeI32(p: *mut i32, value: i32) -> Unit
+
+/// Stores value at p.
+pub unsafe fn writeI64(p: *mut i64, value: i64) -> Unit
+
+/// Stores value at p.
+pub unsafe fn writeF64(p: *mut f64, value: f64) -> Unit
+
+/// Bytes a value of a `layout(C)` record occupies in C.
+pub pure fn sizeOf[T](value: &T) -> usize
+
+/// Bytes a value of a `layout(C)` record must be aligned to in C
+/// (`layout(C, align: N)` raises it to N when N is the larger of the two).
+pub pure fn alignOf[T](value: &T) -> usize
+
+/// Copies the `layout(C)` record at p into a value.
+pub unsafe fn readRecord[T](p: *const T) -> T
+
+/// Stores a `layout(C)` record at p.
+pub unsafe fn writeRecord[T](p: *mut T, value: &T) -> Unit
+
+/// C memory holding one value of T; freed on drop. T must be concrete: a
+/// `layout(C)` record, a fixed-width number, `Bool`, `Char`, or a pointer,
+/// never a generic type parameter (AOT shares one body per generic function
+/// rather than one per instantiation).
+pub type CValue[T] = resource {
+    handle Int
+}
+
+/// Allocates C memory for value and copies it in.
+pub fn CValue.new[T](value: T) -> CValue[T]
+
+/// Pointer to the C memory; valid while the CValue lives.
+pub fn CValue[T].ptr(self) -> *mut T
+
+/// A copy of the value as C currently holds it.
+pub fn CValue[T].get(self) -> T
+
+/// Overwrites the C memory with value.
+pub fn CValue[T].set(self, value: &T) -> Unit
+
+/// Frees the C memory.
+pub fn CValue[T].drop(move self) -> Unit
+
+/// A Kigumi value pinned for C as userdata; the pointer stays valid until drop.
+pub type Pin[T] = resource {
+    handle Int
+}
+
+/// Pins value and takes ownership of it.
+pub fn Pin.new[T](value: T) -> Pin[T]
+
+/// The userdata pointer to hand to C; valid while the Pin lives.
+pub fn Pin[T].ptr(self) -> *mut u8
+
+/// Runs f on the value behind a userdata pointer that came from a live Pin[T].
+pub unsafe fn Pin.with[T, R](p: *mut u8, f: fn(&T) -> R) -> R
+
+/// Releases the value.
+pub fn Pin[T].drop(move self) -> Unit
+
+/// Gives up ownership without dropping: self is consumed, the pinned value
+/// stays alive, and the returned pointer can be handed to C to come back
+/// later through reclaim.
+pub fn Pin[T].release(move self) -> *mut u8
+
+/// Takes ownership back of a pointer previously returned by release;
+/// dropping the result drops the value. Reclaiming a pointer that was
+/// never released, or reclaiming one twice, is undefined.
+pub unsafe fn Pin.reclaim[T](p: *mut u8) -> Pin[T]
+
+/// Reinterprets a byte pointer as a pointer to T; reading through it is the caller's responsibility.
+pub pure fn cast[T](p: *const u8) -> *const T
+
+/// Copies n bytes at p into a Bytes value.
+pub unsafe fn bytesFrom(p: *const u8, n: usize) -> Bytes
+
+/// Pointer to the bytes; valid while b lives and is not changed.
+pub unsafe fn bytesPtr(b: &Bytes) -> *const u8
+
+/// Reads the pointer stored at p.
+pub unsafe fn readPtr(p: *const u8) -> *const u8
+
+/// Stores value at p.
+pub unsafe fn writePtr(p: *mut u8, value: *const u8) -> Unit
+
+/// Error from a C call: the errno value and its text.
+pub type CError = {
+    pub code i32
+    pub text String
+}
+
+/// The error text.
+pub fn CError.message(self) -> String {
+    self.text
+}
+
+/// The last C error of the calling thread as an error value.
+pub fn lastError() -> CError {
+    let code = errno()
+    CError {
+        code: code
+        text: errorText(code)
+    }
+}

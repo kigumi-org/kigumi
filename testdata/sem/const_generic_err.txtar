@@ -1,0 +1,53 @@
+-- app/t/t.kg --
+fn wrongType[const N: f64]() -> usize { 0 } //~ ERROR `Float` cannot be a const parameter's type
+
+fn sameLen[const N: usize](a: &FixedArray[i32, N], b: &FixedArray[i32, N]) -> Bool { true }
+
+const M: usize = 3
+fn exprConst[const N: usize]() -> usize { N }
+
+fn caller() -> Unit {
+    let a = FixedArray.filled[i32, 4](0)
+    let b = FixedArray.filled[i32, 5](0)
+    let _ = sameLen(&a, &b) //~ ERROR expected `&FixedArray[i32, 4]`, found `&FixedArray[i32, 5]`
+    let _ = exprConst[M + 1]() //~ ERROR const generic arguments must be a literal, a const declaration or another const parameter
+    let _ = exprConst[-M]() //~ ERROR const generic arguments must be a literal, a const declaration or another const parameter
+}
+
+export(C) {
+    pub fn bad[const N: usize]() -> usize { N } //~ ERROR `bad` is exported to C and cannot have a const parameter
+}
+-- expect --
+error[E1004]: `Float` cannot be a const parameter's type
+ --> app/t/t.kg:1:20
+  |
+1 | fn wrongType[const N: f64]() -> usize { 0 } //~ ERROR `Float` cannot be a const parameter's type
+  |                    ^^^^^^
+  = help: use usize, a fixed-width integer, Int or Bool
+
+error[E400]: expected `&FixedArray[i32, 4]`, found `&FixedArray[i32, 5]`
+  --> app/t/t.kg:11:25
+   |
+11 |     let _ = sameLen(&a, &b) //~ ERROR expected `&FixedArray[i32, 4]`, found `&FixedArray[i32, 5]`
+   |                         ^^
+
+error[E1005]: const generic arguments must be a literal, a const declaration or another const parameter
+  --> app/t/t.kg:12:23
+   |
+12 |     let _ = exprConst[M + 1]() //~ ERROR const generic arguments must be a literal, a const declaration or another const parameter
+   |                       ^^^^^
+   = help: expressions like `N + 1` are not supported yet
+
+error[E1005]: const generic arguments must be a literal, a const declaration or another const parameter
+  --> app/t/t.kg:13:23
+   |
+13 |     let _ = exprConst[-M]() //~ ERROR const generic arguments must be a literal, a const declaration or another const parameter
+   |                       ^^
+   = help: expressions like `N + 1` are not supported yet
+
+error[E1007]: `bad` is exported to C and cannot have a const parameter
+  --> app/t/t.kg:17:5
+   |
+17 |     pub fn bad[const N: usize]() -> usize { N } //~ ERROR `bad` is exported to C and cannot have a const parameter
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+

@@ -1,0 +1,11 @@
+-- src --
+let sum = 1.wrappingAdd(2)
+let ch = 65.toChar()
+let cmp = match 1.compareTo(2) {
+    Ordering.Less -> "less"
+    Ordering.Equal -> "equal"
+    Ordering.Greater -> "greater"
+}
+print "${sum} ${ch} ${cmp}"
+-- stdout --
+3 A less

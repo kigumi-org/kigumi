@@ -1,0 +1,14 @@
+-- src --
+let e = host.entropy()
+let a = e.bytes(16)?
+let b = e.bytes(16)?
+print "len=${a.len()} differ=${!a.equals(&b)}"
+let z = e.bytes(0)?
+print "zero-len=${z.len()}"
+let u1 = e.u64()?
+let u2 = e.u64()?
+print "u64-differ=${u1 != u2}"
+-- stdout --
+len=16 differ=true
+zero-len=0
+u64-differ=true

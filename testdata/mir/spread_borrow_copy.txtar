@@ -1,0 +1,61 @@
+-- lib/rec.kg --
+type Point = {
+    pub x Int
+    pub y Int
+}
+
+fn Point.withX(self, x: Int) -> Point {
+    Point { ..self, x: x }
+}
+
+type Res = resource {
+    pub id Int
+}
+
+fn Res.drop(move self) -> Unit {
+    _ = self
+}
+
+type Handle = {
+    pub tag Int
+    pub res Res
+}
+
+fn Handle.retag(self, tag: Int) -> Handle {
+    Handle { ..self, tag: tag }
+}
+
+-- expect --
+fn lib.Point.withX(%self: Point, %x: Int) -> Point {
+  b0:
+    %t2 = field 0(%self)
+    %t3 = field 1(%self)
+    %t4 = copy(%x)
+    %t5 = record Point(%t4, %t3)
+    drop(%x)
+    return %t5
+}
+fn lib.Res.drop(%self: Res) -> Unit {
+  b0:
+    %t1 = move(%self)
+    drop(%t1)
+    %t2 = unit
+    return %t2
+}
+fn lib.Handle.retag(%self: Handle, %tag: Int) -> Handle {
+  b0:
+    %t2 = field 0(%self)
+    %t3 = field 1(%self)
+    %t4 = move(%self)
+    drop(%t4)
+    %t5 = copy(%tag)
+    %t6 = record Handle(%t5, %t3)
+    drop(%tag)
+    return %t6
+}
+error[move-from-borrow]: `self` is borrowed by this method and cannot be moved out; clone it or take `move self`
+  --> lib/rec.kg:24:14
+   |
+24 |     Handle { ..self, tag: tag }
+   |              ^^^^^^
+

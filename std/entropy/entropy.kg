@@ -1,0 +1,5 @@
+/// CSPRNG capability, obtained from `host.entropy()`; hosted only. `std/random`
+/// is a deterministic splitmix64 and must not be used for keys or nonces.
+/// No bare variant: a freestanding target has no entropy source in std
+/// (an SGX enclave supplies its own through `Runtime.randomBytes`).
+pub type Entropy

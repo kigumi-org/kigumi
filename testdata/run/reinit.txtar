@@ -1,0 +1,73 @@
+-- src --
+type Handle = resource {
+    pub id Int
+}
+
+fn Handle.drop(move self) -> Unit {
+    print "drop ${self.id}"
+}
+
+fn make(id: Int) -> Handle {
+    Handle { id: id }
+}
+
+fn step(h: Handle) -> Handle {
+    h
+}
+
+fn loopReinit() -> Unit {
+    let mut h = make(1)
+    let mut i = 0
+    for i < 3 {
+        h = step(h)
+        i = i + 1
+    }
+    print "loop done ${h.id}"
+}
+
+fn relabel(h: Handle) -> Handle {
+    print "relabel ${h.id}"
+    make(h.id + 100)
+}
+
+fn branchReinit(flag: Bool, mut h: Handle) -> Handle {
+    if flag {
+        h = relabel(h)
+    }
+    h
+}
+
+fn reassignDropsOnce() -> Unit {
+    let mut h = make(10)
+    h = make(11)
+    print "reassignDropsOnce done ${h.id}"
+}
+
+fn neverMovedReassign() -> Unit {
+    let mut h = make(20)
+    h = make(21)
+    print "neverMovedReassign done ${h.id}"
+}
+
+loopReinit()
+let r1 = branchReinit(true, make(30))
+print "branch true result ${r1.id}"
+let r2 = branchReinit(false, make(40))
+print "branch false result ${r2.id}"
+reassignDropsOnce()
+neverMovedReassign()
+-- stdout --
+loop done 1
+drop 1
+relabel 30
+drop 30
+branch true result 130
+branch false result 40
+drop 10
+reassignDropsOnce done 11
+drop 11
+drop 20
+neverMovedReassign done 21
+drop 21
+drop 40
+drop 130

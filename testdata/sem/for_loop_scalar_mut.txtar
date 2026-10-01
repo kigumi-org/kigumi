@@ -1,0 +1,47 @@
+-- lib/flsm.kg --
+import map from std/map
+
+// Ledger L-181: the vm and native backends give a `for` element no cell to
+// write through, unlike an ordinary `&mut` local (R10), so a mutable
+// scalar element binding is rejected outright instead of silently losing
+// the write on those two engines.
+fn arrayLiteralBorrow() -> Unit {
+    let mut ns = Array.of(1, 2, 3)
+    for x in &mut ns { //~ ERROR cannot bind a mutable `Int` element
+        x = x + 1
+    }
+}
+
+fn arrayParamBorrow(xs: &mut Array[Int]) -> Unit {
+    for x in xs { //~ ERROR cannot bind a mutable `Int` element
+        x = x + 1
+    }
+}
+
+fn mapValueBorrow(m: &mut map.Map[String, Int]) -> Unit {
+    for (k, v) in m { //~ ERROR cannot bind a mutable `Int` element
+        v = v + 1
+    }
+}
+-- expect --
+error[E717]: cannot bind a mutable `Int` element in a `for` loop
+ --> lib/flsm.kg:9:9
+  |
+9 |     for x in &mut ns { //~ ERROR cannot bind a mutable `Int` element
+  |         ^
+  = help: index the collection instead
+
+error[E717]: cannot bind a mutable `Int` element in a `for` loop
+  --> lib/flsm.kg:15:9
+   |
+15 |     for x in xs { //~ ERROR cannot bind a mutable `Int` element
+   |         ^
+   = help: index the collection instead
+
+error[E717]: cannot bind a mutable `Int` element in a `for` loop
+  --> lib/flsm.kg:21:13
+   |
+21 |     for (k, v) in m { //~ ERROR cannot bind a mutable `Int` element
+   |             ^
+   = help: index the collection instead
+

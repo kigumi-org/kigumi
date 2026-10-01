@@ -1,0 +1,12 @@
+-- src --
+import fs from std/fs
+
+let files = host.files()
+let dirPath = fs.Path.fromString("emptydir")?
+files.mkdir(dirPath)?
+match files.list(dirPath) {
+    Ok(names) -> print "count=${names.len()}"
+    Err(e) -> print "err: ${e.message()}"
+}
+-- stdout --
+count=0

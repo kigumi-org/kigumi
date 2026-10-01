@@ -1,0 +1,20 @@
+-- app/m/m.kg --
+import json from std/json
+import map from std/map
+
+pub type Point = {
+    pub x Int
+    pub y Int
+}
+
+fn useIt(text: String) -> Unit! {
+    let bad = json.decode[map.Map[Point, Int]](text)? //~ ERROR `Point` has no `fromKeyText`
+    _ = bad
+}
+-- expect --
+error[E964]: `Point` has no `fromKeyText` to pass for `DecodeKey` and none could be generated
+  --> app/m/m.kg:10:15
+   |
+10 |     let bad = json.decode[map.Map[Point, Int]](text)? //~ ERROR `Point` has no `fromKeyText`
+   |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+

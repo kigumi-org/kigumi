@@ -1,0 +1,36 @@
+-- pkga/lib.kg --
+pub fn Speak() -> Int { 0 }
+pub const Pi: Int = 3
+-- main/main.kg --
+import {Speak, Pi} from pkga //~ WARNING unused import `Speak` //~ WARNING unused import `Pi`
+
+type Node = Speak(Int) | Leaf(Int) //~ ERROR variant `Speak` collides with the imported function `Speak`
+
+type Circle = Pi(Int) | Origin //~ ERROR variant `Pi` collides with the imported const `Pi`
+-- expect --
+warning[W100]: unused import `Speak`
+ --> main/main.kg:1:9
+  |
+1 | import {Speak, Pi} from pkga //~ WARNING unused import `Speak` //~ WARNING unused import `Pi`
+  |         ^^^^^
+
+warning[W100]: unused import `Pi`
+ --> main/main.kg:1:16
+  |
+1 | import {Speak, Pi} from pkga //~ WARNING unused import `Speak` //~ WARNING unused import `Pi`
+  |                ^^
+
+error[E255]: variant `Speak` collides with the imported function `Speak`
+ --> main/main.kg:3:13
+  |
+3 | type Node = Speak(Int) | Leaf(Int) //~ ERROR variant `Speak` collides with the imported function `Speak`
+  |             ^^^^^^^^^
+  = help: rename it
+
+error[E255]: variant `Pi` collides with the imported const `Pi`
+ --> main/main.kg:5:15
+  |
+5 | type Circle = Pi(Int) | Origin //~ ERROR variant `Pi` collides with the imported const `Pi`
+  |               ^^^^^^
+  = help: rename it
+

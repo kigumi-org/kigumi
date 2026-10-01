@@ -1,0 +1,743 @@
+/// Result of a three-way comparison.
+pub type Ordering = Less | Equal | Greater
+
+/// Equality; `==` and `!=` call `equals`. A record or ADT whose parts are
+/// all `Eq` gets a generated `equals` unless it defines one.
+pub interface Eq {
+    pure fn equals(self, other: &Self) -> Bool
+}
+
+/// Hashing consistent with `Eq`; `Map` keys need both. A `Copy` record or
+/// ADT whose parts are all `Hash` gets a generated `hash`.
+pub interface Hash {
+    pure fn hash(self) -> u64
+}
+
+/// Total order; `<`, `<=`, `>` and `>=` call `compareTo`.
+pub interface Ord {
+    pure fn compareTo(self, other: &Self) -> Ordering
+}
+
+/// Outcome of `Fallback.branch`: Hit carries the value, Miss what `||` passes to the fallback.
+pub type Branch[V, R] = Hit(V) | Miss(R)
+
+/// Anything a function can fail with; `?` and `fail` work on values of this interface.
+pub interface Error {
+    fn message(self) -> String
+}
+
+/// Types usable on the left of `||`: Bool, Option and Result.
+pub interface Fallback[V, R] {
+    pure noalloc fn branch(move self) -> Branch[V, R]
+}
+
+/// One value out of an `asm` block.
+pub type Out[T] = {
+    pub value T
+}
+
+/// `start..end`, half-open unless `inclusive` (`start..=end`).
+pub type Range[T] = {
+    pub start T
+    pub end T
+    pub inclusive Bool
+}
+
+/// Hit(true) for true, Miss(()) for false.
+pub pure noalloc fn Bool.branch(move self) -> Branch[Bool, Unit]
+
+/// Hit(value) for Some, Miss(()) for None.
+pub pure noalloc fn Option[T].branch(move self) -> Branch[T, Unit]
+
+/// Hit(value) for Ok, Miss(error) for Err.
+pub pure noalloc fn Result[T, E].branch(move self) -> Branch[T, E]
+
+/// The value of Some; panics on None.
+pub pure fn Option[T].unwrap(move self) -> T {
+    match self {
+        Some(v) -> v
+        None -> panic("unwrap on an empty value")
+    }
+}
+
+/// The value of Some; panics with message on None.
+pub pure fn Option[T].expect(move self, message: String) -> T {
+    match self {
+        Some(v) -> v
+        None -> panic(message)
+    }
+}
+
+/// Calls f with a borrow of the value; None when there is none.
+pub pure fn Option[T].with[R](self, f: fn(&T) -> R) -> R? {
+    match self {
+        Some(v) -> Some(f(v))
+        None -> None
+    }
+}
+
+/// Transforms the value of Some by consuming it; None stays None.
+pub pure fn Option[T].map[U](move self, f: fn(T) -> U) -> U? {
+    match self {
+        Some(v) -> Some(f(v))
+        None -> None
+    }
+}
+
+/// Chains an Option-returning step onto the value of Some, consuming it; None stays None.
+pub pure fn Option[T].andThen[U](move self, f: fn(T) -> U?) -> U? {
+    match self {
+        Some(v) -> f(v)
+        None -> None
+    }
+}
+
+/// The value of Some, or fallback for None.
+pub pure fn Option[T].unwrapOr(move self, fallback: T) -> T {
+    match self {
+        Some(v) -> v
+        None -> fallback
+    }
+}
+
+/// Moves the value out, leaving None in its place.
+pub pure fn Option[T].take(mut self) -> T?
+
+/// The value of Ok; panics on Err.
+pub pure fn Result[T, E].unwrap(move self) -> T {
+    match self {
+        Ok(v) -> v
+        Err(_) -> panic("unwrap on an empty value")
+    }
+}
+
+/// The value of Ok; panics with message on Err.
+pub pure fn Result[T, E].expect(move self, message: String) -> T {
+    match self {
+        Ok(v) -> v
+        Err(_) -> panic(message)
+    }
+}
+
+/// Transforms the value of Ok by consuming it; Err stays Err.
+pub pure fn Result[T, E].map[U](move self, f: fn(T) -> U) -> Result[U, E] {
+    match self {
+        Ok(v) -> Ok(f(v))
+        Err(e) -> Err(e)
+    }
+}
+
+/// Transforms the error of Err by consuming it; Ok stays Ok.
+pub pure fn Result[T, E].mapErr[F](move self, f: fn(E) -> F) -> Result[T, F] {
+    match self {
+        Ok(v) -> Ok(v)
+        Err(e) -> Err(f(e))
+    }
+}
+
+/// Chains a Result-returning step onto the value of Ok, consuming it; Err stays Err.
+pub pure fn Result[T, E].andThen[U](move self, f: fn(T) -> Result[U, E]) -> Result[U, E] {
+    match self {
+        Ok(v) -> f(v)
+        Err(e) -> Err(e)
+    }
+}
+
+/// A readable rendering of any value, for diagnostics; not a stable format.
+pub pure fn debug[T](value: &T) -> String
+
+/// Sum modulo 2^bits; `+` panics on overflow instead.
+pub pure noalloc fn i32.wrappingAdd(self, other: i32) -> i32
+
+/// Difference modulo 2^bits.
+pub pure noalloc fn i32.wrappingSub(self, other: i32) -> i32
+
+/// Product modulo 2^bits.
+pub pure noalloc fn i32.wrappingMul(self, other: i32) -> i32
+
+/// Left shift by count masked to the width.
+pub pure noalloc fn i32.wrappingShiftLeft(self, count: i32) -> i32
+
+/// Right shift by count masked to the width; arithmetic for signed types.
+pub pure noalloc fn i32.wrappingShiftRight(self, count: i32) -> i32
+
+/// Bits rotated left by count masked to the width.
+pub pure noalloc fn i32.rotateLeft(self, count: i32) -> i32
+
+/// Bits rotated right by count masked to the width.
+pub pure noalloc fn i32.rotateRight(self, count: i32) -> i32
+
+/// Sum modulo 2^bits; `+` panics on overflow instead.
+pub pure noalloc fn i64.wrappingAdd(self, other: i64) -> i64
+
+/// Difference modulo 2^bits.
+pub pure noalloc fn i64.wrappingSub(self, other: i64) -> i64
+
+/// Product modulo 2^bits.
+pub pure noalloc fn i64.wrappingMul(self, other: i64) -> i64
+
+/// Left shift by count masked to the width.
+pub pure noalloc fn i64.wrappingShiftLeft(self, count: i64) -> i64
+
+/// Right shift by count masked to the width; arithmetic for signed types.
+pub pure noalloc fn i64.wrappingShiftRight(self, count: i64) -> i64
+
+/// Bits rotated left by count masked to the width.
+pub pure noalloc fn i64.rotateLeft(self, count: i64) -> i64
+
+/// Bits rotated right by count masked to the width.
+pub pure noalloc fn i64.rotateRight(self, count: i64) -> i64
+
+/// Sum modulo 2^bits; `+` panics on overflow instead.
+pub pure noalloc fn u32.wrappingAdd(self, other: u32) -> u32
+
+/// Difference modulo 2^bits.
+pub pure noalloc fn u32.wrappingSub(self, other: u32) -> u32
+
+/// Product modulo 2^bits.
+pub pure noalloc fn u32.wrappingMul(self, other: u32) -> u32
+
+/// Left shift by count masked to the width.
+pub pure noalloc fn u32.wrappingShiftLeft(self, count: u32) -> u32
+
+/// Right shift by count masked to the width; arithmetic for signed types.
+pub pure noalloc fn u32.wrappingShiftRight(self, count: u32) -> u32
+
+/// Bits rotated left by count masked to the width.
+pub pure noalloc fn u32.rotateLeft(self, count: u32) -> u32
+
+/// Bits rotated right by count masked to the width.
+pub pure noalloc fn u32.rotateRight(self, count: u32) -> u32
+
+/// Sum modulo 2^bits; `+` panics on overflow instead.
+pub pure noalloc fn u64.wrappingAdd(self, other: u64) -> u64
+
+/// Difference modulo 2^bits.
+pub pure noalloc fn u64.wrappingSub(self, other: u64) -> u64
+
+/// Product modulo 2^bits.
+pub pure noalloc fn u64.wrappingMul(self, other: u64) -> u64
+
+/// Left shift by count masked to the width.
+pub pure noalloc fn u64.wrappingShiftLeft(self, count: u64) -> u64
+
+/// Right shift by count masked to the width; arithmetic for signed types.
+pub pure noalloc fn u64.wrappingShiftRight(self, count: u64) -> u64
+
+/// Bits rotated left by count masked to the width.
+pub pure noalloc fn u64.rotateLeft(self, count: u64) -> u64
+
+/// Bits rotated right by count masked to the width.
+pub pure noalloc fn u64.rotateRight(self, count: u64) -> u64
+
+/// Sum modulo 2^bits; `+` panics on overflow instead.
+pub pure noalloc fn usize.wrappingAdd(self, other: usize) -> usize
+
+/// Difference modulo 2^bits.
+pub pure noalloc fn usize.wrappingSub(self, other: usize) -> usize
+
+/// Product modulo 2^bits.
+pub pure noalloc fn usize.wrappingMul(self, other: usize) -> usize
+
+/// Left shift by count masked to the width.
+pub pure noalloc fn usize.wrappingShiftLeft(self, count: usize) -> usize
+
+/// Right shift by count masked to the width; arithmetic for signed types.
+pub pure noalloc fn usize.wrappingShiftRight(self, count: usize) -> usize
+
+/// Bits rotated left by count masked to the width.
+pub pure noalloc fn usize.rotateLeft(self, count: usize) -> usize
+
+/// Bits rotated right by count masked to the width.
+pub pure noalloc fn usize.rotateRight(self, count: usize) -> usize
+
+/// Sum modulo 2^bits; `+` panics on overflow instead.
+pub pure noalloc fn u8.wrappingAdd(self, other: u8) -> u8
+
+/// Difference modulo 2^bits.
+pub pure noalloc fn u8.wrappingSub(self, other: u8) -> u8
+
+/// Product modulo 2^bits.
+pub pure noalloc fn u8.wrappingMul(self, other: u8) -> u8
+
+/// Left shift by count masked to the width.
+pub pure noalloc fn u8.wrappingShiftLeft(self, count: u8) -> u8
+
+/// Right shift by count masked to the width; arithmetic for signed types.
+pub pure noalloc fn u8.wrappingShiftRight(self, count: u8) -> u8
+
+/// Bits rotated left by count masked to the width.
+pub pure noalloc fn u8.rotateLeft(self, count: u8) -> u8
+
+/// Bits rotated right by count masked to the width.
+pub pure noalloc fn u8.rotateRight(self, count: u8) -> u8
+
+/// Sum modulo 2^bits; `+` panics on overflow instead.
+pub pure noalloc fn i8.wrappingAdd(self, other: i8) -> i8
+
+/// Difference modulo 2^bits.
+pub pure noalloc fn i8.wrappingSub(self, other: i8) -> i8
+
+/// Product modulo 2^bits.
+pub pure noalloc fn i8.wrappingMul(self, other: i8) -> i8
+
+/// Left shift by count masked to the width.
+pub pure noalloc fn i8.wrappingShiftLeft(self, count: i8) -> i8
+
+/// Right shift by count masked to the width; arithmetic for signed types.
+pub pure noalloc fn i8.wrappingShiftRight(self, count: i8) -> i8
+
+/// Bits rotated left by count masked to the width.
+pub pure noalloc fn i8.rotateLeft(self, count: i8) -> i8
+
+/// Bits rotated right by count masked to the width.
+pub pure noalloc fn i8.rotateRight(self, count: i8) -> i8
+
+/// Sum modulo 2^bits; `+` panics on overflow instead.
+pub pure noalloc fn i16.wrappingAdd(self, other: i16) -> i16
+
+/// Difference modulo 2^bits.
+pub pure noalloc fn i16.wrappingSub(self, other: i16) -> i16
+
+/// Product modulo 2^bits.
+pub pure noalloc fn i16.wrappingMul(self, other: i16) -> i16
+
+/// Left shift by count masked to the width.
+pub pure noalloc fn i16.wrappingShiftLeft(self, count: i16) -> i16
+
+/// Right shift by count masked to the width; arithmetic for signed types.
+pub pure noalloc fn i16.wrappingShiftRight(self, count: i16) -> i16
+
+/// Bits rotated left by count masked to the width.
+pub pure noalloc fn i16.rotateLeft(self, count: i16) -> i16
+
+/// Bits rotated right by count masked to the width.
+pub pure noalloc fn i16.rotateRight(self, count: i16) -> i16
+
+/// Sum modulo 2^bits; `+` panics on overflow instead.
+pub pure noalloc fn u16.wrappingAdd(self, other: u16) -> u16
+
+/// Difference modulo 2^bits.
+pub pure noalloc fn u16.wrappingSub(self, other: u16) -> u16
+
+/// Product modulo 2^bits.
+pub pure noalloc fn u16.wrappingMul(self, other: u16) -> u16
+
+/// Left shift by count masked to the width.
+pub pure noalloc fn u16.wrappingShiftLeft(self, count: u16) -> u16
+
+/// Right shift by count masked to the width; arithmetic for signed types.
+pub pure noalloc fn u16.wrappingShiftRight(self, count: u16) -> u16
+
+/// Bits rotated left by count masked to the width.
+pub pure noalloc fn u16.rotateLeft(self, count: u16) -> u16
+
+/// Bits rotated right by count masked to the width.
+pub pure noalloc fn u16.rotateRight(self, count: u16) -> u16
+
+/// Sum modulo 2^bits; `+` panics on overflow instead.
+pub pure noalloc fn isize.wrappingAdd(self, other: isize) -> isize
+
+/// Difference modulo 2^bits.
+pub pure noalloc fn isize.wrappingSub(self, other: isize) -> isize
+
+/// Product modulo 2^bits.
+pub pure noalloc fn isize.wrappingMul(self, other: isize) -> isize
+
+/// Left shift by count masked to the width.
+pub pure noalloc fn isize.wrappingShiftLeft(self, count: isize) -> isize
+
+/// Right shift by count masked to the width; arithmetic for signed types.
+pub pure noalloc fn isize.wrappingShiftRight(self, count: isize) -> isize
+
+/// Bits rotated left by count masked to the width.
+pub pure noalloc fn isize.rotateLeft(self, count: isize) -> isize
+
+/// Bits rotated right by count masked to the width.
+pub pure noalloc fn isize.rotateRight(self, count: isize) -> isize
+
+/// Length in bytes.
+pub pure noalloc fn String.len(self) -> usize
+
+/// Whether the string has no bytes.
+pub pure noalloc fn String.isEmpty(self) -> Bool {
+    self.len() == 0
+}
+
+/// The UTF-8 bytes of the string.
+pub pure noalloc fn String.bytes(self) -> Bytes
+
+/// The Unicode scalar values of the string, in order.
+pub pure fn String.chars(self) -> Array[Char] {
+    let mut out = Array.empty[Char]()
+    let n = self.len()
+    let mut i: usize = 0
+    for i < n {
+        let lead = self[i].toInt()
+        let mut width = 1
+        let mut point = lead
+        if lead >= 240 {
+            width = 4
+            point = lead & 7
+        } else if lead >= 224 {
+            width = 3
+            point = lead & 15
+        } else if lead >= 192 {
+            width = 2
+            point = lead & 31
+        }
+        let mut k = 1
+        for k < width {
+            point = (point << 6) | (self[i + (k.toUsize() || 0)].toInt() & 63)
+            k = k + 1
+        }
+        out.push(Char.fromInt(point) || '?')
+        i = i + (width.toUsize() || 0)
+    }
+    out
+}
+
+/// Whether sub occurs in the string; the empty string occurs in every string.
+pub pure noalloc fn String.contains(self, sub: String) -> Bool {
+    if sub.len() > self.len() {
+        return false
+    }
+    let mut i: usize = 0
+    for i <= self.len() - sub.len() {
+        if self.matchesAt(sub, i) {
+            return true
+        }
+        i = i + 1
+    }
+    false
+}
+
+/// Whether the bytes of sub appear at byte offset at; false for any offset past the end.
+pub pure noalloc fn String.matchesAt(self, sub: String, at: usize) -> Bool {
+    if sub.len() > self.len() || at > self.len() - sub.len() {
+        return false
+    }
+    let mut j: usize = 0
+    for j < sub.len() {
+        if self[at + j] != sub[j] {
+            return false
+        }
+        j = j + 1
+    }
+    true
+}
+
+/// Whether the string begins with prefix.
+pub pure noalloc fn String.startsWith(self, prefix: String) -> Bool {
+    self.matchesAt(prefix, 0)
+}
+
+/// Whether the string ends with suffix.
+pub pure noalloc fn String.endsWith(self, suffix: String) -> Bool {
+    suffix.len() <= self.len() && self.matchesAt(suffix, self.len() - suffix.len())
+}
+
+/// Bytes start..end of the string; None unless both offsets are within it and on character boundaries.
+pub pure fn String.sliceBytes(self, start: usize, end: usize) -> String?
+
+/// Whether b is an ASCII space, tab, carriage return or newline.
+pure noalloc fn isAsciiSpace(b: u8) -> Bool {
+    b == 32 || b == 9 || b == 13 || b == 10
+}
+
+/// Copy without leading and trailing ASCII whitespace (space, tab, CR, LF).
+pub pure fn String.trim(self) -> String {
+    let mut lo: usize = 0
+    let mut hi = self.len()
+    for lo < hi && isAsciiSpace(self[lo]) {
+        lo = lo + 1
+    }
+    for hi > lo && isAsciiSpace(self[hi - 1]) {
+        hi = hi - 1
+    }
+    self.sliceBytes(lo, hi) || ""
+}
+
+/// Pieces between occurrences of sep, empty pieces included; an empty sep yields the whole string as one piece.
+pub pure fn String.split(self, sep: String) -> Array[String] {
+    let mut out = Array.empty[String]()
+    if sep.len() == 0 {
+        out.push(self)
+        return out
+    }
+    let mut start: usize = 0
+    let mut i: usize = 0
+    for i + sep.len() <= self.len() {
+        if self.matchesAt(sep, i) {
+            out.push(self.sliceBytes(start, i) || "")
+            i = i + sep.len()
+            start = i
+        } else {
+            i = i + 1
+        }
+    }
+    out.push(self.sliceBytes(start, self.len()) || "")
+    out
+}
+
+/// self followed by other.
+pub pure fn String.concat(self, other: String) -> String {
+    "${self}${other}"
+}
+
+/// Copy with ASCII letters upper-cased; other bytes are kept.
+pub pure fn String.toUpper(self) -> String {
+    self.shiftAscii(97, 122, false)
+}
+
+/// Copy with ASCII letters lower-cased; other bytes are kept.
+pub pure fn String.toLower(self) -> String {
+    self.shiftAscii(65, 90, true)
+}
+
+/// Copy with every byte in lo..=hi moved 32 places down (upper case) or up (lower case); the
+/// callers keep lo..=hi inside the ASCII letters, so the shifted byte stays a valid UTF-8 unit.
+pure fn String.shiftAscii(self, lo: u8, hi: u8, down: Bool) -> String {
+    let mut bytes = Array.empty[u8]()
+    let mut i: usize = 0
+    for i < self.len() {
+        let b = self[i]
+        if b >= lo && b <= hi {
+            if down {
+                bytes.push(b + 32)
+            } else {
+                bytes.push(b - 32)
+            }
+        } else {
+            bytes.push(b)
+        }
+        i = i + 1
+    }
+    String.fromBytes(Bytes.fromArray(&bytes)) || self
+}
+
+/// The string repeated count times.
+pub pure fn String.repeat(self, count: usize) -> String {
+    // Doubling keeps the copying linear in the result instead of quadratic.
+    let mut out = ""
+    let mut base = self
+    let mut left = count
+    for left > 0 {
+        if left % 2 == 1 {
+            out = "${out}${base}"
+        }
+        left = left / 2
+        if left > 0 {
+            base = "${base}${base}"
+        }
+    }
+    out
+}
+
+/// Why an allocation was refused; carries no allocation itself.
+pub type AllocError = | OutOfMemory
+
+/// Bytes holding the items in order.
+pub pure fn Bytes.fromArray(items: &Array[u8]) -> Bytes
+
+/// Bytes holding the items in order, or AllocError when the allocator
+/// refuses (fromArray panics instead).
+pub pure fn Bytes.tryFromArray(items: &Array[u8]) -> Result[Bytes, AllocError]
+
+/// The UTF-8 bytes of the string.
+pub pure noalloc fn String.toBytes(self) -> Bytes
+
+/// Interprets bytes as UTF-8; fails when they are not valid UTF-8.
+pub pure fn String.fromBytes(bytes: Bytes) -> String!
+
+/// Interprets bytes as UTF-8, same as fromBytes, but reports an allocator
+/// refusal as an error too instead of risking the crash fromBytes has there.
+pub pure fn String.tryFromBytes(bytes: Bytes) -> String!
+
+/// Byte-wise equality; satisfies `Eq`.
+pub pure noalloc fn String.equals(self, other: &String) -> Bool
+
+/// The hash of any `Hash` value; lets generic code hash a `T: Hash`.
+pub pure fn hash[T: Hash](value: &T) -> u64 {
+    value.hash()
+}
+
+/// Hash of the bytes; satisfies `Hash`.
+pub pure noalloc fn String.hash(self) -> u64
+
+/// Byte-wise lexicographic comparison.
+pub pure noalloc fn String.compareTo(self, other: &String) -> Ordering
+
+/// Number of bytes.
+pub pure noalloc fn Bytes.len(self) -> usize
+
+/// Byte at index, or None past the end.
+pub pure noalloc fn Bytes.get(self, index: usize) -> u8?
+
+/// Bytes start..end of self; None unless start <= end <= self.len().
+pub pure fn Bytes.slice(self, start: usize, end: usize) -> Bytes?
+
+/// Byte-wise position of the first occurrence of sub in self; the empty sub matches at 0.
+pub pure noalloc fn Bytes.indexOf(self, sub: Bytes) -> usize? {
+    if sub.len() > self.len() {
+        return None
+    }
+    let mut i: usize = 0
+    for i <= self.len() - sub.len() {
+        if self.matchesAt(sub, i) {
+            return Some(i)
+        }
+        i = i + 1
+    }
+    None
+}
+
+/// Whether the bytes of sub appear at byte offset at; false for any offset past the end.
+pub pure noalloc fn Bytes.matchesAt(self, sub: Bytes, at: usize) -> Bool {
+    if sub.len() > self.len() || at > self.len() - sub.len() {
+        return false
+    }
+    let mut j: usize = 0
+    for j < sub.len() {
+        if self[at + j] != sub[j] {
+            return false
+        }
+        j = j + 1
+    }
+    true
+}
+
+/// Whether self begins with sub.
+pub pure noalloc fn Bytes.startsWith(self, sub: Bytes) -> Bool {
+    self.matchesAt(sub, 0)
+}
+
+/// Whether self ends with sub.
+pub pure noalloc fn Bytes.endsWith(self, sub: Bytes) -> Bool {
+    sub.len() <= self.len() && self.matchesAt(sub, self.len() - sub.len())
+}
+
+/// Whether sub occurs in self; the empty sub occurs in every Bytes.
+pub pure noalloc fn Bytes.contains(self, sub: Bytes) -> Bool {
+    self.indexOf(sub) is Some(_)
+}
+
+/// n zero bytes.
+pub pure fn Bytes.zeros(n: usize) -> Bytes
+
+/// n bytes, each set to value.
+pub pure fn Bytes.fill(value: u8, n: usize) -> Bytes
+
+/// The bytes of self followed by those of other.
+pub pure fn Bytes.concat(self, other: Bytes) -> Bytes
+
+/// self followed by other, or AllocError when the allocator refuses (concat panics instead).
+pub pure fn Bytes.tryConcat(self, other: Bytes) -> Result[Bytes, AllocError]
+
+/// Equality; satisfies `Eq`.
+pub pure noalloc fn i64.equals(self, other: &i64) -> Bool
+
+/// Hash of the value; satisfies `Hash`.
+pub pure noalloc fn i64.hash(self) -> u64
+
+/// Numeric three-way comparison.
+pub pure noalloc fn i64.compareTo(self, other: &i64) -> Ordering
+
+/// Equality; satisfies `Eq`.
+pub pure noalloc fn i32.equals(self, other: &i32) -> Bool
+
+/// Hash of the value; satisfies `Hash`.
+pub pure noalloc fn i32.hash(self) -> u64
+
+/// Numeric three-way comparison.
+pub pure noalloc fn i32.compareTo(self, other: &i32) -> Ordering
+
+/// Equality; satisfies `Eq`.
+pub pure noalloc fn u8.equals(self, other: &u8) -> Bool
+
+/// Hash of the value; satisfies `Hash`.
+pub pure noalloc fn u8.hash(self) -> u64
+
+/// Numeric three-way comparison.
+pub pure noalloc fn u8.compareTo(self, other: &u8) -> Ordering
+
+/// Equality; satisfies `Eq`.
+pub pure noalloc fn usize.equals(self, other: &usize) -> Bool
+
+/// Hash of the value; satisfies `Hash`.
+pub pure noalloc fn usize.hash(self) -> u64
+
+/// Numeric three-way comparison.
+pub pure noalloc fn usize.compareTo(self, other: &usize) -> Ordering
+
+pub pure noalloc fn i8.equals(self, other: &i8) -> Bool
+
+pub pure noalloc fn i8.hash(self) -> u64
+
+pub pure noalloc fn i8.compareTo(self, other: &i8) -> Ordering
+
+pub pure noalloc fn i16.equals(self, other: &i16) -> Bool
+
+pub pure noalloc fn i16.hash(self) -> u64
+
+pub pure noalloc fn i16.compareTo(self, other: &i16) -> Ordering
+
+pub pure noalloc fn isize.equals(self, other: &isize) -> Bool
+
+pub pure noalloc fn isize.hash(self) -> u64
+
+pub pure noalloc fn isize.compareTo(self, other: &isize) -> Ordering
+
+pub pure noalloc fn u16.equals(self, other: &u16) -> Bool
+
+pub pure noalloc fn u16.hash(self) -> u64
+
+pub pure noalloc fn u16.compareTo(self, other: &u16) -> Ordering
+
+pub pure noalloc fn u32.equals(self, other: &u32) -> Bool
+
+pub pure noalloc fn u32.hash(self) -> u64
+
+pub pure noalloc fn u32.compareTo(self, other: &u32) -> Ordering
+
+pub pure noalloc fn u64.equals(self, other: &u64) -> Bool
+
+pub pure noalloc fn u64.hash(self) -> u64
+
+pub pure noalloc fn u64.compareTo(self, other: &u64) -> Ordering
+
+pub pure noalloc fn f64.equals(self, other: &f64) -> Bool
+
+pub pure noalloc fn f64.hash(self) -> u64
+
+pub pure noalloc fn f64.compareTo(self, other: &f64) -> Ordering
+
+pub pure noalloc fn f32.equals(self, other: &f32) -> Bool
+
+pub pure noalloc fn f32.hash(self) -> u64
+
+pub pure noalloc fn f32.compareTo(self, other: &f32) -> Ordering
+
+pub pure noalloc fn Bool.equals(self, other: &Bool) -> Bool
+
+pub pure noalloc fn Bool.hash(self) -> u64
+
+pub pure noalloc fn Bool.compareTo(self, other: &Bool) -> Ordering
+
+pub pure noalloc fn Char.equals(self, other: &Char) -> Bool
+
+pub pure noalloc fn Char.hash(self) -> u64
+
+pub pure noalloc fn Char.compareTo(self, other: &Char) -> Ordering
+
+pub pure noalloc fn Bytes.equals(self, other: &Bytes) -> Bool
+
+pub pure noalloc fn Bytes.hash(self) -> u64
+
+pub pure noalloc fn Bytes.compareTo(self, other: &Bytes) -> Ordering
+
+pub pure noalloc fn Unit.equals(self, other: &Unit) -> Bool
+
+pub pure noalloc fn Unit.hash(self) -> u64
+
+pub pure noalloc fn Unit.compareTo(self, other: &Unit) -> Ordering

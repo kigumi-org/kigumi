@@ -1,0 +1,69 @@
+-- src --
+import math from std/math
+
+let iLo: Int = -1000
+let iHi: Int = 1000
+print "${math.min(iLo, iHi)} ${math.max(iLo, iHi)} ${math.clamp(-2000, iLo, iHi)} ${math.clamp(2000, iLo, iHi)} ${math.clamp(0, iLo, iHi)} ${math.abs(iLo)}"
+print "${math.clamp(0, iHi, iLo)}"
+
+let fLo: Float = -1.5
+let fHi: Float = 1.5
+print "${math.min(fLo, fHi)} ${math.max(fLo, fHi)} ${math.clamp(-3.0, fLo, fHi)} ${math.clamp(3.0, fLo, fHi)} ${math.clamp(0.0, fLo, fHi)} ${math.abs(fLo)}"
+
+let i8min: i8 = -128
+let i8max: i8 = 127
+let i8zero: i8 = 0
+print "${math.min(i8min, i8max)} ${math.max(i8min, i8max)} ${math.clamp(i8zero, i8min, i8max)} ${math.clamp(i8min, i8zero, i8max)} ${math.clamp(i8max, i8min, i8zero)} ${math.abs(i8max)} ${math.clamp(i8zero, i8max, i8min)}"
+
+let i16min: i16 = -32768
+let i16max: i16 = 32767
+let i16zero: i16 = 0
+print "${math.min(i16min, i16max)} ${math.max(i16min, i16max)} ${math.clamp(i16zero, i16min, i16max)} ${math.clamp(i16min, i16zero, i16max)} ${math.abs(i16max)}"
+
+let i32min: i32 = -2147483648
+let i32max: i32 = 2147483647
+let i32zero: i32 = 0
+print "${math.min(i32min, i32max)} ${math.max(i32min, i32max)} ${math.clamp(i32zero, i32min, i32max)} ${math.clamp(i32min, i32zero, i32max)} ${math.abs(i32max)}"
+
+let iszMin: isize = -9223372036854775808
+let iszMax: isize = 9223372036854775807
+let iszZero: isize = 0
+print "${math.min(iszMin, iszMax)} ${math.max(iszMin, iszMax)} ${math.clamp(iszZero, iszMin, iszMax)} ${math.clamp(iszMin, iszZero, iszMax)} ${math.abs(iszMax)}"
+
+let u8zero: u8 = 0
+let u8max: u8 = 255
+let u8mid: u8 = 128
+print "${math.min(u8zero, u8max)} ${math.max(u8zero, u8max)} ${math.clamp(u8mid, u8zero, u8max)} ${math.clamp(u8max, u8zero, u8mid)} ${math.clamp(u8zero, u8mid, u8max)}"
+
+let u16zero: u16 = 0
+let u16max: u16 = 65535
+let u16mid: u16 = 30000
+print "${math.min(u16zero, u16max)} ${math.max(u16zero, u16max)} ${math.clamp(u16mid, u16zero, u16max)} ${math.clamp(u16max, u16zero, u16mid)}"
+
+let u32zero: u32 = 0
+let u32max: u32 = 4294967295
+let u32mid: u32 = 2000000000
+print "${math.min(u32zero, u32max)} ${math.max(u32zero, u32max)} ${math.clamp(u32mid, u32zero, u32max)} ${math.clamp(u32max, u32zero, u32mid)}"
+
+let u64zero: u64 = 0
+let u64max: u64 = 18446744073709551615
+let u64mid: u64 = 9000000000000000000
+print "${math.min(u64zero, u64max)} ${math.max(u64zero, u64max)} ${math.clamp(u64mid, u64zero, u64max)} ${math.clamp(u64max, u64zero, u64mid)}"
+
+let uszZero: usize = 0
+let uszMax: usize = 18446744073709551615
+let uszMid: usize = 9000000000000000000
+print "${math.min(uszZero, uszMax)} ${math.max(uszZero, uszMax)} ${math.clamp(uszMid, uszZero, uszMax)} ${math.clamp(uszMax, uszZero, uszMid)}"
+-- stdout --
+-1000 1000 -1000 1000 0 1000
+1000
+-1.5 1.5 -1.5 1.5 0 1.5
+-128 127 0 0 0 127 127
+-32768 32767 0 0 32767
+-2147483648 2147483647 0 0 2147483647
+-9223372036854775808 9223372036854775807 0 0 9223372036854775807
+0 255 128 128 128
+0 65535 30000 30000
+0 4294967295 2000000000 2000000000
+0 18446744073709551615 9000000000000000000 9000000000000000000
+0 18446744073709551615 9000000000000000000 9000000000000000000

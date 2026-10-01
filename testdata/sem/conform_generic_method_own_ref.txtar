@@ -1,0 +1,28 @@
+-- app/t/t.kg --
+interface Show {
+    pure fn show(self) -> String
+}
+
+type W = {
+    pub n Int
+}
+
+pure fn W.show(self) -> String {
+    "${self.n}"
+}
+
+pure fn W.equals[T: Show](self, other: T) -> Bool {
+    other.show() == "1"
+}
+
+fn same(a: W, b: W) -> Bool {
+    a == b //~ ERROR generic method `equals[T]` cannot satisfy `Eq.equals`: `T` is determined as `&W`, which does not satisfy its own constraint
+}
+-- expect --
+error[E965]: `W` defines `equals` but it does not satisfy `Eq`: generic method `equals[T]` cannot satisfy `Eq.equals`: `T` is determined as `&W`, which does not satisfy its own constraint: missing `fn show(self) -> String`
+  --> app/t/t.kg:18:5
+   |
+18 |     a == b //~ ERROR generic method `equals[T]` cannot satisfy `Eq.equals`: `T` is determined as `&W`, which does not satisfy its own constraint
+   |     ^^^^^^
+   = help: nothing is derived over it
+

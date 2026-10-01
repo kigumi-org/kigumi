@@ -1,0 +1,38 @@
+-- src --
+// Ledger L-08/L-116: a resource passed through a chain of user generic
+// functions still has exactly one owner at a time and drops exactly
+// once, the same as passing it through a concrete function.
+type Res = resource {
+    pub id Int
+}
+
+fn Res.drop(move self) -> Unit {
+    print "drop ${self.id}"
+}
+
+fn identity[T](x: T) -> T {
+    x
+}
+
+fn wrap[T](x: T) -> T {
+    identity(x)
+}
+
+fn twiceButOnce[T](x: T) -> T {
+    let y = identity(x)
+    y
+}
+
+let a = identity(Res { id: 1 })
+print "a=${a.id}"
+let b = wrap(a)
+print "b=${b.id}"
+let c = twiceButOnce(b)
+print "c=${c.id}"
+print "end"
+-- stdout --
+a=1
+b=1
+c=1
+end
+drop 1

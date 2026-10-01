@@ -1,0 +1,95 @@
+-- src --
+type Res = resource {
+    pub id Int
+}
+
+fn Res.drop(move self) -> Unit {
+    print "drop ${self.id}"
+}
+
+type Holder = {
+    pub name String
+    pub slot Res?
+}
+
+fn peek(h: &Holder) -> Int {
+    match h.slot {
+        Some(r) -> r.id
+        None -> 0
+    }
+}
+
+fn Holder.describe(self) -> String {
+    let Holder { name, slot } = self
+    if slot is Some(r) {
+        return "${name}:${r.id}"
+    }
+    name
+}
+
+fn firstLen(o: &Option[String]) -> usize {
+    if o is Some(s) {
+        return s.len()
+    }
+    0
+}
+
+fn find[T: Eq](xs: &Array[T], key: T) -> Bool {
+    let mut i: usize = 0
+    for i < xs.len() {
+        if xs.with(i, (x: &T) => x == key) is Some(true) {
+            return true
+        }
+        i = i + 1
+    }
+    false
+}
+
+fn findRef[T: Eq](xs: &Array[T], key: &T) -> usize? {
+    let mut i: usize = 0
+    for i < xs.len() {
+        if xs.with(i, (x: &T) => x == key) is Some(true) {
+            return Some(i)
+        }
+        i = i + 1
+    }
+    None
+}
+
+fn sameInt(a: &Int, b: Int) -> Bool {
+    a == b
+}
+
+type Decl = {
+    pub name String
+    pub attrs Array[String]?
+}
+
+fn attrCount(d: &Decl) -> usize {
+    d.attrs.with((a: &Array[String]) => a.len()) || 0
+}
+
+let h = Holder { name: "h", slot: Some(Res { id: 7 }) }
+print "${peek(&h)} ${peek(&h)} ${h.describe()}"
+print "${firstLen(&Some("abc"))} ${find(&Array.of("a", "b"), "b")} ${find(&Array.of(1, 2), 3)} ${sameInt(&1, 1)}"
+let names = Array.of("x", "y", "z")
+print "${findRef(&names, &"z") || 9} ${findRef(&names, &"q") || 9}"
+print "${Some("xyz").with((s: &String) => s.len()) || 0} ${None.with((s: &String) => s.len()) is None}"
+let oi: Int? = Some(41)
+print "${oi.with((v: &Int) => v + 1) || 0} ${None.with((v: &Int) => v + 1) is None}"
+let oa: Array[Int]? = Some(Array.of(1, 2, 3))
+print "${oa.with((v: &Array[Int]) => v.len()) || 0}"
+let d1 = Decl { name: "d1", attrs: Some(Array.of("a", "b", "c")) }
+let d2 = Decl { name: "d2", attrs: None }
+print "${attrCount(&d1)} ${attrCount(&d2)}"
+print "end"
+-- stdout --
+7 7 h:7
+3 true false true
+2 9
+3 true
+42 true
+3
+3 0
+end
+drop 7

@@ -1,0 +1,35 @@
+-- src --
+import {Shared, Weak} from std/alloc
+
+type Node = resource {
+    pub id Int
+}
+
+fn Node.drop(move self) -> Unit {
+    print "drop ${self.id}"
+}
+
+fn make() -> Weak[Node] {
+    let a = Shared.new(Node { id: 1 })
+    let w = a.downgrade()
+    let b = a.clone()
+    print "alive ${w.upgrade() is Some(_)} ${b.with((n) => n.id)}"
+    w
+}
+
+let w = make()
+print "after ${w.upgrade() is None}"
+let s = Shared.new(Node { id: 2 })
+let w2 = s.downgrade()
+let w3 = w2.clone()
+if w3.upgrade() is Some(t) {
+    print "id ${t.with((n) => n.id)}"
+}
+print "end"
+-- stdout --
+alive true 1
+drop 1
+after true
+id 2
+end
+drop 2

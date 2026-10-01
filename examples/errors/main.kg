@@ -1,0 +1,46 @@
+#!/usr/bin/env kigumi
+
+import error from std/error
+
+type ConfigError = Missing(key: String) | Invalid(key: String, value: String)
+
+fn ConfigError.message(self) -> String {
+    match self {
+        Missing(key) -> "missing key ${key}"
+        Invalid {
+            key
+            value
+        } -> "invalid value ${value} for ${key}"
+    }
+}
+
+fn lookup(key: String) -> Result[String, ConfigError] {
+    match key {
+        "port" -> "8080"
+        "debug" -> "yes"
+        _ -> fail Missing(key)
+    }
+}
+
+fn port() -> Result[Int, ConfigError] {
+    let raw = lookup("port")?
+    if raw == "8080" {
+        8080
+    } else {
+        fail Invalid("port", raw)
+    }
+}
+
+fn boot() -> Unit! {
+    let p = port()?
+    print "listening on ${p}"
+    let host = lookup("host") || (e) => {
+        print "fallback: ${e.message()}"
+        "localhost"
+    }
+    print "host=${host}"
+    _ = lookup("user")?
+}
+
+boot() || (e) => print "boot failed: ${error.context(e, "startup").message()}"
+print "done"

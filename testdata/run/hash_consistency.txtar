@@ -1,0 +1,77 @@
+-- src --
+import map from std/map
+
+fn unitVal() -> Unit {}
+
+let i1: i64 = 1
+let i2: i64 = -7
+let u1: u32 = 42
+let b1: Bool = true
+let b2: Bool = false
+let c1: Char = 'a'
+let f1: f64 = 0.0
+let f2: f64 = -0.0
+let f3: f64 = 1.5
+let f4: f64 = 1.0e300
+let s1: String = "hello"
+let by1: Bytes = "hi".toBytes()
+let some1: i64? = Some(5)
+let none1: i64? = None
+print "i1=${i1.hash()}"
+print "i2=${i2.hash()}"
+print "u1=${u1.hash()}"
+print "b1=${b1.hash()}"
+print "b2=${b2.hash()}"
+print "c1=${c1.hash()}"
+print "f1=${f1.hash()}"
+print "f2=${f2.hash()}"
+print "f1eqf2=${f1 == f2}"
+print "f1hasheqf2hash=${f1.hash() == f2.hash()}"
+print "f3=${f3.hash()}"
+print "f4=${f4.hash()}"
+print "s1=${s1.hash()}"
+print "by1=${by1.hash()}"
+print "unit=${unitVal().hash()}"
+print "some1=${hash(&some1)}"
+print "none1=${hash(&none1)}"
+
+let mut fm = map.empty[f64, i64]()
+fm.set(0.0, 1)
+fm.set(-0.0, 2)
+fm.set(1.5, 3)
+print "fm.len=${fm.len()}"
+print "fm.get(&0.0)=${debug(fm.get(&0.0))}"
+print "fm.get(&(-0.0))=${debug(fm.get(&(-0.0)))}"
+print "fm.get(&1.5)=${debug(fm.get(&1.5))}"
+
+let mut bm = map.empty[Bool, i64]()
+bm.set(true, 10)
+bm.set(false, 20)
+print "bm.len=${bm.len()}"
+print "bm.get(&true)=${debug(bm.get(&true))}"
+print "bm.get(&false)=${debug(bm.get(&false))}"
+-- stdout --
+i1=12638134423997487868
+i2=562968678213606237
+u1=571532774284038691
+b1=6583304908937478053
+b2=13113042584710199672
+c1=12638187200555641996
+f1=12638135523509116079
+f2=12638135523509116079
+f1eqf2=true
+f1hasheqf2hash=true
+f3=5007220036841904057
+f4=16543770657120897569
+s1=11831194018420276491
+by1=628919584683901914
+unit=567769145981429338
+some1=570597089888620355
+none1=2
+fm.len=2
+fm.get(&0.0)=Some(2)
+fm.get(&(-0.0))=Some(2)
+fm.get(&1.5)=Some(3)
+bm.len=2
+bm.get(&true)=Some(10)
+bm.get(&false)=Some(20)

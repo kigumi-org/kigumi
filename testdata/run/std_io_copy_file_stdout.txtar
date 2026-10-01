@@ -1,0 +1,21 @@
+-- src --
+import fs from std/fs
+import io from std/io
+
+let files = host.files()
+let path = fs.Path.fromString("copy_out.txt")?
+let mut f = files.create(path)?
+let mut src = io.BytesReader.new("hello, kigumi\n".toBytes())
+let written = io.copy(src, f)?
+print "wrote=${written}"
+
+let content = files.readBytes(path)?
+let mut r2 = io.BytesReader.new(content)
+let mut out = host.stdout()
+let copied = io.copy(r2, out)?
+print "copied=${copied}"
+files.remove(path)?
+-- stdout --
+wrote=14
+hello, kigumi
+copied=14

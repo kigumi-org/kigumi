@@ -1,0 +1,11 @@
+// open(2) flag bits of this platform: wasi-libc's __header_fcntl.h
+// shifts the WASI oflags into O_CREAT/O_TRUNC's low bits (__WASI_OFLAGS_
+// CREAT/TRUNC << 12) and uses the raw fdflags bit for O_APPEND/O_WRONLY.
+fn openFlags() -> OpenFlags {
+    OpenFlags {
+        creat: 4096
+        trunc: 32768
+        append: 1
+        wronly: 0x10000000
+    }
+}

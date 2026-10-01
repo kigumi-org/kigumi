@@ -1,0 +1,29 @@
+#!/usr/bin/env kigumi
+
+import array from std/array
+import map from std/map
+import text from std/text
+
+// Reads stdin and prints each word with its count, most frequent first.
+let input = host.stdin().readAll()?
+let mut counts = map.empty[String, Int]()
+for line in text.lines(input) {
+    for word in line.split(" ") {
+        if word.isEmpty() {
+            continue
+        }
+        let w = word.toLower()
+        counts.set(w, (counts.get(&w) || 0) + 1)
+    }
+}
+let entries = counts.entries()
+let ranked = array.sortedBy(&entries, (a, b) => {
+    if a.value != b.value {
+        b.value.compareTo(a.value)
+    } else {
+        a.key.compareTo(&b.key)
+    }
+})
+for e in ranked {
+    print "${e.value} ${e.key}"
+}

@@ -1,0 +1,67 @@
+-- lib/ua.kg --
+unsafe fn raw(x: Int) -> Int {
+    x
+}
+
+fn use(x: Int) -> Int {
+    raw(x) //~ ERROR calling `raw` requires an `unsafe { }` block //~ WARNING unused value of type `Int`
+    unsafe { raw(x) }
+}
+
+pure unsafe fn pureRaw(x: Int) -> Int {
+    x
+}
+
+pure fn callsUnsafe(x: Int) -> Int {
+    unsafe { pureRaw(x) } //~ ERROR `unsafe` blocks are not `pure`
+}
+
+fn viaValue(f: unsafe fn(Int) -> Int, x: Int) -> Int {
+    f(x) //~ ERROR calling an `unsafe fn` value requires an `unsafe { }` block //~ WARNING unused value of type `Int`
+    unsafe { f(x) }
+}
+
+async fn fetch() -> Int {
+    1
+}
+
+fn callsAsync() -> Int {
+    fetch() //~ ERROR expected `Int`, found `Future[Int]`
+}
+-- expect --
+error[E914]: calling `raw` requires an `unsafe { }` block
+ --> lib/ua.kg:6:5
+  |
+6 |     raw(x) //~ ERROR calling `raw` requires an `unsafe { }` block //~ WARNING unused value of type `Int`
+  |     ^^^^^
+
+warning[W400]: unused value of type `Int`
+ --> lib/ua.kg:6:5
+  |
+6 |     raw(x) //~ ERROR calling `raw` requires an `unsafe { }` block //~ WARNING unused value of type `Int`
+  |     ^^^^^
+
+error[E905]: `unsafe` blocks are not `pure`
+  --> lib/ua.kg:15:5
+   |
+15 |     unsafe { pureRaw(x) } //~ ERROR `unsafe` blocks are not `pure`
+   |     ^^^^^^^^^^^^^^^^^^
+
+error[E914]: calling an `unsafe fn` value requires an `unsafe { }` block
+  --> lib/ua.kg:19:5
+   |
+19 |     f(x) //~ ERROR calling an `unsafe fn` value requires an `unsafe { }` block //~ WARNING unused value of type `Int`
+   |     ^^^
+
+warning[W400]: unused value of type `Int`
+  --> lib/ua.kg:19:5
+   |
+19 |     f(x) //~ ERROR calling an `unsafe fn` value requires an `unsafe { }` block //~ WARNING unused value of type `Int`
+   |     ^^^
+
+error[E400]: expected `Int`, found `Future[Int]`
+  --> lib/ua.kg:28:5
+   |
+28 |     fetch() //~ ERROR expected `Int`, found `Future[Int]`
+   |     ^^^^^^
+

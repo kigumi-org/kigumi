@@ -1,0 +1,397 @@
+import {Map, empty} from std/map
+import math from std/math
+import text from std/text
+
+pub fn i64.toJson(self) -> Value {
+    Value.Integer(self)
+}
+
+pub fn i64.fromJson(value: Value) -> Int! {
+    match value {
+        Value.Integer(n) -> Ok(n)
+        other -> mismatch("integer", other)
+    }
+}
+
+pub fn i64.fromKeyText(s: String) -> Int! {
+    text.parseInt(s) || fail Error { text: "expected an integer key, found \"${s}\"" }
+}
+
+pub fn i32.toJson(self) -> Value {
+    Value.Integer(self.toInt())
+}
+
+pub fn i32.fromJson(value: Value) -> i32! {
+    let n = i64.fromJson(value)?
+    n.toI32() || fail Error { text: "${n} does not fit i32" }
+}
+
+pub fn i32.fromKeyText(s: String) -> i32! {
+    let n = i64.fromKeyText(s)?
+    n.toI32() || fail Error { text: "${n} does not fit i32" }
+}
+
+pub fn u8.toJson(self) -> Value {
+    Value.Integer(self.toInt())
+}
+
+pub fn u8.fromJson(value: Value) -> u8! {
+    let n = i64.fromJson(value)?
+    n.toU8() || fail Error { text: "${n} does not fit u8" }
+}
+
+pub fn u8.fromKeyText(s: String) -> u8! {
+    let n = i64.fromKeyText(s)?
+    n.toU8() || fail Error { text: "${n} does not fit u8" }
+}
+
+pub fn u32.toJson(self) -> Value {
+    Value.Integer(self.toInt())
+}
+
+pub fn u32.fromJson(value: Value) -> u32! {
+    let n = i64.fromJson(value)?
+    n.toU32() || fail Error { text: "${n} does not fit u32" }
+}
+
+pub fn u32.fromKeyText(s: String) -> u32! {
+    let n = i64.fromKeyText(s)?
+    n.toU32() || fail Error { text: "${n} does not fit u32" }
+}
+
+/// Integer when the value fits i64, else Unsigned.
+pub fn u64.toJson(self) -> Value {
+    if self.toInt() is Some(n) {
+        return Value.Integer(n)
+    }
+    Value.Unsigned(self)
+}
+
+pub fn u64.fromJson(value: Value) -> u64! {
+    match value {
+        Value.Integer(n) -> n.toU64() || fail Error { text: "${n} does not fit u64" }
+        Value.Unsigned(n) -> Ok(n)
+        other -> mismatch("integer", other)
+    }
+}
+
+pub fn u64.fromKeyText(s: String) -> u64! {
+    text.parseUint(s) || fail Error { text: "expected an integer key, found \"${s}\"" }
+}
+
+/// Integer when the value fits i64, else Unsigned.
+pub fn usize.toJson(self) -> Value {
+    if self.toInt() is Some(n) {
+        return Value.Integer(n)
+    }
+    Value.Unsigned(self.toU64())
+}
+
+pub fn usize.fromJson(value: Value) -> usize! {
+    match value {
+        Value.Integer(n) -> n.toUsize() || fail Error { text: "${n} does not fit usize" }
+        Value.Unsigned(n) -> Ok(n.toUsize())
+        other -> mismatch("integer", other)
+    }
+}
+
+pub fn usize.fromKeyText(s: String) -> usize! {
+    let n = text.parseUint(s) || fail Error { text: "expected an integer key, found \"${s}\"" }
+    Ok(n.toUsize())
+}
+
+pub fn f64.toJson(self) -> Value {
+    Value.Number(self)
+}
+
+pub fn f64.fromJson(value: Value) -> Float! {
+    match value {
+        Value.Number(f) -> Ok(f)
+        Value.Integer(n) -> Ok(math.toFloat(n))
+        other -> mismatch("number", other)
+    }
+}
+
+pub fn f64.fromKeyText(s: String) -> Float! {
+    text.parseFloat(s) || fail Error { text: "expected a number key, found \"${s}\"" }
+}
+
+pub fn Bool.toJson(self) -> Value {
+    Value.Boolean(self)
+}
+
+pub fn Bool.fromJson(value: Value) -> Bool! {
+    match value {
+        Value.Boolean(b) -> Ok(b)
+        other -> mismatch("boolean", other)
+    }
+}
+
+pub fn Bool.fromKeyText(s: String) -> Bool! {
+    if s == "true" {
+        return Ok(true)
+    }
+    if s == "false" {
+        return Ok(false)
+    }
+    fail Error { text: "expected a boolean key, found \"${s}\"" }
+}
+
+pub fn String.toJson(self) -> Value {
+    Value.Text(self)
+}
+
+pub fn String.fromJson(value: Value) -> String! {
+    match value {
+        Value.Text(s) -> Ok(s)
+        other -> mismatch("string", other)
+    }
+}
+
+pub fn String.fromKeyText(s: String) -> String! {
+    Ok(s)
+}
+
+pub fn Char.toJson(self) -> Value {
+    Value.Text(text.fromChar(self))
+}
+
+pub fn Char.fromJson(value: Value) -> Char! {
+    let s = String.fromJson(value)?
+    let chars = s.chars()
+    if chars.len() == 1 {
+        return Ok(chars.get(0) || ' ')
+    }
+    fail Error { text: "expected a single character for Char, found \"${s}\"" }
+}
+
+pub fn Char.fromKeyText(s: String) -> Char! {
+    let chars = s.chars()
+    if chars.len() == 1 {
+        return Ok(chars.get(0) || ' ')
+    }
+    fail Error { text: "expected a single character key, found \"${s}\"" }
+}
+
+pub fn Bytes.toJson(self) -> Value {
+    Value.Text(String.fromBytes(self) || "")
+}
+
+pub fn Bytes.fromJson(value: Value) -> Bytes! {
+    let s = String.fromJson(value)?
+    Ok(s.toBytes())
+}
+
+pub fn Bytes.fromKeyText(s: String) -> Bytes! {
+    Ok(s.toBytes())
+}
+
+pub fn Unit.toJson(self) -> Value {
+    Value.Null
+}
+
+pub fn Unit.fromJson(value: Value) -> Unit! {
+    if !(value is Value.Null) {
+        return mismatch("null", value)
+    }
+}
+
+pub fn Option[T: Encode].toJson(self) -> Value {
+    match self {
+        Some(x) -> x.toJson()
+        None -> Value.Null
+    }
+}
+
+pub fn Option[T: Decode].fromJson(value: Value) -> Option[T]! {
+    if value is Value.Null {
+        return Ok(None)
+    }
+    Ok(Some(T.fromJson(value)?))
+}
+
+pub fn Array[T: Encode].toJson(self) -> Value {
+    let mut items = Array.empty[Value]()
+    for i in 0..self.len() {
+        items.push(self.with(i, (x) => x.toJson()) || Value.Null)
+    }
+    Value.List(items)
+}
+
+pub fn Array[T: Decode].fromJson(value: Value) -> Array[T]! {
+    match value {
+        Value.List(items) -> {
+            let mut out = Array.empty[T]()
+            for item in items {
+                out.push(T.fromJson(item)?)
+            }
+            Ok(out)
+        }
+        other -> mismatch("array", other)
+    }
+}
+
+/// Keys that are not strings are written with their own JSON text.
+fn keyText(key: Value) -> String {
+    match key {
+        Value.Text(s) -> s
+        other -> render(other) || ""
+    }
+}
+
+pub fn Map[K: Copy + Encode, V: Encode].toJson(self) -> Value {
+    let mut fields = empty[String, Value]()
+    for key in self.keys() {
+        let text = keyText(key.toJson())
+        fields.set(text, self.with(&key, (v: &V) => v.toJson()) || Value.Null)
+    }
+    Value.Object(fields)
+}
+
+pub fn Map[K: DecodeKey + Eq + Hash, V: Decode].fromJson(value: Value) -> Map[K, V]! {
+    match value {
+        Value.Object(m) -> {
+            let mut source = m
+            let mut out = empty[K, V]()
+            for key in source.keys() {
+                let v = source.take(&key) || Value.Null
+                out.set(K.fromKeyText(key)?, V.fromJson(v)?)
+            }
+            Ok(out)
+        }
+        other -> mismatch("object", other)
+    }
+}
+
+pub fn Ordering.toJson(self) -> Value {
+    match self {
+        Ordering.Less -> tag("Less")
+        Ordering.Equal -> tag("Equal")
+        Ordering.Greater -> tag("Greater")
+    }
+}
+
+pub fn Ordering.fromJson(value: Value) -> Ordering! {
+    let t = Tagged.expect(value, "Ordering")?
+    if t.name == "Less" {
+        return Ok(Ordering.Less)
+    }
+    if t.name == "Equal" {
+        return Ok(Ordering.Equal)
+    }
+    if t.name == "Greater" {
+        return Ok(Ordering.Greater)
+    }
+    t.unknown()
+}
+
+/// A tuple encodes as a JSON array of its elements in order.
+fn tupleItems(value: Value, n: usize) -> Array[Value]! {
+    match value {
+        Value.List(items) -> {
+            if items.len() != n {
+                return mismatch("${n}-element array", value)
+            }
+            Ok(items)
+        }
+        other -> mismatch("array", other)
+    }
+}
+
+pub fn Tuple2[A: Encode, B: Encode].toJson(self) -> Value {
+    Value.List(Array.of(self._0.toJson(), self._1.toJson()))
+}
+
+pub fn Tuple2[A: Decode, B: Decode].fromJson(value: Value) -> Tuple2[A, B]! {
+    let mut items = tupleItems(value, 2)?
+    let v0 = A.fromJson(items.takeAt(0) || Value.Null)?
+    let v1 = B.fromJson(items.takeAt(0) || Value.Null)?
+    Ok((v0, v1))
+}
+
+pub fn Tuple3[A: Encode, B: Encode, C: Encode].toJson(self) -> Value {
+    Value.List(Array.of(self._0.toJson(), self._1.toJson(), self._2.toJson()))
+}
+
+pub fn Tuple3[A: Decode, B: Decode, C: Decode].fromJson(value: Value) -> Tuple3[A, B, C]! {
+    let mut items = tupleItems(value, 3)?
+    let v0 = A.fromJson(items.takeAt(0) || Value.Null)?
+    let v1 = B.fromJson(items.takeAt(0) || Value.Null)?
+    let v2 = C.fromJson(items.takeAt(0) || Value.Null)?
+    Ok((v0, v1, v2))
+}
+
+pub fn Tuple4[A: Encode, B: Encode, C: Encode, D: Encode].toJson(self) -> Value {
+    Value.List(Array.of(self._0.toJson(), self._1.toJson(), self._2.toJson(), self._3.toJson()))
+}
+
+pub fn Tuple4[A: Decode, B: Decode, C: Decode, D: Decode].fromJson(value: Value) -> Tuple4[A, B, C, D]! {
+    let mut items = tupleItems(value, 4)?
+    let v0 = A.fromJson(items.takeAt(0) || Value.Null)?
+    let v1 = B.fromJson(items.takeAt(0) || Value.Null)?
+    let v2 = C.fromJson(items.takeAt(0) || Value.Null)?
+    let v3 = D.fromJson(items.takeAt(0) || Value.Null)?
+    Ok((v0, v1, v2, v3))
+}
+
+pub fn Tuple5[A: Encode, B: Encode, C: Encode, D: Encode, E: Encode].toJson(self) -> Value {
+    Value.List(Array.of(self._0.toJson(), self._1.toJson(), self._2.toJson(), self._3.toJson(), self._4.toJson()))
+}
+
+pub fn Tuple5[A: Decode, B: Decode, C: Decode, D: Decode, E: Decode].fromJson(value: Value) -> Tuple5[A, B, C, D, E]! {
+    let mut items = tupleItems(value, 5)?
+    let v0 = A.fromJson(items.takeAt(0) || Value.Null)?
+    let v1 = B.fromJson(items.takeAt(0) || Value.Null)?
+    let v2 = C.fromJson(items.takeAt(0) || Value.Null)?
+    let v3 = D.fromJson(items.takeAt(0) || Value.Null)?
+    let v4 = E.fromJson(items.takeAt(0) || Value.Null)?
+    Ok((v0, v1, v2, v3, v4))
+}
+
+pub fn Tuple6[A: Encode, B: Encode, C: Encode, D: Encode, E: Encode, F: Encode].toJson(self) -> Value {
+    Value.List(Array.of(self._0.toJson(), self._1.toJson(), self._2.toJson(), self._3.toJson(), self._4.toJson(), self._5.toJson()))
+}
+
+pub fn Tuple6[A: Decode, B: Decode, C: Decode, D: Decode, E: Decode, F: Decode].fromJson(value: Value) -> Tuple6[A, B, C, D, E, F]! {
+    let mut items = tupleItems(value, 6)?
+    let v0 = A.fromJson(items.takeAt(0) || Value.Null)?
+    let v1 = B.fromJson(items.takeAt(0) || Value.Null)?
+    let v2 = C.fromJson(items.takeAt(0) || Value.Null)?
+    let v3 = D.fromJson(items.takeAt(0) || Value.Null)?
+    let v4 = E.fromJson(items.takeAt(0) || Value.Null)?
+    let v5 = F.fromJson(items.takeAt(0) || Value.Null)?
+    Ok((v0, v1, v2, v3, v4, v5))
+}
+
+pub fn Tuple7[A: Encode, B: Encode, C: Encode, D: Encode, E: Encode, F: Encode, G: Encode].toJson(self) -> Value {
+    Value.List(Array.of(self._0.toJson(), self._1.toJson(), self._2.toJson(), self._3.toJson(), self._4.toJson(), self._5.toJson(), self._6.toJson()))
+}
+
+pub fn Tuple7[A: Decode, B: Decode, C: Decode, D: Decode, E: Decode, F: Decode, G: Decode].fromJson(value: Value) -> Tuple7[A, B, C, D, E, F, G]! {
+    let mut items = tupleItems(value, 7)?
+    let v0 = A.fromJson(items.takeAt(0) || Value.Null)?
+    let v1 = B.fromJson(items.takeAt(0) || Value.Null)?
+    let v2 = C.fromJson(items.takeAt(0) || Value.Null)?
+    let v3 = D.fromJson(items.takeAt(0) || Value.Null)?
+    let v4 = E.fromJson(items.takeAt(0) || Value.Null)?
+    let v5 = F.fromJson(items.takeAt(0) || Value.Null)?
+    let v6 = G.fromJson(items.takeAt(0) || Value.Null)?
+    Ok((v0, v1, v2, v3, v4, v5, v6))
+}
+
+pub fn Tuple8[A: Encode, B: Encode, C: Encode, D: Encode, E: Encode, F: Encode, G: Encode, H: Encode].toJson(self) -> Value {
+    Value.List(Array.of(self._0.toJson(), self._1.toJson(), self._2.toJson(), self._3.toJson(), self._4.toJson(), self._5.toJson(), self._6.toJson(), self._7.toJson()))
+}
+
+pub fn Tuple8[A: Decode, B: Decode, C: Decode, D: Decode, E: Decode, F: Decode, G: Decode, H: Decode].fromJson(value: Value) -> Tuple8[A, B, C, D, E, F, G, H]! {
+    let mut items = tupleItems(value, 8)?
+    let v0 = A.fromJson(items.takeAt(0) || Value.Null)?
+    let v1 = B.fromJson(items.takeAt(0) || Value.Null)?
+    let v2 = C.fromJson(items.takeAt(0) || Value.Null)?
+    let v3 = D.fromJson(items.takeAt(0) || Value.Null)?
+    let v4 = E.fromJson(items.takeAt(0) || Value.Null)?
+    let v5 = F.fromJson(items.takeAt(0) || Value.Null)?
+    let v6 = G.fromJson(items.takeAt(0) || Value.Null)?
+    let v7 = H.fromJson(items.takeAt(0) || Value.Null)?
+    Ok((v0, v1, v2, v3, v4, v5, v6, v7))
+}

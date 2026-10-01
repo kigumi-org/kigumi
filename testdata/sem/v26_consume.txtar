@@ -1,0 +1,27 @@
+-- lib/cs.kg --
+import fs from std/fs
+
+fn take(r: &Result[fs.File, Error], v: Result[fs.File, Error], c: &Int!) -> Unit! {
+    let f = r? //~ ERROR cannot move `File` out of a borrow
+    let g = v? //~ TYPE g : File
+    let h = c? //~ TYPE h : Int
+    g.close()?
+}
+
+fn moveMethod(r: &fs.File, f: fs.File) -> Unit! {
+    r.close()? //~ ERROR cannot move `File` out of a borrow
+    f.close()?
+}
+-- expect --
+error[E517]: cannot move `File` out of a borrow
+ --> lib/cs.kg:4:13
+  |
+4 |     let f = r? //~ ERROR cannot move `File` out of a borrow
+  |             ^^
+
+error[E517]: cannot move `File` out of a borrow
+  --> lib/cs.kg:11:5
+   |
+11 |     r.close()? //~ ERROR cannot move `File` out of a borrow
+   |     ^
+

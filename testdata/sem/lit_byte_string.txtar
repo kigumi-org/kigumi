@@ -1,0 +1,32 @@
+-- src --
+const K: Bytes = b"\x01\x02"
+
+fn wantBytes(b: Bytes) -> Unit {}
+fn wantString(s: String) -> Unit {}
+
+fn use() -> Unit {
+    let a = b"abc"
+    wantBytes(a)
+    wantBytes(a)
+    wantBytes(b"")
+    wantBytes(K)
+    let y = comptime { b"\x01\x02" }
+    wantBytes(y)
+    wantString(b"x") //~ ERROR expected `String`, found `Bytes`
+    let z: Bytes = "x" //~ ERROR expected `Bytes`, found `String`
+    _ = z
+}
+
+-- expect --
+error[E400]: expected `String`, found `Bytes`
+  --> main/main.kg:14:16
+   |
+14 |     wantString(b"x") //~ ERROR expected `String`, found `Bytes`
+   |                ^^^^
+
+error[E400]: expected `Bytes`, found `String`
+  --> main/main.kg:15:20
+   |
+15 |     let z: Bytes = "x" //~ ERROR expected `Bytes`, found `String`
+   |                    ^^^
+

@@ -1,0 +1,47 @@
+import time from std/time
+
+/// Deterministic pseudo-random generator (splitmix64); a seed gives the same sequence in the interpreter and in native builds.
+pub type Rng = {
+    mut state u64
+}
+
+/// Generator starting from seed, taken as its two's-complement bits.
+pub pure fn seeded(seed: i64) -> Rng {
+    if seed >= 0 {
+        return Rng { state: seed.toU64() || 0 }
+    }
+    if seed == -9223372036854775807 - 1 {
+        return Rng { state: 9223372036854775808 }
+    }
+    let magnitude = (0 - seed).toU64() || 0
+    let zero: u64 = 0
+    Rng { state: zero.wrappingSub(magnitude) }
+}
+
+/// One splitmix64 step: advances the state and mixes it into the output.
+fn Rng.next(mut self) -> u64 {
+    self.state = self.state.wrappingAdd(11400714819323198485)
+    let mut z = self.state
+    z = (z ^ (z >> 30)).wrappingMul(13787848793156543929)
+    z = (z ^ (z >> 27)).wrappingMul(10723151780598845931)
+    z ^ (z >> 31)
+}
+
+/// Generator seeded from the clock.
+pub fn fromClock() -> Rng {
+    seeded(time.now().unixMillis())
+}
+
+/// Uniform integer in 0..bound; bound must be positive.
+pub fn Rng.nextInt(mut self, bound: Int) -> Int {
+    if bound <= 0 {
+        panic()
+    }
+    let step = self.next()
+    (step % (bound.toU64() || 1)).toInt() || 0
+}
+
+/// Uniform Float in [0, 1).
+pub fn Rng.nextFloat(mut self) -> Float {
+    (self.next() >> 11).toFloat() / 9007199254740992.0
+}

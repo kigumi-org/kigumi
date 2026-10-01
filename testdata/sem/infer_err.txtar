@@ -1,0 +1,192 @@
+-- lib/inf.kg --
+fn identity[T](x: T) -> T {
+    x
+}
+
+fn pair[T](a: T, b: T) -> Array[T] {
+    Array.of(a, b)
+}
+
+fn use() -> Unit {
+    let e: Array[u8] = pair(1, 300) //~ ERROR `300` does not fit `u8`
+    let g = Array.empty() //~ ERROR cannot infer type parameter
+    let i = identity[Int, Int](1) //~ ERROR `identity` takes 1 type argument, 2 given
+    let j = identity(1, 2) //~ ERROR `identity` expects 1 argument, 2 given
+    let k = pair(1, "s") //~ ERROR expected `Int`, found `String`
+    let n = 1
+    n(2) //~ ERROR `Int` is not callable
+    let p = nope() //~ ERROR undefined name `nope`
+    let q = Int //~ ERROR `Int` is a type, not a value
+    let r = String.fromBytes("s") //~ ERROR expected `Bytes`, found `String`
+}
+
+type Counter = {
+    pub mut n Int
+}
+
+fn Counter.inc(mut self) -> Unit {
+    self.n += 1
+}
+
+fn Counter.get(self) -> Int {
+    self.n
+}
+
+fn Counter.make() -> Counter {
+    Counter { n: 0 }
+}
+
+fn m() -> Unit {
+    let c = Counter.make()
+    c.inc() //~ ERROR `inc` takes `mut self` but `c` is immutable
+    let mut d = Counter.make()
+    Counter.make().inc() //~ ERROR `inc` takes `mut self` but the receiver is a temporary
+    Counter.get(d) //~ ERROR `get` is a method
+    d.make() //~ ERROR `make` is an associated function
+    d.nope() //~ ERROR `Counter` has no field or method `nope`
+    c.n = 3 //~ ERROR `c` is immutable
+    let s: String = c.get() //~ ERROR expected `String`, found `Int`
+    d.inc(1) //~ ERROR `inc` expects 0 arguments, 1 given
+    let fld = Counter.n //~ ERROR `n` is a field
+}
+
+fn selfUse(c: Counter) -> Unit {
+    c.inc() //~ ERROR `inc` takes `mut self` but `c` is immutable
+}
+
+fn mutParam(mut c: Counter) -> Unit {
+    c.inc()
+}
+
+fn Counter.getInc(self) -> Unit {
+    self.inc() //~ ERROR `inc` takes `mut self` but `self` is immutable
+}
+-- expect --
+error[E402]: `300` does not fit `u8`
+  --> lib/inf.kg:10:32
+   |
+10 |     let e: Array[u8] = pair(1, 300) //~ ERROR `300` does not fit `u8`
+   |                                ^^^
+
+error[E301]: cannot infer type parameter `T`
+  --> lib/inf.kg:11:13
+   |
+11 |     let g = Array.empty() //~ ERROR cannot infer type parameter
+   |             ^^^^^^^^^^^^
+   = help: write explicit type arguments or an annotation
+
+error[E217]: `identity` takes 1 type argument, 2 given
+  --> lib/inf.kg:12:13
+   |
+12 |     let i = identity[Int, Int](1) //~ ERROR `identity` takes 1 type argument, 2 given
+   |             ^^^^^^^^^^^^^^^^^^^^
+
+error[E501]: `identity` expects 1 argument, 2 given
+  --> lib/inf.kg:13:13
+   |
+13 |     let j = identity(1, 2) //~ ERROR `identity` expects 1 argument, 2 given
+   |             ^^^^^^^^^^^^^
+
+error[E400]: expected `Int`, found `String`
+  --> lib/inf.kg:14:21
+   |
+14 |     let k = pair(1, "s") //~ ERROR expected `Int`, found `String`
+   |                     ^^^
+
+error[E500]: `Int` is not callable
+  --> lib/inf.kg:16:5
+   |
+16 |     n(2) //~ ERROR `Int` is not callable
+   |     ^^^
+
+error[E100]: undefined name `nope`
+  --> lib/inf.kg:17:13
+   |
+17 |     let p = nope() //~ ERROR undefined name `nope`
+   |             ^^^^
+
+error[E123]: `Int` is a type, not a value
+  --> lib/inf.kg:18:13
+   |
+18 |     let q = Int //~ ERROR `Int` is a type, not a value
+   |             ^^^
+
+error[E400]: expected `Bytes`, found `String`
+  --> lib/inf.kg:19:30
+   |
+19 |     let r = String.fromBytes("s") //~ ERROR expected `Bytes`, found `String`
+   |                              ^^^
+
+error[E515]: `inc` takes `mut self` but `c` is immutable
+  --> lib/inf.kg:40:5
+   |
+40 |     c.inc() //~ ERROR `inc` takes `mut self` but `c` is immutable
+   |     ^
+   = help: declare `let mut c = ...`
+
+error[E516]: `inc` takes `mut self` but the receiver is a temporary
+  --> lib/inf.kg:42:5
+   |
+42 |     Counter.make().inc() //~ ERROR `inc` takes `mut self` but the receiver is a temporary
+   |     ^^^^^^^^^^^^^
+
+error[E512]: `get` is a method
+  --> lib/inf.kg:43:5
+   |
+43 |     Counter.get(d) //~ ERROR `get` is a method
+   |     ^^^^^^^^^^^
+   = help: call it on a value: `v.get()`
+
+error[E514]: `make` is an associated function
+  --> lib/inf.kg:44:5
+   |
+44 |     d.make() //~ ERROR `make` is an associated function
+   |     ^^^^^^
+   = help: call `Counter.make(...)`
+
+error[E510]: `Counter` has no field or method `nope`
+  --> lib/inf.kg:45:5
+   |
+45 |     d.nope() //~ ERROR `Counter` has no field or method `nope`
+   |     ^^^^^^
+
+error[E701]: `c` is immutable
+  --> lib/inf.kg:46:5
+   |
+46 |     c.n = 3 //~ ERROR `c` is immutable
+   |     ^
+   = help: declare `let mut c`
+
+error[E400]: expected `String`, found `Int`
+  --> lib/inf.kg:47:21
+   |
+47 |     let s: String = c.get() //~ ERROR expected `String`, found `Int`
+   |                     ^^^^^^
+
+error[E501]: `inc` expects 0 arguments, 1 given
+  --> lib/inf.kg:48:5
+   |
+48 |     d.inc(1) //~ ERROR `inc` expects 0 arguments, 1 given
+   |     ^^^^^^^
+
+error[E513]: `n` is a field
+  --> lib/inf.kg:49:15
+   |
+49 |     let fld = Counter.n //~ ERROR `n` is a field
+   |               ^^^^^^^^^
+   = help: access it on a value
+
+error[E515]: `inc` takes `mut self` but `c` is immutable
+  --> lib/inf.kg:53:5
+   |
+53 |     c.inc() //~ ERROR `inc` takes `mut self` but `c` is immutable
+   |     ^
+   = help: declare `mut c` in the parameter list
+
+error[E515]: `inc` takes `mut self` but `self` is immutable
+  --> lib/inf.kg:61:5
+   |
+61 |     self.inc() //~ ERROR `inc` takes `mut self` but `self` is immutable
+   |     ^^^^
+   = help: declare `mut self` in the parameter list
+

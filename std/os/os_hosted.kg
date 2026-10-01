@@ -1,0 +1,300 @@
+import dl from std/dl
+import entropy from std/entropy
+import ffi from std/ffi
+
+/// The dynamic loader.
+pub fn Host.dl(self) -> dl.Loader
+
+/// The CSPRNG; see `std/entropy`.
+pub fn Host.entropy(self) -> entropy.Entropy
+
+extern(C) {
+    fn read(fd: i32, buf: *mut u8, n: usize) -> isize
+    fn write(fd: i32, buf: *const u8, n: usize) -> isize
+    fn poll(fds: *mut u8, n: usize, timeout: i32) -> i32
+    fn close(fd: i32) -> i32
+    fn exit(code: i32) -> Never
+    fn getenv(name: *const u8) -> *const u8
+    fn malloc(n: usize) -> *mut u8
+    fn free(p: *mut u8) -> Unit
+}
+
+// struct pollfd, the same shape std/shell/shell_hosted.kg's Pollfd uses.
+type Pollfd layout(C) = {
+    pub fd i32
+    pub events i16
+    pub revents i16
+}
+
+// The C runtime's system layer: print, eprint and panics end up here, and
+// so does the exit of the process. Bare targets keep the weak C versions.
+export(C) {
+    pub fn rt_sys_write(fd: i32, p: *const u8, n: usize) -> Unit {
+        let mut off: usize = 0
+        for off < n {
+            let w = unsafe {
+                write(fd, ffi.offset(p, off.toInt() || 0), n - off)
+            }
+            if w <= 0 {
+                if w < 0 && ffi.errno() == eintr() {
+                    continue
+                }
+                return
+            }
+            off = off + (w.toUsize() || 0)
+        }
+    }
+
+    pub fn rt_sys_exit(code: i32) -> Never {
+        unsafe {
+            exit(code)
+        }
+    }
+
+    pub fn rt_sys_close(fd: i32) -> i32 {
+        unsafe {
+            close(fd)
+        }
+    }
+}
+
+/// Everything left on stdin as UTF-8 text; fails when it is not valid UTF-8
+/// or on a real read error (a signal arriving mid-read is retried, not
+/// reported).
+pub fn Stdin.readAll(self) -> String! {
+    let buf = unsafe {
+        malloc(65536)
+    }
+    let mut acc = "".toBytes()
+    for true {
+        let got = unsafe {
+            read(0, buf, 65536)
+        }
+        if got < 0 {
+            if ffi.errno() == eintr() {
+                continue
+            }
+            unsafe {
+                free(buf)
+            }
+            fail ffi.lastError()
+        }
+        if got == 0 {
+            break
+        }
+        acc = acc.concat(unsafe {
+            ffi.bytesFrom(ffi.toConst(buf), got.toUsize() || 0)
+        })
+    }
+    unsafe {
+        free(buf)
+    }
+    String.fromBytes(acc)
+}
+
+/// Next line without its line break, or None at end of input; fails on a
+/// real read error or invalid UTF-8, matching readAll.
+pub fn Stdin.readLine(self) -> String?! {
+    let buf = unsafe {
+        malloc(1)
+    }
+    let mut acc = "".toBytes()
+    let mut any = false
+    for true {
+        let got = unsafe {
+            read(0, buf, 1)
+        }
+        if got < 0 {
+            if ffi.errno() == eintr() {
+                continue
+            }
+            unsafe {
+                free(buf)
+            }
+            fail ffi.lastError()
+        }
+        if got == 0 {
+            break
+        }
+        any = true
+        if unsafe {
+            ffi.readU8(ffi.toConst(buf))
+        } == 10 {
+            break
+        }
+        acc = acc.concat(unsafe {
+            ffi.bytesFrom(ffi.toConst(buf), 1)
+        })
+    }
+    unsafe {
+        free(buf)
+    }
+    if !any {
+        return Ok(None)
+    }
+    let mut text = String.fromBytes(acc)?
+    for text.endsWith("\r") {
+        text = text.sliceBytes(0, text.len() - 1) || ""
+    }
+    Ok(Some(text))
+}
+
+/// Reads up to max bytes from stdin into into, returning how many; 0 with
+/// no error is end of input, matching std/io's Reader (POSIX read
+/// semantics; a signal arriving mid-read is retried, not reported).
+pub fn Stdin.read(mut self, into: &mut Array[u8], max: usize) -> usize! {
+    if max == 0 {
+        return 0
+    }
+    let buf = unsafe {
+        malloc(max)
+    }
+    if ffi.isNull(ffi.toConst(buf)) {
+        fail ffi.CError {
+            code: 12
+            text: "out of memory"
+        }
+    }
+    let mut got: isize = -1
+    for got < 0 {
+        got = unsafe {
+            read(0, buf, max)
+        }
+        if got < 0 && ffi.errno() != eintr() {
+            unsafe {
+                free(buf)
+            }
+            fail ffi.lastError()
+        }
+    }
+    let n = got.toUsize() || 0
+    let data = unsafe {
+        ffi.bytesFrom(ffi.toConst(buf), n)
+    }
+    unsafe {
+        free(buf)
+    }
+    let mut i: usize = 0
+    for i < n {
+        into.push(data.get(i) || 0)
+        i = i + 1
+    }
+    n
+}
+
+/// Waits up to timeoutMs milliseconds for stdin to have data and returns
+/// whatever is there (up to a fixed buffer); empty `Bytes` on timeout,
+/// fails when stdin is closed.
+pub fn Stdin.readSome(self, timeoutMs: Int) -> Bytes! {
+    // poll(2) treats any negative timeout as "wait forever", so clamp to
+    // its i32 range ourselves instead of letting toI32() fall back to -1.
+    let clampedMs = if timeoutMs < 0 {
+        0
+    } else if timeoutMs > 2147483647 {
+        2147483647
+    } else {
+        timeoutMs
+    }
+    let pfd = unsafe {
+        malloc(8)
+    }
+    for true {
+        unsafe {
+            ffi.writeRecord(ffi.toMut(ffi.cast[Pollfd](ffi.toConst(pfd))), &Pollfd {
+                fd: 0
+                events: 1
+                revents: 0
+            })
+        }
+        let r = unsafe {
+            poll(pfd, 1, clampedMs.toI32() || 0)
+        }
+        if r < 0 {
+            if ffi.errno() == eintr() {
+                continue
+            }
+            unsafe {
+                free(pfd)
+            }
+            fail ffi.lastError()
+        }
+        if r == 0 {
+            unsafe {
+                free(pfd)
+            }
+            return "".toBytes()
+        }
+        break
+    }
+    unsafe {
+        free(pfd)
+    }
+    let buf = unsafe {
+        malloc(65536)
+    }
+    let mut got: isize = -1
+    for got < 0 {
+        got = unsafe {
+            read(0, buf, 65536)
+        }
+        if got < 0 && ffi.errno() != eintr() {
+            unsafe {
+                free(buf)
+            }
+            fail ffi.lastError()
+        }
+    }
+    if got == 0 {
+        unsafe {
+            free(buf)
+        }
+        fail ffi.CError {
+            code: 0
+            text: "stdin is closed"
+        }
+    }
+    let out = unsafe {
+        ffi.bytesFrom(ffi.toConst(buf), got.toUsize() || 0)
+    }
+    unsafe {
+        free(buf)
+    }
+    out
+}
+
+/// Writes data to standard output as-is: no newline is added and nothing
+/// is buffered, so ANSI escapes and partial lines reach the terminal
+/// exactly as given; may send fewer bytes than given (a short write),
+/// matching write(2) and std/io's Writer (writeAll loops for the rest).
+pub fn Stdout.write(mut self, data: Bytes) -> usize! {
+    let n = data.len()
+    if n == 0 {
+        return 0
+    }
+    let mut w: isize = -1
+    for w < 0 {
+        w = unsafe {
+            write(1, ffi.bytesPtr(&data), n)
+        }
+        if w < 0 && ffi.errno() != eintr() {
+            fail ffi.lastError()
+        }
+    }
+    w.toUsize() || 0
+}
+
+/// Value of the environment variable name, or None when it is unset or not
+/// valid UTF-8 (an environment variable is an arbitrary byte string on
+/// Unix).
+pub fn Host.env(self, name: String) -> String? {
+    let c = ffi.CString.new(&name) || (_) => return None
+    let p = unsafe {
+        getenv(c.ptr())
+    }
+    if ffi.isNull(p) {
+        return None
+    }
+    unsafe {
+        ffi.stringChecked(p)
+    }
+}

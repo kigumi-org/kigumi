@@ -1,0 +1,81 @@
+-- lib/s.kg --
+pub interface Parse {
+    fn parse(text: String) -> Self?
+}
+
+pub interface Show {
+    fn show(self) -> String
+}
+
+pub type Num = {
+    pub n Int
+}
+
+pub fn Num.parse(text: String) -> Num? {
+    Some(Num { n: 1 })
+}
+
+pub fn Num.show(self) -> String {
+    "${self.n}"
+}
+
+pub type Bad = {
+    pub n Int
+}
+
+pub fn Bad.parse(self) -> Bad? {
+    Some(self)
+}
+
+pub fn parseAll[T: Parse](texts: Array[String]) -> Array[T] {
+    let mut out = Array.empty[T]()
+    for t in texts {
+        if T.parse(t) is Some(v) {
+            out.push(v)
+        }
+    }
+    out
+}
+
+pub fn showAll[T: Show](xs: Array[T]) -> Array[String] {
+    let mut out = Array.empty[String]()
+    for x in xs {
+        out.push(x.show())
+    }
+    out
+}
+
+pub fn useIt() -> Unit {
+    let nums = parseAll[Num](Array.of("1", "2"))
+    _ = showAll(nums)
+    let bad = parseAll[Bad](Array.of("x")) //~ ERROR `Bad` does not satisfy `Parse`
+    _ = bad
+    let boxed: Parse = Num { n: 1 } //~ ERROR `Parse` is not object-safe
+    _ = boxed
+}
+
+pub fn wrong[T](x: T) -> Unit {
+    let v = T.parse("x") //~ ERROR `T` has no method `parse`
+    _ = v
+}
+-- expect --
+error[E300]: `Bad` does not satisfy `Parse`: `parse` is a method, the requirement is an associated function
+  --> lib/s.kg:50:15
+   |
+50 |     let bad = parseAll[Bad](Array.of("x")) //~ ERROR `Bad` does not satisfy `Parse`
+   |               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E307]: `Parse` is not object-safe (requirement `parse` has no receiver)
+  --> lib/s.kg:52:16
+   |
+52 |     let boxed: Parse = Num { n: 1 } //~ ERROR `Parse` is not object-safe
+   |                ^^^^^
+   = help: use it as a constraint
+
+error[E303]: `T` has no method `parse`
+  --> lib/s.kg:57:13
+   |
+57 |     let v = T.parse("x") //~ ERROR `T` has no method `parse`
+   |             ^^^^^^^
+   = help: add a constraint
+

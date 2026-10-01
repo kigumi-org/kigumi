@@ -1,0 +1,44 @@
+-- src --
+import {Arena, Shared} from std/alloc
+
+fn build(n: Int) -> Array[String] {
+    let mut xs = Array.empty[String]()
+    for i in 0..n {
+        xs.push("item ${i}")
+    }
+    xs
+}
+
+fn run() -> Unit! {
+    let arena = Arena.create()?
+    let kept = allocator arena.scope() {
+        let xs = build(50)
+        let inner = allocator arena.scope() {
+            build(3).len()
+        }
+        "${xs.len()} ${inner} ${xs[49]}"
+    }
+    print kept
+    let early = allocator arena.scope() {
+        if true {
+            return
+        }
+        1
+    }
+    print "${early}"
+}
+
+let a = Shared.new(1)
+let b = a.clone()
+b.set(41)
+let sum = a.with((x) => x + 1)
+print "${a.get()} ${b.get()} ${sum}"
+let words = Shared.new(Array.of("x"))
+words.with((ws) => print "${ws.len()}")
+let r = run()
+print "done"
+-- stdout --
+41 41 42
+1
+50 3 item 49
+done

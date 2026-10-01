@@ -1,0 +1,69 @@
+-- src --
+type Counter = {
+    pub mut n Int
+}
+
+fn Counter.bump(mut self) -> Unit {
+    let step = () => {
+        self.n = self.n + 1
+    }
+    step()
+}
+
+fn Counter.resetDirect(mut self) -> Unit {
+    self = Counter { n: 99 }
+}
+
+let mut c = Counter { n: 0 }
+c.bump()
+c.resetDirect()
+print "n=${c.n}"
+-- expect --
+fn main.Counter.bump.closure1(%self: Counter) -> Unit {
+  b0:
+    %t1 = cellget(%self)
+    %t2 = cellget(%self)
+    %t3 = field 0(%t2)
+    %t4 = const 1: Int
+    %t5 = bin +(%t3, %t4)
+    setfield 0(%t1, %t5)
+    %t6 = unit
+    return %t6
+}
+fn main.Counter.bump(%t0: Counter) -> Unit {
+  b0:
+    %self = newcell(%t0)
+    %t2 = closure closure(%self)
+    %step = copy(%t2)
+    %t4 = callv(%step)
+    drop(%step)
+    return %t4
+}
+fn main.Counter.resetDirect(%self: Counter) -> Unit {
+  b0:
+    %t1 = const 99: Int
+    %t2 = record Counter(%t1)
+    %t3 = field 0(%t2)
+    setfield 0(%self, %t3)
+    %t4 = unit
+    return %t4
+}
+fn main() -> Unit! {
+  b0:
+    %t0 = const 0: Int
+    %t1 = record Counter(%t0)
+    %c = copy(%t1)
+    %t3 = borrow 1(%c)
+    %t4 = call bump(%t3)
+    drop(%t4)
+    %t5 = borrow 1(%c)
+    %t6 = call resetDirect(%t5)
+    drop(%t6)
+    %t8 = field 0(%c)
+    %t7 = interp "n=\x00"(%t8)
+    %t9 = builtin print(%t7)
+    drop(%t9)
+    drop(%c)
+    %t10 = unit
+    return %t10
+}

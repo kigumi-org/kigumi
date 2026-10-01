@@ -1,0 +1,16 @@
+-- src --
+type Cmd =
+    Serve(ServeFlags)
+    | Version
+
+type Two =
+    A
+    | B
+-- expect --
+type Cmd =
+    | Serve(ServeFlags)
+    | Version
+
+type Two =
+    | A
+    | B

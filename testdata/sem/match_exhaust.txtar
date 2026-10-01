@@ -1,0 +1,163 @@
+-- lib/ex.kg --
+type Shape = Circle(r: Float) | Rect(w: Float, h: Float) | Dot
+
+type P = {
+    pub x Int
+    pub b Bool
+}
+
+fn shapes(s: Shape, o: Int?, r: Result[Int, String], b: Bool, n: Int, p: P, oo: Int??) -> Int {
+    match s { //~ ERROR non-exhaustive match: `Dot` is not covered
+        Circle(_) -> 1
+        Rect(_, _) -> 2
+    }
+    match s { //~ ERROR non-exhaustive match: `Rect(_, _)`, `Dot` is not covered
+        Circle(_) -> 1
+    }
+    match s {
+        Circle(_) -> 1
+        _ -> 2
+    }
+    match o { //~ ERROR non-exhaustive match: `Some(_)` is not covered
+        None -> 0
+    }
+    match o { //~ ERROR non-exhaustive match: `None` is not covered
+        Some(v) -> v
+    }
+    match r { //~ ERROR non-exhaustive match: `Err(_)` is not covered //~ NOTE arms with a guard do not count
+        Ok(v) -> v
+        Err(e) if e.len() > 0 -> 0
+    }
+    match b { //~ ERROR non-exhaustive match: `false` is not covered
+        true -> 1
+    }
+    match b {
+        true -> 1
+        false -> 0
+    }
+    match n { //~ ERROR non-exhaustive match: `_` is not covered
+        0 -> 0
+        1 -> 1
+    }
+    match n {
+        0 -> 0
+        _ -> 1
+    }
+    match oo { //~ ERROR non-exhaustive match: `Some(None)` is not covered
+        Some(Some(v)) -> v
+        None -> 0
+    }
+    match p { //~ ERROR non-exhaustive match: `P { b: false }` is not covered
+        P { b: true } -> 1
+    }
+    match p {
+        P { x } -> x
+    }
+    match s {
+        Circle(_) -> 1
+        Rect(_, _) -> 2
+        Dot -> 3
+        Circle(_) -> 4 //~ WARNING unreachable pattern
+    }
+    match o {
+        _ -> 0
+        None -> 1 //~ WARNING unreachable pattern
+    }
+    match n {
+        0 -> 0
+        0 -> 1 //~ WARNING unreachable pattern
+        _ -> 2
+    }
+    match o {
+        Some(1) -> 1
+        Some(v) if v > 1 -> 2
+        Some(_) -> 3
+        None -> 0
+    }
+    match s {
+        Circle(r) if r > 1.0 -> 1
+        Circle(_) -> 2
+        Rect { w } if w > 0.0 -> 3
+        Rect { w, h } -> 4
+        Dot -> 5
+    }
+    0
+}
+-- expect --
+error[E814]: non-exhaustive match: `Dot` is not covered
+ --> lib/ex.kg:9:5
+  |
+9 |     match s { //~ ERROR non-exhaustive match: `Dot` is not covered
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E814]: non-exhaustive match: `Rect(_, _)`, `Dot` is not covered
+  --> lib/ex.kg:13:5
+   |
+13 |     match s { //~ ERROR non-exhaustive match: `Rect(_, _)`, `Dot` is not covered
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E814]: non-exhaustive match: `Some(_)` is not covered
+  --> lib/ex.kg:20:5
+   |
+20 |     match o { //~ ERROR non-exhaustive match: `Some(_)` is not covered
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E814]: non-exhaustive match: `None` is not covered
+  --> lib/ex.kg:23:5
+   |
+23 |     match o { //~ ERROR non-exhaustive match: `None` is not covered
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E814]: non-exhaustive match: `Err(_)` is not covered
+  --> lib/ex.kg:26:5
+   |
+26 |     match r { //~ ERROR non-exhaustive match: `Err(_)` is not covered //~ NOTE arms with a guard do not count
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+note: arms with a guard do not count
+  --> lib/ex.kg:26:5
+   |
+26 |     match r { //~ ERROR non-exhaustive match: `Err(_)` is not covered //~ NOTE arms with a guard do not count
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E814]: non-exhaustive match: `false` is not covered
+  --> lib/ex.kg:30:5
+   |
+30 |     match b { //~ ERROR non-exhaustive match: `false` is not covered
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E814]: non-exhaustive match: `_` is not covered
+  --> lib/ex.kg:37:5
+   |
+37 |     match n { //~ ERROR non-exhaustive match: `_` is not covered
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E814]: non-exhaustive match: `Some(None)` is not covered
+  --> lib/ex.kg:45:5
+   |
+45 |     match oo { //~ ERROR non-exhaustive match: `Some(None)` is not covered
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E814]: non-exhaustive match: `P { b: false }` is not covered
+  --> lib/ex.kg:49:5
+   |
+49 |     match p { //~ ERROR non-exhaustive match: `P { b: false }` is not covered
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning[W801]: unreachable pattern
+  --> lib/ex.kg:59:9
+   |
+59 |         Circle(_) -> 4 //~ WARNING unreachable pattern
+   |         ^^^^^^^^
+
+warning[W801]: unreachable pattern
+  --> lib/ex.kg:63:9
+   |
+63 |         None -> 1 //~ WARNING unreachable pattern
+   |         ^^^^
+
+warning[W801]: unreachable pattern
+  --> lib/ex.kg:67:9
+   |
+67 |         0 -> 1 //~ WARNING unreachable pattern
+   |         ^
+

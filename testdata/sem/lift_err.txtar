@@ -1,0 +1,67 @@
+-- lib/lift.kg --
+fn res() -> Result[Int, String] {
+    1
+}
+
+fn noLift() -> Int {
+    Some(1) //~ ERROR expected `Int`, found `Int?`
+}
+
+fn noLiftFloat() -> Int {
+    Some(1.5) //~ ERROR expected `Int`, found `Float?`
+}
+
+fn resres() -> Result[Int?, String] {
+    res() //~ ERROR `Result[Int, String]` is already a `Result`
+}
+
+fn wrongErr() -> Result[Int, String] {
+    Err(1) //~ ERROR expected `String`, found `Int`
+}
+
+fn plus() -> Int? {
+    let x: Int? = 1 + None //~ ERROR expected `Int`, found `_?`
+    x
+}
+
+fn tail() -> String { //~ ERROR expected `String`, found `Unit`
+    let a = 1
+}
+-- expect --
+error[E400]: expected `Int`, found `Int?`
+ --> lib/lift.kg:6:5
+  |
+6 |     Some(1) //~ ERROR expected `Int`, found `Int?`
+  |     ^^^^^^
+
+error[E400]: expected `Int`, found `Float?`
+  --> lib/lift.kg:10:5
+   |
+10 |     Some(1.5) //~ ERROR expected `Int`, found `Float?`
+   |     ^^^^^^^^
+
+error[E404]: `Result[Int, String]` is already a `Result`
+  --> lib/lift.kg:14:5
+   |
+14 |     res() //~ ERROR `Result[Int, String]` is already a `Result`
+   |     ^^^^
+   = help: write `Ok(...)` or `Err(...)` explicitly
+
+error[E400]: expected `String`, found `Int`
+  --> lib/lift.kg:18:9
+   |
+18 |     Err(1) //~ ERROR expected `String`, found `Int`
+   |         ^
+
+error[E400]: expected `Int`, found `_?`
+  --> lib/lift.kg:22:23
+   |
+22 |     let x: Int? = 1 + None //~ ERROR expected `Int`, found `_?`
+   |                       ^^^^
+
+error[E400]: expected `String`, found `Unit`
+  --> lib/lift.kg:26:21
+   |
+26 | fn tail() -> String { //~ ERROR expected `String`, found `Unit`
+   |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+

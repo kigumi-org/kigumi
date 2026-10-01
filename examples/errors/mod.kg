@@ -1,0 +1,4 @@
+Module {
+    name: "errors"
+    kigumi: "0.1"
+}

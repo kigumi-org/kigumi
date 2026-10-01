@@ -1,0 +1,212 @@
+-- src --
+type Inner = {
+    pub text String
+}
+
+fn Inner.message(self) -> String {
+    self.text
+}
+
+type Outer = Wrapped(Inner) | Plain
+
+fn Outer.message(self) -> String {
+    match self {
+        Outer.Wrapped(i) -> "wrapped: ${i.message()}"
+        Outer.Plain -> "plain"
+    }
+}
+
+fn source(ok: Bool) -> Result[Int, Inner] {
+    if ok {
+        return Ok(1)
+    }
+    Err(Inner { text: "boom" })
+}
+
+fn relay(ok: Bool) -> Int! {
+    let v = source(ok) || (e) => fail Outer.Wrapped(e)
+    v + 1
+}
+
+fn relay2(ok: Bool) -> Int! {
+    let v = source(ok) || (e) => fail Outer.Plain
+    v + 1
+}
+
+print "${relay(true) || 0} ${relay(false) || -1} ${relay2(false) || -2}"
+-- expect --
+fn main.Inner.message(%self: Inner) -> String {
+  b0:
+    %t1 = field 0(%self)
+    return %t1
+}
+fn main.Outer.message(%self: Outer) -> String {
+  b0:
+    %t2 = isvariant Wrapped(%self)
+    branch %t2 ? b2 : b3
+  b1:
+    return %t1
+  b2:
+    %t3 = payload 0(%self)
+    %i = copy(%t3)
+    %t6 = call message(%i)
+    %t5 = interp "wrapped: \x00"(%t6)
+    %t1 = copy(%t5)
+    drop(%i)
+    jump b1
+  b3:
+    %t7 = isvariant Plain(%self)
+    branch %t7 ? b4 : b5
+  b4:
+    %t8 = const "plain": String
+    %t1 = copy(%t8)
+    jump b1
+  b5:
+    panic "no match arm matched"
+    unreachable
+}
+fn main.source(%ok: Bool) -> Result[Int, Inner] {
+  b0:
+    branch %ok ? b1 : b2
+  b1:
+    %t2 = const 1: Int
+    %t3 = variant Ok(%t2)
+    drop(%ok)
+    return %t3
+  b2:
+    %t5 = unit
+    %t1 = copy(%t5)
+    jump b3
+  b3:
+    drop(%t1)
+    %t6 = const "boom": String
+    %t7 = record Inner(%t6)
+    %t8 = variant Err(%t7)
+    drop(%ok)
+    return %t8
+  b4:
+    %t4 = unit
+    jump b3
+}
+fn main.relay(%ok: Bool) -> Int! {
+  b0:
+    %t1 = copy(%ok)
+    %t2 = call source(%t1)
+    %t4 = isvariant Ok(%t2)
+    branch %t4 ? b1 : b2
+  b1:
+    %t5 = payload 0(%t2)
+    %t3 = copy(%t5)
+    jump b3
+  b2:
+    %t6 = payload 0(%t2)
+    %e = copy(%t6)
+    %t8 = copy(%e)
+    %t9 = variant Wrapped(%t8)
+    %t10 = box Outer(%t9)
+    drop(%e)
+    drop(%t2)
+    drop(%ok)
+    %t11 = variant Err(%t10)
+    return %t11
+  b3:
+    drop(%t2)
+    %v = copy(%t3)
+    %t14 = const 1: Int
+    %t15 = bin +(%v, %t14)
+    %t16 = variant Ok(%t15)
+    drop(%v)
+    drop(%ok)
+    return %t16
+  b4:
+    %t12 = unit
+    drop(%e)
+    jump b3
+}
+fn main.relay2(%ok: Bool) -> Int! {
+  b0:
+    %t1 = copy(%ok)
+    %t2 = call source(%t1)
+    %t4 = isvariant Ok(%t2)
+    branch %t4 ? b1 : b2
+  b1:
+    %t5 = payload 0(%t2)
+    %t3 = copy(%t5)
+    jump b3
+  b2:
+    %t6 = payload 0(%t2)
+    %e = copy(%t6)
+    %t8 = variant Plain
+    %t9 = box Outer(%t8)
+    drop(%e)
+    drop(%t2)
+    drop(%ok)
+    %t10 = variant Err(%t9)
+    return %t10
+  b3:
+    drop(%t2)
+    %v = copy(%t3)
+    %t13 = const 1: Int
+    %t14 = bin +(%v, %t13)
+    %t15 = variant Ok(%t14)
+    drop(%v)
+    drop(%ok)
+    return %t15
+  b4:
+    %t11 = unit
+    drop(%e)
+    jump b3
+}
+fn main() -> Unit! {
+  b0:
+    %t1 = const true: Bool
+    %t2 = call relay(%t1)
+    %t4 = isvariant Ok(%t2)
+    branch %t4 ? b1 : b2
+  b1:
+    %t5 = payload 0(%t2)
+    %t3 = copy(%t5)
+    jump b3
+  b2:
+    %t6 = payload 0(%t2)
+    %t7 = const 0: Int
+    %t3 = copy(%t7)
+    jump b3
+  b3:
+    drop(%t2)
+    %t8 = const false: Bool
+    %t9 = call relay(%t8)
+    %t11 = isvariant Ok(%t9)
+    branch %t11 ? b4 : b5
+  b4:
+    %t12 = payload 0(%t9)
+    %t10 = copy(%t12)
+    jump b6
+  b5:
+    %t13 = payload 0(%t9)
+    %t14 = const -1: Int
+    %t10 = copy(%t14)
+    jump b6
+  b6:
+    drop(%t9)
+    %t15 = const false: Bool
+    %t16 = call relay2(%t15)
+    %t18 = isvariant Ok(%t16)
+    branch %t18 ? b7 : b8
+  b7:
+    %t19 = payload 0(%t16)
+    %t17 = copy(%t19)
+    jump b9
+  b8:
+    %t20 = payload 0(%t16)
+    %t21 = const -2: Int
+    %t17 = copy(%t21)
+    jump b9
+  b9:
+    drop(%t16)
+    %t0 = interp "\x00 \x00\x00 \x00"(%t3, %t10, %t17)
+    %t22 = builtin print(%t0)
+    drop(%t22)
+    %t23 = unit
+    return %t23
+}

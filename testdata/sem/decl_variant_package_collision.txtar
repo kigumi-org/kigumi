@@ -1,0 +1,28 @@
+-- app/t/color.kg --
+pub type Color = {
+    r Int
+    g Int
+    b Int
+}
+
+-- app/t/node.kg --
+type Node = Color(Int) | Leaf(Int) //~ ERROR variant `Color` collides with the declared type `Color`
+
+fn use() -> Unit {
+    let c = Color { r: 0, g: 0, b: 0 }
+    _ = c
+}
+
+// Not a collision: two ADTs of the same package sharing a variant name is
+// the existing variant-ambiguity rule (r.variantNames), unrelated to this
+// check -- neither ADT's own name collides with the other's variants.
+type Shape = Circle(Int) | Square(Int)
+type Sign = Circle(Int) | Triangle(Int)
+-- expect --
+error[E255]: variant `Color` collides with the declared type `Color`
+ --> app/t/node.kg:1:13
+  |
+1 | type Node = Color(Int) | Leaf(Int) //~ ERROR variant `Color` collides with the declared type `Color`
+  |             ^^^^^^^^^
+  = help: rename it
+

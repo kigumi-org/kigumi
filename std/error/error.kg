@@ -1,0 +1,37 @@
+/// An error built by context(), carrying an outer message and the error it wraps.
+pub type Context = {
+    text String
+    wrapped Error
+}
+
+pub fn Context.message(self) -> String {
+    self.text
+}
+
+/// The error this Context wraps.
+pub fn Context.inner(move self) -> Error {
+    self.wrapped
+}
+
+/// Wraps e so that its message reads `message: <original message>`.
+pub fn context(e: Error, message: String) -> Error {
+    Context {
+        text: "${message}: ${e.message()}"
+        wrapped: e
+    }
+}
+
+/// The error e wraps, or None when e was not built by context().
+pub fn cause(e: Error) -> Error? {
+    if e is Context(c) {
+        Some(c.wrapped)
+    } else {
+        None
+    }
+}
+
+/// Downcasts e to E: the concrete error when the box holds one directly,
+/// or one wrapped by context() anywhere down the chain (first match wins).
+/// E must be a concrete Copy type implementing Error, extracted from behind
+/// a shared borrow, so a move-only E is rejected.
+pub fn as[E](e: &Error) -> E?

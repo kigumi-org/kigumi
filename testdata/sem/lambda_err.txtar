@@ -1,0 +1,112 @@
+-- lib/lam.kg --
+fn apply(f: fn(Int) -> Int, x: Int) -> Int {
+    f(x)
+}
+
+fn use(r: &Int) -> Unit {
+    let a = (x) => x //~ ERROR parameter `x` needs a type annotation
+    apply((x, y) => x, 1) //~ ERROR lambda takes 2 parameters, `fn(Int) -> Int` expects 1 //~ WARNING unused value of type `Int`
+    apply((x: String) => 1, 1) //~ ERROR parameter `x` is `String`, expected `Int` //~ WARNING unused value of type `Int`
+    apply((x) => "s", 1) //~ ERROR expected `Int`, found `String` //~ WARNING unused value of type `Int`
+    let mut n = 0
+    let f: fn() -> Unit = () => { //~ ERROR closure captures `n` (assigned inside the closure) and cannot be a plain `fn`
+        n += 1
+    }
+    let g = () => r //~ ERROR closure cannot capture the borrow `r`
+    let h = () => {
+        break //~ ERROR `break` outside a loop
+    }
+    let t = () => {
+        let v: Int! = Ok(1)
+        v? //~ ERROR `?` in a lambda needs a known return type
+    }
+    let q = ((x: Int) => x)("s") //~ ERROR expected `Int`, found `String`
+    let dup = (x: Int, x: Int) => x //~ ERROR duplicate parameter `x`
+    let s: String = (x: Int) => x //~ ERROR expected `String`, found `closure fn(Int) -> Int`
+}
+-- expect --
+error[E410]: parameter `x` needs a type annotation
+ --> lib/lam.kg:6:14
+  |
+6 |     let a = (x) => x //~ ERROR parameter `x` needs a type annotation
+  |              ^
+
+warning[W400]: unused value of type `Int`
+ --> lib/lam.kg:7:5
+  |
+7 |     apply((x, y) => x, 1) //~ ERROR lambda takes 2 parameters, `fn(Int) -> Int` expects 1 //~ WARNING unused value of type `Int`
+  |     ^^^^^^^^^^^^^^^^^^^^
+
+error[E409]: lambda takes 2 parameters, `fn(Int) -> Int` expects 1
+ --> lib/lam.kg:7:11
+  |
+7 |     apply((x, y) => x, 1) //~ ERROR lambda takes 2 parameters, `fn(Int) -> Int` expects 1 //~ WARNING unused value of type `Int`
+  |           ^^^^^^^^^^^
+
+warning[W400]: unused value of type `Int`
+ --> lib/lam.kg:8:5
+  |
+8 |     apply((x: String) => 1, 1) //~ ERROR parameter `x` is `String`, expected `Int` //~ WARNING unused value of type `Int`
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E411]: parameter `x` is `String`, expected `Int`
+ --> lib/lam.kg:8:12
+  |
+8 |     apply((x: String) => 1, 1) //~ ERROR parameter `x` is `String`, expected `Int` //~ WARNING unused value of type `Int`
+  |            ^^^^^^^^^
+
+warning[W400]: unused value of type `Int`
+ --> lib/lam.kg:9:5
+  |
+9 |     apply((x) => "s", 1) //~ ERROR expected `Int`, found `String` //~ WARNING unused value of type `Int`
+  |     ^^^^^^^^^^^^^^^^^^^
+
+error[E400]: expected `Int`, found `String`
+ --> lib/lam.kg:9:18
+  |
+9 |     apply((x) => "s", 1) //~ ERROR expected `Int`, found `String` //~ WARNING unused value of type `Int`
+  |                  ^^^
+
+error[E413]: closure captures `n` (assigned inside the closure) and cannot be a plain `fn`
+  --> lib/lam.kg:11:27
+   |
+11 |     let f: fn() -> Unit = () => { //~ ERROR closure captures `n` (assigned inside the closure) and cannot be a plain `fn`
+   |                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   = help: use `F: Fn[...]`
+
+error[E412]: closure cannot capture the borrow `r`
+  --> lib/lam.kg:14:19
+   |
+14 |     let g = () => r //~ ERROR closure cannot capture the borrow `r`
+   |                   ^
+
+error[E705]: `break` outside a loop
+  --> lib/lam.kg:16:9
+   |
+16 |         break //~ ERROR `break` outside a loop
+   |         ^^^^^
+
+error[E714]: `?` in a lambda needs a known return type
+  --> lib/lam.kg:20:9
+   |
+20 |         v? //~ ERROR `?` in a lambda needs a known return type
+   |         ^^
+
+error[E400]: expected `Int`, found `String`
+  --> lib/lam.kg:22:29
+   |
+22 |     let q = ((x: Int) => x)("s") //~ ERROR expected `Int`, found `String`
+   |                             ^^^
+
+error[E250]: duplicate parameter `x`
+  --> lib/lam.kg:23:24
+   |
+23 |     let dup = (x: Int, x: Int) => x //~ ERROR duplicate parameter `x`
+   |                        ^^^^^^
+
+error[E400]: expected `String`, found `closure fn(Int) -> Int`
+  --> lib/lam.kg:24:21
+   |
+24 |     let s: String = (x: Int) => x //~ ERROR expected `String`, found `closure fn(Int) -> Int`
+   |                     ^^^^^^^^^^^^^
+

@@ -1,0 +1,86 @@
+-- app/t/t.kg --
+type Node = Leaf(Int) | Range(Int) //~ ERROR variant `Range` collides with the prelude type `Range`
+
+type Tree = Twig(Int) | Branch(Int) //~ ERROR variant `Branch` collides with the prelude type `Branch`
+
+type Count = Blank | Int //~ ERROR variant `Int` collides with the predeclared type `Int`
+
+type Proto = Refl | Eq //~ ERROR variant `Eq` collides with the prelude type `Eq`
+
+type Weekday = Mon | Tue | Wed | Thu | Fri | Sat | Sun
+
+type Range = {
+    lo Int
+    hi Int
+}
+
+// Some/None/Ok/Err collide with Option/Result's own variants, which the
+// universe scope binds directly (types_predeclared.go declareAdt) unlike
+// every other prelude ADT (Ordering, Branch, AllocError below never bind
+// their variants to any scope reachable outside std/prelude itself, so a
+// same-named variant in another package cannot misresolve the same way).
+type MyOption = Some(String) | None //~ ERROR variant `Some` collides with the predeclared variant `Some` //~ ERROR variant `None` collides with the predeclared variant `None`
+
+type MyResult = Ok(Int) | Err(String) //~ ERROR variant `Ok` collides with the predeclared variant `Ok` //~ ERROR variant `Err` collides with the predeclared variant `Err`
+
+// Not a collision: Ordering's Less/Equal/Greater are never bound outside
+// std/prelude's own package scope (only Option/Result get that universe
+// treatment), so this bare name is unambiguously this file's own variant.
+type MyOrdering = Less | Equal | Greater
+-- expect --
+error[E255]: variant `Range` collides with the prelude type `Range`
+ --> app/t/t.kg:1:25
+  |
+1 | type Node = Leaf(Int) | Range(Int) //~ ERROR variant `Range` collides with the prelude type `Range`
+  |                         ^^^^^^^^^
+  = help: rename it
+
+error[E255]: variant `Branch` collides with the prelude type `Branch`
+ --> app/t/t.kg:3:25
+  |
+3 | type Tree = Twig(Int) | Branch(Int) //~ ERROR variant `Branch` collides with the prelude type `Branch`
+  |                         ^^^^^^^^^^
+  = help: rename it
+
+error[E255]: variant `Int` collides with the predeclared type `Int`
+ --> app/t/t.kg:5:22
+  |
+5 | type Count = Blank | Int //~ ERROR variant `Int` collides with the predeclared type `Int`
+  |                      ^^^
+  = help: rename it
+
+error[E255]: variant `Eq` collides with the prelude type `Eq`
+ --> app/t/t.kg:7:21
+  |
+7 | type Proto = Refl | Eq //~ ERROR variant `Eq` collides with the prelude type `Eq`
+  |                     ^^
+  = help: rename it
+
+error[E255]: variant `Some` collides with the predeclared variant `Some`
+  --> app/t/t.kg:21:17
+   |
+21 | type MyOption = Some(String) | None //~ ERROR variant `Some` collides with the predeclared variant `Some` //~ ERROR variant `None` collides with the predeclared variant `None`
+   |                 ^^^^^^^^^^^
+   = help: rename it
+
+error[E255]: variant `None` collides with the predeclared variant `None`
+  --> app/t/t.kg:21:32
+   |
+21 | type MyOption = Some(String) | None //~ ERROR variant `Some` collides with the predeclared variant `Some` //~ ERROR variant `None` collides with the predeclared variant `None`
+   |                                ^^^^
+   = help: rename it
+
+error[E255]: variant `Ok` collides with the predeclared variant `Ok`
+  --> app/t/t.kg:23:17
+   |
+23 | type MyResult = Ok(Int) | Err(String) //~ ERROR variant `Ok` collides with the predeclared variant `Ok` //~ ERROR variant `Err` collides with the predeclared variant `Err`
+   |                 ^^^^^^
+   = help: rename it
+
+error[E255]: variant `Err` collides with the predeclared variant `Err`
+  --> app/t/t.kg:23:27
+   |
+23 | type MyResult = Ok(Int) | Err(String) //~ ERROR variant `Ok` collides with the predeclared variant `Ok` //~ ERROR variant `Err` collides with the predeclared variant `Err`
+   |                           ^^^^^^^^^^
+   = help: rename it
+

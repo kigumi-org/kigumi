@@ -1,0 +1,108 @@
+-- src --
+type App = {
+    pub view pure? fn(Int) -> Int
+}
+
+pure fn pureView(x: Int) -> Int {
+    x + 1
+}
+
+fn plainView(x: Int) -> Int {
+    x * 2
+}
+
+fn useApp(app: App, x: Int) -> Int {
+    app.view(x)
+}
+
+fn withCallbackField(cb: pure? fn(Int) -> Int, x: Int) -> Int {
+    let app = App { view: cb }
+    app.view(x)
+}
+
+fn withMutReassigned(x: Int) -> Int {
+    let mut app = App { view: pureView }
+    app = App { view: plainView }
+    app.view(x)
+}
+
+// callChain forwards app to forwardChain, declared after it: the caller's
+// own CalledFieldParams must not depend on that order (L-159).
+fn callChain(app: App, x: Int) -> Int {
+    forwardChain(app, x)
+}
+
+fn forwardChain(app: App, x: Int) -> Int {
+    app.view(x)
+}
+
+// sameArityApply's two overloads share one arity: a pure caller reaching
+// the String overload through a forwarding hop must not be rejected for
+// the unrelated App overload's field requirement (L-160 revised).
+fn sameArityApply(a: App, x: Int) -> Int {
+    a.view(x)
+}
+
+fn sameArityApply(s: String, x: Int) -> Int {
+    x + 100
+}
+
+fn sameArityHop(s: String, x: Int) -> Int {
+    sameArityApply(s, x)
+}
+
+pure fn callSameArityHop(x: Int) -> Int {
+    sameArityHop("s", x)
+}
+
+// multiParamRelay's two overloads share the forwarded position's type
+// (App), differing only at the other parameter (mode: Bool vs Int): a pure
+// caller reaching the Int overload through a forwarding hop must not be
+// rejected for the Bool overload's field requirement (L-160 revised a
+// second time).
+fn multiParamRelay(a: App, mode: Bool) -> Int {
+    a.view(1)
+}
+
+fn multiParamRelay(a: App, mode: Int) -> Int {
+    mode + 1000
+}
+
+fn multiParamHop(a: App, mode: Int) -> Int {
+    multiParamRelay(a, mode)
+}
+
+pure fn callMultiParamHop(x: Int) -> Int {
+    multiParamHop(App { view: plainView }, x)
+}
+
+// literalParamRelay is multiParamRelay's shape again, but the hop passes
+// mode as a literal instead of forwarding an identifier: the filter must
+// type a literal argument itself, not only bare identifiers naming the
+// caller's own parameters (L-160 revised a third time).
+fn literalParamRelay(a: App, mode: Bool) -> Int {
+    a.view(1)
+}
+
+fn literalParamRelay(a: App, mode: Int) -> Int {
+    mode + 10000
+}
+
+fn literalParamHop(a: App) -> Int {
+    literalParamRelay(a, 1)
+}
+
+pure fn callLiteralParamHop(x: Int) -> Int {
+    literalParamHop(App { view: plainView }) + x - x
+}
+
+let byArg = useApp(App { view: pureView }, 10)
+let byClosure = withCallbackField((n) => n + 5, 10)
+let byMut = withMutReassigned(10)
+let byChain = callChain(App { view: pureView }, 10)
+let bySameArityOverload = callSameArityHop(10)
+let byMultiParamOverload = callMultiParamHop(10)
+let byLiteralParamOverload = callLiteralParamHop(10)
+print "byArg=${byArg} byClosure=${byClosure} byMut=${byMut} byChain=${byChain} bySameArityOverload=${bySameArityOverload} byMultiParamOverload=${byMultiParamOverload} byLiteralParamOverload=${byLiteralParamOverload}"
+-- stdout --
+byArg=11 byClosure=15 byMut=20 byChain=11 bySameArityOverload=110 byMultiParamOverload=1010 byLiteralParamOverload=10001

@@ -1,0 +1,241 @@
+import array from std/array
+import ffi from std/ffi
+
+extern(C) {
+    fn fopen(path: *const u8, mode: *const u8) -> *mut u8
+    fn fclose(f: *mut u8) -> i32
+    fn fflush(f: *mut u8) -> i32
+    fn fwrite(p: *const u8, size: usize, n: usize, f: *mut u8) -> usize
+    fn fread(p: *mut u8, size: usize, n: usize, f: *mut u8) -> usize
+    fn ferror(f: *mut u8) -> i32
+    fn remove(path: *const u8) -> i32
+    fn access(path: *const u8, mode: i32) -> i32
+    fn mkdir(path: *const u8, mode: u32) -> i32
+    fn opendir(path: *const u8) -> *mut u8
+    fn readdir(dir: *mut u8) -> *mut u8
+    fn closedir(dir: *mut u8) -> i32
+    fn malloc(n: usize) -> *mut u8
+    fn realloc(p: *mut u8, n: usize) -> *mut u8
+    fn free(p: *mut u8) -> Unit
+}
+
+fn openFile(path: &String, mode: String) -> File! {
+    let c = ffi.CString.new(path)?
+    let m = ffi.CString.new(&mode)?
+    let f = unsafe {
+        fopen(c.ptr(), m.ptr())
+    }
+    if ffi.isNull(ffi.toConst(f)) {
+        fail ffi.lastError()
+    }
+    File { f: f }
+}
+
+/// Creates the file at path, truncating an existing one, and opens it for writing.
+pub fn Files.create(self, path: Path) -> File! {
+    openFile(&path.text, "w")
+}
+
+/// Opens the file at path for writing at its end, creating it when missing;
+/// unlike create it never truncates, so a redirected /dev/stdout keeps its content.
+pub fn Files.append(self, path: Path) -> File! {
+    openFile(&path.text, "a")
+}
+
+/// Deletes the file at path.
+pub fn Files.remove(self, path: Path) -> Unit! {
+    let c = ffi.CString.new(&path.text)?
+    if unsafe {
+        remove(c.ptr())
+    } != 0 {
+        fail ffi.lastError()
+    }
+}
+
+/// Writes data to the file; may write fewer bytes than given (a short
+/// write), matching std/io's Writer (writeAll loops for the rest).
+pub fn File.write(mut self, data: Bytes) -> usize! {
+    let n = data.len()
+    if n == 0 {
+        return 0
+    }
+    let got = unsafe {
+        fwrite(ffi.bytesPtr(&data), 1, n, self.f)
+    }
+    if got < n && unsafe {
+        ferror(self.f)
+    } != 0 {
+        fail ffi.lastError()
+    }
+    got
+}
+
+/// Flushes the file and reports any error; the drop then closes it.
+pub fn File.close(move self) -> Unit! {
+    if unsafe {
+        fflush(self.f)
+    } != 0 {
+        fail ffi.lastError()
+    }
+}
+
+/// Closes the file when it goes out of scope, ignoring errors.
+pub fn File.drop(move self) -> Unit {
+    _ = unsafe {
+        fclose(self.f)
+    }
+}
+
+/// Whole file as UTF-8 text; fails when the file is missing or not valid UTF-8.
+pub fn Files.read(self, path: Path) -> String! {
+    String.fromBytes(self.readBytes(path)?)
+}
+
+/// Whole file as bytes.
+pub fn Files.readBytes(self, path: Path) -> Bytes! {
+    // fopen happily opens a directory; report it as EISDIR up front.
+    let c = ffi.CString.new(&path.text)?
+    let d = unsafe {
+        opendir(c.ptr())
+    }
+    if !ffi.isNull(ffi.toConst(d)) {
+        _ = unsafe {
+            closedir(d)
+        }
+        fail ffi.CError {
+            code: 21
+            text: ffi.errorText(21)
+        }
+    }
+    let file = openFile(&path.text, "rb")?
+    let mut cap: usize = 65536
+    let mut len: usize = 0
+    let mut buf = unsafe {
+        malloc(cap)
+    }
+    if ffi.isNull(ffi.toConst(buf)) {
+        fail ffi.CError {
+            code: 12
+            text: "out of memory"
+        }
+    }
+    for true {
+        if len == cap {
+            cap = cap * 2
+            let grown = unsafe {
+                realloc(buf, cap)
+            }
+            if ffi.isNull(ffi.toConst(grown)) {
+                unsafe {
+                    free(buf)
+                }
+                fail ffi.CError {
+                    code: 12
+                    text: "out of memory"
+                }
+            }
+            buf = grown
+        }
+        let got = unsafe {
+            fread(ffi.toMut(ffi.offset(ffi.toConst(buf), len.toInt() || 0)), 1, cap - len, file.f)
+        }
+        if got == 0 {
+            if unsafe {
+                ferror(file.f)
+            } != 0 {
+                unsafe {
+                    free(buf)
+                }
+                fail ffi.lastError()
+            }
+            break
+        }
+        len = len + got
+    }
+    let out = unsafe {
+        ffi.bytesFrom(ffi.toConst(buf), len)
+    }
+    unsafe {
+        free(buf)
+    }
+    out
+}
+
+/// Creates the directory at path and any missing parents; an existing directory is fine.
+pub fn Files.mkdir(self, path: Path) -> Unit! {
+    let parts = path.text.split("/")
+    let mut cur = ""
+    for i in 0..parts.len() {
+        if i > 0 {
+            cur = "${cur}/"
+        }
+        cur = "${cur}${parts.get(i) || ""}"
+        if cur == "" || cur == "/" {
+            continue
+        }
+        let c = ffi.CString.new(&cur)?
+        if unsafe {
+            mkdir(c.ptr(), 493)
+        } != 0 && ffi.errno() != eexist() {
+            fail ffi.lastError()
+        }
+    }
+}
+
+/// Whether something exists at path.
+pub fn Files.exists(self, path: Path) -> Bool {
+    let c = ffi.CString.new(&path.text) || (_) => return false
+    unsafe {
+        access(c.ptr(), 0)
+    } == 0
+}
+
+/// Paths of the entries directly inside the directory at path, sorted by name.
+pub fn Files.list(self, path: Path) -> Array[Path]! {
+    let c = ffi.CString.new(&path.text)?
+    let d = unsafe {
+        opendir(c.ptr())
+    }
+    if ffi.isNull(ffi.toConst(d)) {
+        fail ffi.lastError()
+    }
+    let mut names: Array[String] = Array.empty()
+    for true {
+        ffi.clearErrno()
+        let e = unsafe {
+            readdir(d)
+        }
+        if ffi.isNull(ffi.toConst(e)) {
+            if ffi.errno() == eintr() {
+                continue
+            }
+            if ffi.errno() != 0 {
+                let err = ffi.lastError()
+                _ = unsafe {
+                    closedir(d)
+                }
+                fail err
+            }
+            break
+        }
+        let name = unsafe {
+            ffi.stringLossy(ffi.offset(ffi.toConst(e), direntNameOffset()))
+        }
+        if name != "." && name != ".." {
+            names.push(name)
+        }
+    }
+    _ = unsafe {
+        closedir(d)
+    }
+    let dir = if path.text.endsWith("/") || path.text == "" {
+        path.text
+    } else {
+        "${path.text}/"
+    }
+    let mut out: Array[Path] = Array.empty()
+    for name in array.sortedBy(&names, (a, b) => a.compareTo(b)) {
+        out.push(Path { text: "${dir}${name}" })
+    }
+    out
+}

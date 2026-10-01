@@ -1,0 +1,50 @@
+-- src --
+let mut n = 0
+let k = (x: Int) => x + n
+let m: pure fn(Int) -> Int = k
+let inc = () => { n += 1 }
+inc()
+print "${m(1)}"
+-- expect --
+fn main.closure1(%n: Int, %x: Int) -> Int {
+  b0:
+    %t2 = cellget(%n)
+    %t3 = bin +(%x, %t2)
+    drop(%x)
+    drop(%n)
+    return %t3
+}
+fn main.closure2(%n: Int) -> Unit {
+  b0:
+    %t1 = cellget(%n)
+    %t2 = const 1: Int
+    %t3 = bin +(%t1, %t2)
+    cellset(%n, %t3)
+    %t4 = unit
+    drop(%n)
+    return %t4
+}
+fn main() -> Unit! {
+  b0:
+    %t0 = const 0: Int
+    %n = newcell(%t0)
+    %t2 = closure closure(%n)
+    %k = copy(%t2)
+    %t4 = copy(%k)
+    %m = copy(%t4)
+    %t6 = closure closure(%n)
+    %inc = copy(%t6)
+    %t8 = callv(%inc)
+    drop(%t8)
+    %t10 = const 1: Int
+    %t11 = callv(%m, %t10)
+    %t9 = interp ""(%t11)
+    %t12 = builtin print(%t9)
+    drop(%t12)
+    drop(%inc)
+    drop(%m)
+    drop(%k)
+    drop(%n)
+    %t13 = unit
+    return %t13
+}

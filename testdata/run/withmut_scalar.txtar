@@ -1,0 +1,28 @@
+-- src --
+import {Shared} from std/alloc
+
+let mut xs = Array.of(1, 2, 3)
+let _ = xs.withMut(1, (x: &mut Int) => { x = x + 100 })
+print "${xs.get(0).unwrap()} ${xs.get(1).unwrap()} ${xs.get(2).unwrap()}"
+
+let mut us: Array[u8] = Array.of(10, 20)
+let _ = us.withMut(0, (x: &mut u8) => { x = 250 })
+print "${us.get(0).unwrap()} ${us.get(1).unwrap()}"
+
+let mut fs = Array.of(1.5, 2.5)
+let _ = fs.withMut(1, (x: &mut Float) => { x = x * 2.0 })
+print "${fs.get(0).unwrap()} ${fs.get(1).unwrap()}"
+
+let mut bs = Array.of(true, false)
+let _ = bs.withMut(0, (x: &mut Bool) => { x = !x })
+print "${bs.get(0).unwrap()} ${bs.get(1).unwrap()}"
+
+let s = Shared.new(41)
+let _ = s.withMut((x: &mut Int) => { x = x + 1 })
+print "${s.get()}"
+-- stdout --
+1 102 3
+250 20
+1.5 5
+false false
+42

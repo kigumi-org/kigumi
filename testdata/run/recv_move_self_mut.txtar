@@ -1,0 +1,38 @@
+-- src --
+type Inner = {
+    pub mut n usize
+}
+
+fn Inner.bump(mut self) -> usize {
+    self.n = self.n + 1
+    self.n
+}
+
+type Outer = {
+    mut c Inner
+}
+
+fn Outer.finish(move self) -> usize {
+    self.c.bump()
+}
+
+type Counter = {
+    pub mut n usize
+}
+
+fn Counter.bump(mut self) -> usize {
+    self.n = self.n + 1
+    self.n
+}
+
+fn Counter.finish(move self) -> usize {
+    self.bump()
+}
+
+let outer = Outer { c: Inner { n: 0 } }
+print "${outer.finish()}"
+let counter = Counter { n: 41 }
+print "${counter.finish()}"
+-- stdout --
+1
+42

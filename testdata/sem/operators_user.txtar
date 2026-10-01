@@ -1,0 +1,88 @@
+-- lib/op.kg --
+pub type Vec = {
+    pub x Float
+    pub y Float
+}
+
+pub pure fn Vec.+(a: Vec, b: Vec) -> Vec {
+    Vec { x: a.x + b.x, y: a.y + b.y }
+}
+
+pub pure fn Vec.*(a: Float, b: Vec) -> Vec {
+    Vec { x: a * b.x, y: a * b.y }
+}
+
+pub pure fn Vec.*(a: Vec, b: Float) -> Vec {
+    b * a
+}
+
+pub pure fn Vec.!(a: Vec) -> Bool {
+    a.x == 0.0
+}
+
+pub pure fn Vec.+^(a: Vec, b: Int) -> Vec {
+    a
+}
+
+fn use(v: Vec, w: Vec) -> Unit {
+    let a = v + w //~ TYPE a : Vec
+    let b = 2.0 * v //~ TYPE b : Vec
+    let c = v * 2 //~ TYPE c : Vec
+    let d = v - w //~ ERROR no operator `-` for (Vec, Vec)
+    let e = v *- w //~ ERROR `*-` is not defined
+    let f = !v //~ TYPE f : Bool
+    let g = v + 1 //~ ERROR no operator `+` for (Vec, Int)
+    let h = v +^ 3 //~ TYPE h : Vec
+    let i = 1 + v //~ ERROR expected `Int`, found `Vec`
+    let mut m = v
+    m += w
+    m *= 2
+    m -= w //~ ERROR no operator `-` for (Vec, Vec)
+    let n = v == w
+}
+
+type NoEq = {
+    pub f fn() -> Unit
+}
+
+fn eq(a: NoEq, b: NoEq) -> Bool {
+    a == b //~ ERROR `==` is not defined for `NoEq` (no `Eq`)
+}
+-- expect --
+error[E600]: no operator `-` for (Vec, Vec)
+  --> lib/op.kg:30:13
+   |
+30 |     let d = v - w //~ ERROR no operator `-` for (Vec, Vec)
+   |             ^^^^^
+
+error[E601]: `*-` is not defined
+  --> lib/op.kg:31:13
+   |
+31 |     let e = v *- w //~ ERROR `*-` is not defined
+   |             ^^^^^^
+   = help: if you meant `v * -w`, add a space
+
+error[E600]: no operator `+` for (Vec, Int)
+  --> lib/op.kg:33:13
+   |
+33 |     let g = v + 1 //~ ERROR no operator `+` for (Vec, Int)
+   |             ^^^^^
+
+error[E400]: expected `Int`, found `Vec`
+  --> lib/op.kg:35:17
+   |
+35 |     let i = 1 + v //~ ERROR expected `Int`, found `Vec`
+   |                 ^
+
+error[E600]: no operator `-` for (Vec, Vec)
+  --> lib/op.kg:39:5
+   |
+39 |     m -= w //~ ERROR no operator `-` for (Vec, Vec)
+   |     ^^^^^^
+
+error[E610]: `==` is not defined for `NoEq` (no `Eq`)
+  --> lib/op.kg:48:5
+   |
+48 |     a == b //~ ERROR `==` is not defined for `NoEq` (no `Eq`)
+   |     ^^^^^^
+

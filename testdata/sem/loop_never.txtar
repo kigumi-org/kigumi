@@ -1,0 +1,36 @@
+-- app/t/t.kg --
+fn spin(n: Int) -> Never {
+    let mut i = n
+    for {
+        i = i + 1
+    }
+}
+
+fn pick(n: Int) -> Int {
+    if n > 0 {
+        return n
+    }
+    spin(n)
+}
+
+fn stops() -> Int {
+    for { //~ ERROR expected `Int`, found `Unit`
+        break
+    }
+}
+
+fn nested() -> Never {
+    for {
+        for {
+            break
+        }
+    }
+}
+
+-- expect --
+error[E400]: expected `Int`, found `Unit`
+  --> app/t/t.kg:16:5
+   |
+16 |     for { //~ ERROR expected `Int`, found `Unit`
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+

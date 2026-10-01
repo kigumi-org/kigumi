@@ -1,0 +1,69 @@
+-- lib/inf.kg --
+fn identity[T](x: T) -> T {
+    x
+}
+
+fn pair[T](a: T, b: T) -> Array[T] {
+    Array.of(a, b)
+}
+
+fn use() -> Unit {
+    let a = identity(1) //~ TYPE a : Int
+    let b: u8 = identity(1) //~ TYPE b : u8
+    let c = identity("s") //~ TYPE c : String
+    let d = pair(1, 2) //~ TYPE d : Array[Int]
+    let f = Array.empty[Int]() //~ TYPE f : Array[Int]
+    let h: Array[String] = Array.empty() //~ TYPE h : Array[String]
+    let o: Int? = identity(1) //~ TYPE o : Int?
+    let mut xs = Array.empty[Int]()
+    xs.push(1)
+    let n = xs.len() //~ TYPE n : usize
+    let g = xs.get(0) //~ TYPE g : Int?
+    let t = xs.take(2) //~ TYPE t : Array[Int]
+}
+
+type Counter = {
+    pub mut n Int
+}
+
+fn Counter.inc(mut self) -> Unit {
+    self.n += 1
+}
+
+fn Counter.get(self) -> Int {
+    self.n
+}
+
+fn Counter.make() -> Counter {
+    Counter { n: 0 }
+}
+
+fn m() -> Unit {
+    let mut d = Counter.make()
+    d.inc()
+    let v = d.get() //~ TYPE v : Int
+    d.n = 3
+    let w = d.n //~ TYPE w : Int
+}
+
+type Box[T] = {
+    pub v T
+}
+
+fn Box[T].get(self) -> T {
+    self.v
+}
+
+fn Box[T].map[U](self, f: fn(T) -> U) -> Box[U] {
+    Box[U] { v: f(self.v) }
+}
+
+fn boxes(f: fn(Int) -> String) -> Unit {
+    let b = Box[Int] { v: 1 } //~ TYPE b : Box[Int]
+    let c = Box { v: "s" } //~ TYPE c : Box[String]
+    let v = b.get() //~ TYPE v : Int
+    let s = b.map(f) //~ TYPE s : Box[String]
+    let inner = c.v //~ TYPE inner : String
+    let fv = f(1) //~ TYPE fv : String
+}
+-- expect --

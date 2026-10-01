@@ -1,0 +1,214 @@
+-- lib/disjoint.kg --
+type Pair = {
+    mut a Array[u8]
+    mut b Array[u8]
+}
+
+fn Pair.disjointOk(mut self) -> Unit {
+    let r = &mut self.a
+    let s = &mut self.b
+    r.push(1)
+    s.push(2)
+}
+
+fn Pair.sameFieldConflict(mut self) -> Unit {
+    let r = &mut self.a
+    let s = &mut self.a
+    r.push(1)
+    s.push(2)
+}
+
+fn Pair.sharedThenExclusiveConflict(mut self) -> Unit {
+    let s = &self.a
+    let r = &mut self.a
+    s.len()
+    r.push(1)
+}
+
+type Nested = {
+    mut pair Pair
+}
+
+fn Nested.nestedOverlapConflict(mut self) -> Unit {
+    let r = &mut self.pair.a
+    let s = &mut self.pair
+    r.push(1)
+    s.a.push(2)
+}
+
+fn Nested.sharedAncestorThenExclusiveDescendant(mut self) -> Unit {
+    let s = &self.pair
+    let r = &mut self.pair.a
+    s.a.len()
+    r.push(1)
+}
+
+fn Nested.nestedSiblingsOk(mut self) -> Unit {
+    let r = &mut self.pair.a
+    let s = &mut self.pair.b
+    r.push(1)
+    s.push(2)
+}
+
+type Bag = {
+    mut items Array[Array[u8]]
+    mut label Array[u8]
+}
+
+fn Bag.indexStaysConservative(mut self) -> Unit {
+    let r = &mut self.items[0]
+    self.label.push(1)
+    r.push(2)
+}
+-- expect --
+fn lib.Pair.disjointOk(%self: Pair) -> Unit {
+  b0:
+    %t1 = field 0(%self)
+    %t2 = borrow 1(%t1)
+    %r = copy(%t2)
+    %t4 = field 1(%self)
+    %t5 = borrow 1(%t4)
+    %s = copy(%t5)
+    %t7 = const 1: u8
+    %t8 = borrow 1(%r)
+    %t9 = call push(%t8, %t7)
+    drop(%t9)
+    %t10 = const 2: u8
+    %t11 = borrow 1(%s)
+    %t12 = call push(%t11, %t10)
+    return %t12
+}
+fn lib.Pair.sameFieldConflict(%self: Pair) -> Unit {
+  b0:
+    %t1 = field 0(%self)
+    %t2 = borrow 1(%t1)
+    %r = copy(%t2)
+    %t4 = field 0(%self)
+    %t5 = borrow 1(%t4)
+    %s = copy(%t5)
+    %t7 = const 1: u8
+    %t8 = borrow 1(%r)
+    %t9 = call push(%t8, %t7)
+    drop(%t9)
+    %t10 = const 2: u8
+    %t11 = borrow 1(%s)
+    %t12 = call push(%t11, %t10)
+    return %t12
+}
+fn lib.Pair.sharedThenExclusiveConflict(%self: Pair) -> Unit {
+  b0:
+    %t1 = field 0(%self)
+    %t2 = borrow 0(%t1)
+    %s = copy(%t2)
+    %t4 = field 0(%self)
+    %t5 = borrow 1(%t4)
+    %r = copy(%t5)
+    %t7 = call len(%s)
+    drop(%t7)
+    %t8 = const 1: u8
+    %t9 = borrow 1(%r)
+    %t10 = call push(%t9, %t8)
+    return %t10
+}
+fn lib.Nested.nestedOverlapConflict(%self: Nested) -> Unit {
+  b0:
+    %t1 = field 0(%self)
+    %t2 = field 0(%t1)
+    %t3 = borrow 1(%t2)
+    %r = copy(%t3)
+    %t5 = field 0(%self)
+    %t6 = borrow 1(%t5)
+    %s = copy(%t6)
+    %t8 = const 1: u8
+    %t9 = borrow 1(%r)
+    %t10 = call push(%t9, %t8)
+    drop(%t10)
+    %t11 = const 2: u8
+    %t12 = field 0(%s)
+    %t13 = borrow 1(%t12)
+    %t14 = call push(%t13, %t11)
+    return %t14
+}
+fn lib.Nested.sharedAncestorThenExclusiveDescendant(%self: Nested) -> Unit {
+  b0:
+    %t1 = field 0(%self)
+    %t2 = borrow 0(%t1)
+    %s = copy(%t2)
+    %t4 = field 0(%self)
+    %t5 = field 0(%t4)
+    %t6 = borrow 1(%t5)
+    %r = copy(%t6)
+    %t8 = field 0(%s)
+    %t9 = call len(%t8)
+    drop(%t9)
+    %t10 = const 1: u8
+    %t11 = borrow 1(%r)
+    %t12 = call push(%t11, %t10)
+    return %t12
+}
+fn lib.Nested.nestedSiblingsOk(%self: Nested) -> Unit {
+  b0:
+    %t1 = field 0(%self)
+    %t2 = field 0(%t1)
+    %t3 = borrow 1(%t2)
+    %r = copy(%t3)
+    %t5 = field 0(%self)
+    %t6 = field 1(%t5)
+    %t7 = borrow 1(%t6)
+    %s = copy(%t7)
+    %t9 = const 1: u8
+    %t10 = borrow 1(%r)
+    %t11 = call push(%t10, %t9)
+    drop(%t11)
+    %t12 = const 2: u8
+    %t13 = borrow 1(%s)
+    %t14 = call push(%t13, %t12)
+    return %t14
+}
+fn lib.Bag.indexStaysConservative(%self: Bag) -> Unit {
+  b0:
+    %t1 = field 0(%self)
+    %t2 = const 0: usize
+    %t3 = index(%t1, %t2)
+    %t4 = borrow 1(%t3)
+    %r = copy(%t4)
+    %t6 = const 1: u8
+    %t7 = field 1(%self)
+    %t8 = borrow 1(%t7)
+    %t9 = call push(%t8, %t6)
+    drop(%t9)
+    %t10 = const 2: u8
+    %t11 = borrow 1(%r)
+    %t12 = call push(%t11, %t10)
+    return %t12
+}
+error[borrow-conflict]: `self` is exclusively borrowed and cannot be used here
+  --> lib/disjoint.kg:15:13
+   |
+15 |     let s = &mut self.a
+   |             ^^^^^^^^^^^
+
+error[borrow-conflict]: `self` is borrowed and cannot be mutated here
+  --> lib/disjoint.kg:22:13
+   |
+22 |     let r = &mut self.a
+   |             ^^^^^^^^^^^
+
+error[borrow-conflict]: `self` is exclusively borrowed and cannot be used here
+  --> lib/disjoint.kg:33:13
+   |
+33 |     let s = &mut self.pair
+   |             ^^^^^^^^^^^^^^
+
+error[borrow-conflict]: `self` is borrowed and cannot be mutated here
+  --> lib/disjoint.kg:40:13
+   |
+40 |     let r = &mut self.pair.a
+   |             ^^^^^^^^^^^^^^^^
+
+error[borrow-conflict]: `self` is exclusively borrowed and cannot be used here
+  --> lib/disjoint.kg:59:5
+   |
+59 |     self.label.push(1)
+   |     ^^^^^^^^^^
+

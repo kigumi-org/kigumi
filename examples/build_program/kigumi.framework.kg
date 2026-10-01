@@ -1,0 +1,10 @@
+// A Framework descriptor registers the external tools a build program may run.
+Framework {
+    name: "example/gen"
+    version: "1.0"
+}
+
+Tool {
+    name: "gen"
+    program: "tools/gen.sh"
+}

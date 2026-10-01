@@ -1,0 +1,100 @@
+import array from std/array
+import fs from std/fs
+import io from std/io
+import json from std/json
+import {Commit, tally} from repostat/parse
+
+pub interface Display {
+    fn display(self) -> String
+}
+
+@impl(Display)
+pub type AuthorStat = {
+    pub name String {
+        json.name("name")
+    }
+
+    pub commits Int {
+        json.name("commits")
+    }
+}
+
+pub pure fn AuthorStat.display(self) -> String {
+    "${self.name}: ${self.commits} commits"
+}
+
+pub type Report = {
+    pub total usize {
+        json.name("total_commits")
+    }
+
+    pub days usize {
+        json.name("active_days")
+    }
+
+    pub authors Array[AuthorStat] {
+        json.name("authors")
+    }
+}
+
+pub type PublishedReport = {
+    pub total usize {
+        json.name("total_commits")
+    }
+
+    pub days usize {
+        json.name("active_days")
+    }
+
+    pub authors Array[AuthorStat] {
+        json.name("authors")
+    }
+
+    pub tool String {
+        json.name("generated_by")
+    }
+}
+
+pub pure fn build(commits: Array[Commit]) -> Report {
+    let authors = tally(commits.map((c) => c.author))
+    let days = tally(commits.map((c) => c.day))
+
+    let stats = authors.entries()
+        .map((e) => AuthorStat {
+            name: e.key
+            commits: e.value
+        })
+    let ranked = array.sortedBy(&stats, (a, b) => b.commits.compareTo(a.commits))
+
+    Report {
+        total: commits.len()
+        days: days.len()
+        authors: ranked
+    }
+}
+
+pub fn writeJson(files: fs.Files, path: fs.Path, r: &Report) -> Unit! {
+    let published = PublishedReport {
+        total: r.total
+        days: r.days
+        authors: r.authors.clone()
+        tool: "repostat"
+    }
+    let body = json.encode(published)? // metadata駆動
+
+    let mut f = files.create(path)? // Result[File, _]からFileを消費分解
+    errdefer _ = files.remove(path)
+    // 失敗経路では書きかけを残さない。write(mut self)は短い書き込みを
+    // 許すので、fを消費するio.writeAllではなくここでループする
+    let data = body.toBytes()
+    // String→Bytesはゼロコピーview
+    let mut sent: usize = 0
+    for sent < data.len() {
+        let n = f.write(data.slice(sent, data.len()).unwrap())?
+        if n == 0 {
+            fail io.IoError { text: "write returned 0 with data remaining" }
+        }
+        sent += n
+    }
+    f.close()? // 明示close(move self)。以後fは使えない
+}

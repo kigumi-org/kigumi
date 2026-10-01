@@ -1,0 +1,5 @@
+/// errno(3) EINTR on this platform: wasi-libc's __errno_values.h maps
+/// EINTR to __WASI_ERRNO_INTR (wasi/api.h), 27, not musl/Linux's 4.
+fn eintr() -> i32 {
+    27
+}

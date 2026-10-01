@@ -1,0 +1,109 @@
+-- lib/poly_iface.kg --
+pub interface Viewer {
+    pure? fn view(self, x: Int) -> Int
+}
+
+@impl(Viewer)
+pub type PureV = {
+    pub tag Int
+}
+
+pub pure fn PureV.view(self, x: Int) -> Int {
+    x + self.tag
+}
+
+@impl(Viewer)
+pub type ImpureV = {
+    pub tag Int
+}
+
+pub fn ImpureV.view(self, x: Int) -> Int {
+    x + self.tag
+}
+
+pure fn callView(v: Viewer, x: Int) -> Int {
+    v.view(x) //~ ERROR requirement `view` of `Viewer` is not `pure`
+}
+
+// A `pure?` requirement called through the callee's own type parameter
+// defers to each instantiation's resolved witness instead of req's own
+// (unresolved) default, unlike the existential `v: Viewer` above (§4.7
+// generic instantiation, L-177).
+fn callViewGeneric[T: Viewer](t: T, x: Int) -> Int {
+    t.view(x)
+}
+
+pure fn callGenericPure(x: Int) -> Int {
+    callViewGeneric(PureV { tag: 1 }, x)
+}
+
+pure fn callGenericImpure(x: Int) -> Int {
+    callViewGeneric(ImpureV { tag: 1 }, x) //~ ERROR `callViewGeneric` may be impure
+}
+
+// Erasing the generic function itself to a fixed-effect fn value has no
+// call-site type argument left to resolve the witness against, the same
+// erasure gap L-157 closed for a `pure?` field read through a parameter.
+fn erasedGenericWitness() -> Int {
+    let g: pure fn(PureV, Int) -> Int = callViewGeneric //~ ERROR `callViewGeneric` is not `pure` (calls `T.view`)
+    g(PureV { tag: 1 }, 1)
+}
+
+pure? fn notARequirement(x: Int) -> Int { //~ ERROR `pure?` is only allowed on an interface requirement (§4.7, L-121)
+    x
+}
+
+// A generic wrapper's own `pure fn` declaration defers to ITS type
+// parameter's witness in turn: trusting the flat declared-pure bit here
+// without checking that nested witness would accept an impure `inner`
+// (regression found in L-177 review, fixed by recursing witnessArgMods
+// over a WitnessBind's own CalledWitnessReqs).
+@impl(Viewer)
+pub type Wrap[T: Viewer] = {
+    pub inner T
+}
+
+pub pure fn Wrap[T].view(self, x: Int) -> Int {
+    self.inner.view(x)
+}
+
+pure fn wrapPure(x: Int) -> Int {
+    callViewGeneric(Wrap { inner: PureV { tag: 1 } }, x)
+}
+
+pure fn wrapImpure(x: Int) -> Int {
+    callViewGeneric(Wrap { inner: ImpureV { tag: 1 } }, x) //~ ERROR `callViewGeneric` may be impure
+}
+-- expect --
+error[E902]: requirement `view` of `Viewer` is not `pure`
+  --> lib/poly_iface.kg:24:5
+   |
+24 |     v.view(x) //~ ERROR requirement `view` of `Viewer` is not `pure`
+   |     ^^^^^^^^
+
+error[E901]: `callViewGeneric` may be impure
+  --> lib/poly_iface.kg:40:5
+   |
+40 |     callViewGeneric(ImpureV { tag: 1 }, x) //~ ERROR `callViewGeneric` may be impure
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   = help: declare it `pure fn(...)`
+
+error[E423]: `callViewGeneric` is not `pure` (calls `T.view`)
+  --> lib/poly_iface.kg:47:41
+   |
+47 |     let g: pure fn(PureV, Int) -> Int = callViewGeneric //~ ERROR `callViewGeneric` is not `pure` (calls `T.view`)
+   |                                         ^^^^^^^^^^^^^^^
+
+error[E257]: `pure?` is only allowed on an interface requirement (§4.7, L-121)
+  --> lib/poly_iface.kg:51:7
+   |
+51 | pure? fn notARequirement(x: Int) -> Int { //~ ERROR `pure?` is only allowed on an interface requirement (§4.7, L-121)
+   |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E901]: `callViewGeneric` may be impure
+  --> lib/poly_iface.kg:74:5
+   |
+74 |     callViewGeneric(Wrap { inner: ImpureV { tag: 1 } }, x) //~ ERROR `callViewGeneric` may be impure
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   = help: declare it `pure fn(...)`
+

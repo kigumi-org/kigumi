@@ -1,0 +1,789 @@
+/// Sum and whether it overflowed the width; unlike `+`, never panics.
+pub type Overflow[T] = {
+    pub value T
+    pub overflowed Bool
+}
+
+/// Sum and whether it overflowed i8's range.
+pub pure fn i8.addWithOverflow(self, other: i8) -> Overflow[i8] {
+    let wrapped = self.wrappingAdd(other)
+    let ovf = (self >= 0 && other >= 0 && wrapped < 0) || (self < 0 && other < 0 && wrapped >= 0)
+    Overflow {
+        value: wrapped
+        overflowed: ovf
+    }
+}
+
+/// Difference and whether it overflowed i8's range.
+pub pure fn i8.subWithOverflow(self, other: i8) -> Overflow[i8] {
+    let wrapped = self.wrappingSub(other)
+    let ovf = (self >= 0 && other < 0 && wrapped < 0) || (self < 0 && other >= 0 && wrapped >= 0)
+    Overflow {
+        value: wrapped
+        overflowed: ovf
+    }
+}
+
+/// Product and whether it overflowed i8's range.
+pub pure fn i8.mulWithOverflow(self, other: i8) -> Overflow[i8] {
+    if self == 0 || other == 0 {
+        return Overflow {
+            value: 0
+            overflowed: false
+        }
+    }
+    if other == -1 {
+        if self == -128 {
+            return Overflow {
+                value: -128
+                overflowed: true
+            }
+        }
+        return Overflow {
+            value: self.wrappingMul(other)
+            overflowed: false
+        }
+    }
+    let wrapped = self.wrappingMul(other)
+    Overflow {
+        value: wrapped
+        overflowed: wrapped / other != self
+    }
+}
+
+/// Sum clamped to i8's range instead of overflowing.
+pub pure fn i8.saturatingAdd(self, other: i8) -> i8 {
+    let r = self.addWithOverflow(other)
+    if r.overflowed {
+        if self >= 0 {
+            127
+        } else {
+            -128
+        }
+    } else {
+        r.value
+    }
+}
+
+/// Difference clamped to i8's range instead of overflowing.
+pub pure fn i8.saturatingSub(self, other: i8) -> i8 {
+    let r = self.subWithOverflow(other)
+    if r.overflowed {
+        if self >= 0 {
+            127
+        } else {
+            -128
+        }
+    } else {
+        r.value
+    }
+}
+
+/// Product clamped to i8's range instead of overflowing.
+pub pure fn i8.saturatingMul(self, other: i8) -> i8 {
+    let r = self.mulWithOverflow(other)
+    if r.overflowed {
+        if (self < 0 && other >= 0) || (self >= 0 && other < 0) {
+            -128
+        } else {
+            127
+        }
+    } else {
+        r.value
+    }
+}
+
+/// Sum and whether it overflowed i16's range.
+pub pure fn i16.addWithOverflow(self, other: i16) -> Overflow[i16] {
+    let wrapped = self.wrappingAdd(other)
+    let ovf = (self >= 0 && other >= 0 && wrapped < 0) || (self < 0 && other < 0 && wrapped >= 0)
+    Overflow {
+        value: wrapped
+        overflowed: ovf
+    }
+}
+
+/// Difference and whether it overflowed i16's range.
+pub pure fn i16.subWithOverflow(self, other: i16) -> Overflow[i16] {
+    let wrapped = self.wrappingSub(other)
+    let ovf = (self >= 0 && other < 0 && wrapped < 0) || (self < 0 && other >= 0 && wrapped >= 0)
+    Overflow {
+        value: wrapped
+        overflowed: ovf
+    }
+}
+
+/// Product and whether it overflowed i16's range.
+pub pure fn i16.mulWithOverflow(self, other: i16) -> Overflow[i16] {
+    if self == 0 || other == 0 {
+        return Overflow {
+            value: 0
+            overflowed: false
+        }
+    }
+    if other == -1 {
+        if self == -32768 {
+            return Overflow {
+                value: -32768
+                overflowed: true
+            }
+        }
+        return Overflow {
+            value: self.wrappingMul(other)
+            overflowed: false
+        }
+    }
+    let wrapped = self.wrappingMul(other)
+    Overflow {
+        value: wrapped
+        overflowed: wrapped / other != self
+    }
+}
+
+/// Sum clamped to i16's range instead of overflowing.
+pub pure fn i16.saturatingAdd(self, other: i16) -> i16 {
+    let r = self.addWithOverflow(other)
+    if r.overflowed {
+        if self >= 0 {
+            32767
+        } else {
+            -32768
+        }
+    } else {
+        r.value
+    }
+}
+
+/// Difference clamped to i16's range instead of overflowing.
+pub pure fn i16.saturatingSub(self, other: i16) -> i16 {
+    let r = self.subWithOverflow(other)
+    if r.overflowed {
+        if self >= 0 {
+            32767
+        } else {
+            -32768
+        }
+    } else {
+        r.value
+    }
+}
+
+/// Product clamped to i16's range instead of overflowing.
+pub pure fn i16.saturatingMul(self, other: i16) -> i16 {
+    let r = self.mulWithOverflow(other)
+    if r.overflowed {
+        if (self < 0 && other >= 0) || (self >= 0 && other < 0) {
+            -32768
+        } else {
+            32767
+        }
+    } else {
+        r.value
+    }
+}
+
+/// Sum and whether it overflowed i32's range.
+pub pure fn i32.addWithOverflow(self, other: i32) -> Overflow[i32] {
+    let wrapped = self.wrappingAdd(other)
+    let ovf = (self >= 0 && other >= 0 && wrapped < 0) || (self < 0 && other < 0 && wrapped >= 0)
+    Overflow {
+        value: wrapped
+        overflowed: ovf
+    }
+}
+
+/// Difference and whether it overflowed i32's range.
+pub pure fn i32.subWithOverflow(self, other: i32) -> Overflow[i32] {
+    let wrapped = self.wrappingSub(other)
+    let ovf = (self >= 0 && other < 0 && wrapped < 0) || (self < 0 && other >= 0 && wrapped >= 0)
+    Overflow {
+        value: wrapped
+        overflowed: ovf
+    }
+}
+
+/// Product and whether it overflowed i32's range.
+pub pure fn i32.mulWithOverflow(self, other: i32) -> Overflow[i32] {
+    if self == 0 || other == 0 {
+        return Overflow {
+            value: 0
+            overflowed: false
+        }
+    }
+    if other == -1 {
+        if self == -2147483648 {
+            return Overflow {
+                value: -2147483648
+                overflowed: true
+            }
+        }
+        return Overflow {
+            value: self.wrappingMul(other)
+            overflowed: false
+        }
+    }
+    let wrapped = self.wrappingMul(other)
+    Overflow {
+        value: wrapped
+        overflowed: wrapped / other != self
+    }
+}
+
+/// Sum clamped to i32's range instead of overflowing.
+pub pure fn i32.saturatingAdd(self, other: i32) -> i32 {
+    let r = self.addWithOverflow(other)
+    if r.overflowed {
+        if self >= 0 {
+            2147483647
+        } else {
+            -2147483648
+        }
+    } else {
+        r.value
+    }
+}
+
+/// Difference clamped to i32's range instead of overflowing.
+pub pure fn i32.saturatingSub(self, other: i32) -> i32 {
+    let r = self.subWithOverflow(other)
+    if r.overflowed {
+        if self >= 0 {
+            2147483647
+        } else {
+            -2147483648
+        }
+    } else {
+        r.value
+    }
+}
+
+/// Product clamped to i32's range instead of overflowing.
+pub pure fn i32.saturatingMul(self, other: i32) -> i32 {
+    let r = self.mulWithOverflow(other)
+    if r.overflowed {
+        if (self < 0 && other >= 0) || (self >= 0 && other < 0) {
+            -2147483648
+        } else {
+            2147483647
+        }
+    } else {
+        r.value
+    }
+}
+
+/// Sum and whether it overflowed i64's range.
+pub pure fn i64.addWithOverflow(self, other: i64) -> Overflow[i64] {
+    let wrapped = self.wrappingAdd(other)
+    let ovf = (self >= 0 && other >= 0 && wrapped < 0) || (self < 0 && other < 0 && wrapped >= 0)
+    Overflow {
+        value: wrapped
+        overflowed: ovf
+    }
+}
+
+/// Difference and whether it overflowed i64's range.
+pub pure fn i64.subWithOverflow(self, other: i64) -> Overflow[i64] {
+    let wrapped = self.wrappingSub(other)
+    let ovf = (self >= 0 && other < 0 && wrapped < 0) || (self < 0 && other >= 0 && wrapped >= 0)
+    Overflow {
+        value: wrapped
+        overflowed: ovf
+    }
+}
+
+/// Product and whether it overflowed i64's range.
+pub pure fn i64.mulWithOverflow(self, other: i64) -> Overflow[i64] {
+    if self == 0 || other == 0 {
+        return Overflow {
+            value: 0
+            overflowed: false
+        }
+    }
+    if other == -1 {
+        if self == -9223372036854775808 {
+            return Overflow {
+                value: -9223372036854775808
+                overflowed: true
+            }
+        }
+        return Overflow {
+            value: self.wrappingMul(other)
+            overflowed: false
+        }
+    }
+    let wrapped = self.wrappingMul(other)
+    Overflow {
+        value: wrapped
+        overflowed: wrapped / other != self
+    }
+}
+
+/// Sum clamped to i64's range instead of overflowing.
+pub pure fn i64.saturatingAdd(self, other: i64) -> i64 {
+    let r = self.addWithOverflow(other)
+    if r.overflowed {
+        if self >= 0 {
+            9223372036854775807
+        } else {
+            -9223372036854775808
+        }
+    } else {
+        r.value
+    }
+}
+
+/// Difference clamped to i64's range instead of overflowing.
+pub pure fn i64.saturatingSub(self, other: i64) -> i64 {
+    let r = self.subWithOverflow(other)
+    if r.overflowed {
+        if self >= 0 {
+            9223372036854775807
+        } else {
+            -9223372036854775808
+        }
+    } else {
+        r.value
+    }
+}
+
+/// Product clamped to i64's range instead of overflowing.
+pub pure fn i64.saturatingMul(self, other: i64) -> i64 {
+    let r = self.mulWithOverflow(other)
+    if r.overflowed {
+        if (self < 0 && other >= 0) || (self >= 0 && other < 0) {
+            -9223372036854775808
+        } else {
+            9223372036854775807
+        }
+    } else {
+        r.value
+    }
+}
+
+// isize's width follows the target pointer width (unlike the fixed-width
+// int types above), so its MIN/MAX come from wrapping arithmetic on usize
+// rather than a literal: a literal wide enough for 64 bit does not fit a
+// 32 bit target's isize.
+pure fn isizeMaxValue() -> isize {
+    let zero: usize = 0
+    let one: usize = 1
+    let allOnes = zero.wrappingSub(one)
+    allOnes.wrappingShiftRight(1).toIsize() || 0
+}
+
+pure fn isizeMinValue() -> isize {
+    0 - isizeMaxValue() - 1
+}
+
+/// Sum and whether it overflowed isize's range.
+pub pure fn isize.addWithOverflow(self, other: isize) -> Overflow[isize] {
+    let wrapped = self.wrappingAdd(other)
+    let ovf = (self >= 0 && other >= 0 && wrapped < 0) || (self < 0 && other < 0 && wrapped >= 0)
+    Overflow {
+        value: wrapped
+        overflowed: ovf
+    }
+}
+
+/// Difference and whether it overflowed isize's range.
+pub pure fn isize.subWithOverflow(self, other: isize) -> Overflow[isize] {
+    let wrapped = self.wrappingSub(other)
+    let ovf = (self >= 0 && other < 0 && wrapped < 0) || (self < 0 && other >= 0 && wrapped >= 0)
+    Overflow {
+        value: wrapped
+        overflowed: ovf
+    }
+}
+
+/// Product and whether it overflowed isize's range.
+pub pure fn isize.mulWithOverflow(self, other: isize) -> Overflow[isize] {
+    if self == 0 || other == 0 {
+        return Overflow {
+            value: 0
+            overflowed: false
+        }
+    }
+    if other == -1 {
+        let mn = isizeMinValue()
+        if self == mn {
+            return Overflow {
+                value: mn
+                overflowed: true
+            }
+        }
+        return Overflow {
+            value: self.wrappingMul(other)
+            overflowed: false
+        }
+    }
+    let wrapped = self.wrappingMul(other)
+    Overflow {
+        value: wrapped
+        overflowed: wrapped / other != self
+    }
+}
+
+/// Sum clamped to isize's range instead of overflowing.
+pub pure fn isize.saturatingAdd(self, other: isize) -> isize {
+    let r = self.addWithOverflow(other)
+    if r.overflowed {
+        if self >= 0 {
+            isizeMaxValue()
+        } else {
+            isizeMinValue()
+        }
+    } else {
+        r.value
+    }
+}
+
+/// Difference clamped to isize's range instead of overflowing.
+pub pure fn isize.saturatingSub(self, other: isize) -> isize {
+    let r = self.subWithOverflow(other)
+    if r.overflowed {
+        if self >= 0 {
+            isizeMaxValue()
+        } else {
+            isizeMinValue()
+        }
+    } else {
+        r.value
+    }
+}
+
+/// Product clamped to isize's range instead of overflowing.
+pub pure fn isize.saturatingMul(self, other: isize) -> isize {
+    let r = self.mulWithOverflow(other)
+    if r.overflowed {
+        if (self < 0 && other >= 0) || (self >= 0 && other < 0) {
+            isizeMinValue()
+        } else {
+            isizeMaxValue()
+        }
+    } else {
+        r.value
+    }
+}
+
+/// Sum and whether it overflowed u8's range.
+pub pure fn u8.addWithOverflow(self, other: u8) -> Overflow[u8] {
+    let wrapped = self.wrappingAdd(other)
+    Overflow {
+        value: wrapped
+        overflowed: wrapped < self
+    }
+}
+
+/// Difference and whether it overflowed u8's range.
+pub pure fn u8.subWithOverflow(self, other: u8) -> Overflow[u8] {
+    let wrapped = self.wrappingSub(other)
+    Overflow {
+        value: wrapped
+        overflowed: wrapped > self
+    }
+}
+
+/// Product and whether it overflowed u8's range.
+pub pure fn u8.mulWithOverflow(self, other: u8) -> Overflow[u8] {
+    let wrapped = self.wrappingMul(other)
+    if self == 0 {
+        return Overflow {
+            value: wrapped
+            overflowed: false
+        }
+    }
+    Overflow {
+        value: wrapped
+        overflowed: wrapped / self != other
+    }
+}
+
+/// Sum clamped to u8's range instead of overflowing.
+pub pure fn u8.saturatingAdd(self, other: u8) -> u8 {
+    let r = self.addWithOverflow(other)
+    if r.overflowed {
+        255
+    } else {
+        r.value
+    }
+}
+
+/// Difference clamped to zero instead of underflowing.
+pub pure fn u8.saturatingSub(self, other: u8) -> u8 {
+    let r = self.subWithOverflow(other)
+    if r.overflowed {
+        0
+    } else {
+        r.value
+    }
+}
+
+/// Product clamped to u8's range instead of overflowing.
+pub pure fn u8.saturatingMul(self, other: u8) -> u8 {
+    let r = self.mulWithOverflow(other)
+    if r.overflowed {
+        255
+    } else {
+        r.value
+    }
+}
+
+/// Sum and whether it overflowed u16's range.
+pub pure fn u16.addWithOverflow(self, other: u16) -> Overflow[u16] {
+    let wrapped = self.wrappingAdd(other)
+    Overflow {
+        value: wrapped
+        overflowed: wrapped < self
+    }
+}
+
+/// Difference and whether it overflowed u16's range.
+pub pure fn u16.subWithOverflow(self, other: u16) -> Overflow[u16] {
+    let wrapped = self.wrappingSub(other)
+    Overflow {
+        value: wrapped
+        overflowed: wrapped > self
+    }
+}
+
+/// Product and whether it overflowed u16's range.
+pub pure fn u16.mulWithOverflow(self, other: u16) -> Overflow[u16] {
+    let wrapped = self.wrappingMul(other)
+    if self == 0 {
+        return Overflow {
+            value: wrapped
+            overflowed: false
+        }
+    }
+    Overflow {
+        value: wrapped
+        overflowed: wrapped / self != other
+    }
+}
+
+/// Sum clamped to u16's range instead of overflowing.
+pub pure fn u16.saturatingAdd(self, other: u16) -> u16 {
+    let r = self.addWithOverflow(other)
+    if r.overflowed {
+        65535
+    } else {
+        r.value
+    }
+}
+
+/// Difference clamped to zero instead of underflowing.
+pub pure fn u16.saturatingSub(self, other: u16) -> u16 {
+    let r = self.subWithOverflow(other)
+    if r.overflowed {
+        0
+    } else {
+        r.value
+    }
+}
+
+/// Product clamped to u16's range instead of overflowing.
+pub pure fn u16.saturatingMul(self, other: u16) -> u16 {
+    let r = self.mulWithOverflow(other)
+    if r.overflowed {
+        65535
+    } else {
+        r.value
+    }
+}
+
+/// Sum and whether it overflowed u32's range.
+pub pure fn u32.addWithOverflow(self, other: u32) -> Overflow[u32] {
+    let wrapped = self.wrappingAdd(other)
+    Overflow {
+        value: wrapped
+        overflowed: wrapped < self
+    }
+}
+
+/// Difference and whether it overflowed u32's range.
+pub pure fn u32.subWithOverflow(self, other: u32) -> Overflow[u32] {
+    let wrapped = self.wrappingSub(other)
+    Overflow {
+        value: wrapped
+        overflowed: wrapped > self
+    }
+}
+
+/// Product and whether it overflowed u32's range.
+pub pure fn u32.mulWithOverflow(self, other: u32) -> Overflow[u32] {
+    let wrapped = self.wrappingMul(other)
+    if self == 0 {
+        return Overflow {
+            value: wrapped
+            overflowed: false
+        }
+    }
+    Overflow {
+        value: wrapped
+        overflowed: wrapped / self != other
+    }
+}
+
+/// Sum clamped to u32's range instead of overflowing.
+pub pure fn u32.saturatingAdd(self, other: u32) -> u32 {
+    let r = self.addWithOverflow(other)
+    if r.overflowed {
+        4294967295
+    } else {
+        r.value
+    }
+}
+
+/// Difference clamped to zero instead of underflowing.
+pub pure fn u32.saturatingSub(self, other: u32) -> u32 {
+    let r = self.subWithOverflow(other)
+    if r.overflowed {
+        0
+    } else {
+        r.value
+    }
+}
+
+/// Product clamped to u32's range instead of overflowing.
+pub pure fn u32.saturatingMul(self, other: u32) -> u32 {
+    let r = self.mulWithOverflow(other)
+    if r.overflowed {
+        4294967295
+    } else {
+        r.value
+    }
+}
+
+/// Sum and whether it overflowed u64's range.
+pub pure fn u64.addWithOverflow(self, other: u64) -> Overflow[u64] {
+    let wrapped = self.wrappingAdd(other)
+    Overflow {
+        value: wrapped
+        overflowed: wrapped < self
+    }
+}
+
+/// Difference and whether it overflowed u64's range.
+pub pure fn u64.subWithOverflow(self, other: u64) -> Overflow[u64] {
+    let wrapped = self.wrappingSub(other)
+    Overflow {
+        value: wrapped
+        overflowed: wrapped > self
+    }
+}
+
+/// Product and whether it overflowed u64's range.
+pub pure fn u64.mulWithOverflow(self, other: u64) -> Overflow[u64] {
+    let wrapped = self.wrappingMul(other)
+    if self == 0 {
+        return Overflow {
+            value: wrapped
+            overflowed: false
+        }
+    }
+    Overflow {
+        value: wrapped
+        overflowed: wrapped / self != other
+    }
+}
+
+/// Sum clamped to u64's range instead of overflowing.
+pub pure fn u64.saturatingAdd(self, other: u64) -> u64 {
+    let r = self.addWithOverflow(other)
+    if r.overflowed {
+        18446744073709551615
+    } else {
+        r.value
+    }
+}
+
+/// Difference clamped to zero instead of underflowing.
+pub pure fn u64.saturatingSub(self, other: u64) -> u64 {
+    let r = self.subWithOverflow(other)
+    if r.overflowed {
+        0
+    } else {
+        r.value
+    }
+}
+
+/// Product clamped to u64's range instead of overflowing.
+pub pure fn u64.saturatingMul(self, other: u64) -> u64 {
+    let r = self.mulWithOverflow(other)
+    if r.overflowed {
+        18446744073709551615
+    } else {
+        r.value
+    }
+}
+
+// usize's width follows the target pointer width, so its MAX comes from
+// wrapping arithmetic rather than a literal (same reason as isizeMaxValue).
+pure fn usizeMaxValue() -> usize {
+    let zero: usize = 0
+    let one: usize = 1
+    zero.wrappingSub(one)
+}
+
+/// Sum and whether it overflowed usize's range.
+pub pure fn usize.addWithOverflow(self, other: usize) -> Overflow[usize] {
+    let wrapped = self.wrappingAdd(other)
+    Overflow {
+        value: wrapped
+        overflowed: wrapped < self
+    }
+}
+
+/// Difference and whether it overflowed usize's range.
+pub pure fn usize.subWithOverflow(self, other: usize) -> Overflow[usize] {
+    let wrapped = self.wrappingSub(other)
+    Overflow {
+        value: wrapped
+        overflowed: wrapped > self
+    }
+}
+
+/// Product and whether it overflowed usize's range.
+pub pure fn usize.mulWithOverflow(self, other: usize) -> Overflow[usize] {
+    let wrapped = self.wrappingMul(other)
+    if self == 0 {
+        return Overflow {
+            value: wrapped
+            overflowed: false
+        }
+    }
+    Overflow {
+        value: wrapped
+        overflowed: wrapped / self != other
+    }
+}
+
+/// Sum clamped to usize's range instead of overflowing.
+pub pure fn usize.saturatingAdd(self, other: usize) -> usize {
+    let r = self.addWithOverflow(other)
+    if r.overflowed {
+        usizeMaxValue()
+    } else {
+        r.value
+    }
+}
+
+/// Difference clamped to zero instead of underflowing.
+pub pure fn usize.saturatingSub(self, other: usize) -> usize {
+    let r = self.subWithOverflow(other)
+    if r.overflowed {
+        0
+    } else {
+        r.value
+    }
+}
+
+/// Product clamped to usize's range instead of overflowing.
+pub pure fn usize.saturatingMul(self, other: usize) -> usize {
+    let r = self.mulWithOverflow(other)
+    if r.overflowed {
+        usizeMaxValue()
+    } else {
+        r.value
+    }
+}

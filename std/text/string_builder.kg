@@ -1,0 +1,54 @@
+/// Growable byte buffer for building a String without the O(n^2) cost of
+/// repeated String.concat. push keeps the buffer valid UTF-8; pushByte does
+/// not, so freeze validates and can fail.
+pub type StringBuilder = {
+    mut bytes Array[u8]
+}
+
+/// Creates an empty builder.
+pub pure fn StringBuilder.new() -> StringBuilder {
+    StringBuilder { bytes: Array.empty[u8]() }
+}
+
+/// Appends s; panics when memory runs out (tryPush reports it instead).
+pub pure fn StringBuilder.push(mut self, s: String) -> Unit {
+    let bs = s.bytes()
+    let mut i: usize = 0
+    for i < bs.len() {
+        self.bytes.push(bs.get(i) || 0)
+        i = i + 1
+    }
+}
+
+/// Appends s, or returns AllocError when memory runs out.
+pub pure fn StringBuilder.tryPush(mut self, s: String) -> Result[Unit, AllocError] {
+    self.bytes.tryReserve(s.len())?
+    self.push(s)
+}
+
+/// Appends a single byte; panics when memory runs out. Unlike push, this
+/// does not preserve UTF-8 validity, so a byte that breaks it makes freeze fail.
+pub pure fn StringBuilder.pushByte(mut self, b: u8) -> Unit {
+    self.bytes.push(b)
+}
+
+/// Appends a single byte, or returns AllocError when memory runs out.
+pub pure fn StringBuilder.tryPushByte(mut self, b: u8) -> Result[Unit, AllocError] {
+    self.bytes.tryPush(b)
+}
+
+/// Number of bytes appended so far.
+pub pure noalloc fn StringBuilder.len(self) -> usize {
+    self.bytes.len()
+}
+
+/// Whether no bytes have been appended.
+pub pure noalloc fn StringBuilder.isEmpty(self) -> Bool {
+    self.bytes.len() == 0
+}
+
+/// Consumes the builder and validates the bytes as UTF-8; Err when a
+/// pushByte call broke validity.
+pub pure fn StringBuilder.freeze(move self) -> String! {
+    String.fromBytes(Bytes.fromArray(&self.bytes))
+}

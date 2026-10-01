@@ -1,0 +1,57 @@
+/// setsockopt level/name for SOL_SOCKET/SO_REUSEADDR on this platform.
+fn solSocket() -> i32 {
+    0xffff
+}
+
+fn soReuseAddr() -> i32 {
+    4
+}
+
+/// setsockopt name for SO_RCVTIMEO/SO_SNDTIMEO on this platform.
+fn soRcvTimeo() -> i32 {
+    0x1006
+}
+
+fn soSndTimeo() -> i32 {
+    0x1005
+}
+
+// Windows takes a raw millisecond DWORD here, not a struct timeval.
+type Timeval layout(C) = {
+    pub millis i32
+}
+
+fn timeoutValue(seconds: i32) -> Timeval {
+    Timeval { millis: seconds * 1000 }
+}
+
+// fcntl(2)/poll(2) aren't real operations on a Winsock SOCKET handle
+// (Windows uses ioctlsocket/WSAPoll instead); these values only keep
+// connectSocket's generic extern(C) calls type-checking and emitting IR
+// for this target, matching this file's existing native-Windows caveat.
+fn fcntlGetFl() -> i32 {
+    3
+}
+
+fn fcntlSetFl() -> i32 {
+    4
+}
+
+fn oNonBlock() -> i32 {
+    4
+}
+
+/// getsockopt name for SO_ERROR on this platform (winsock2.h).
+fn soError() -> i32 {
+    0x1007
+}
+
+/// WSAPoll's POLLOUT (winsock2.h POLLWRNORM), not POSIX's.
+fn pollOut() -> i16 {
+    0x10
+}
+
+/// errno(3) EINTR on this platform (winsock2.h / errno.h).
+fn eintr() -> i32 {
+    4
+}

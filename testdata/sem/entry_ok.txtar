@@ -1,0 +1,80 @@
+-- module --
+entry: cmd/app/main.kg
+-- cmd/app/main.kg --
+import {run} from app/lib
+
+let sh = host.shell()
+let args = host.args()
+let first = args.get(0) //~ TYPE first : String?
+print "hello"
+print("x=${first}") //~ ERROR cannot interpolate `String?`
+let mut n = 0
+n += 1
+run(n)
+let p = print //~ ERROR `print` is a compiler intrinsic, not a value
+eprint 1 //~ ERROR expected `String`, found `Int`
+let q = "n=${n} ok=${true} c=${'x'}"
+
+fn helper(x: Int) -> Int {
+    x + n //~ ERROR undefined name `n` //~ NOTE `n` is a script-local `let` of `main`
+}
+-- app/lib/l.kg --
+pub fn run(n: Int) -> Unit {}
+
+fn lib() -> Unit {
+    print "x" //~ ERROR undefined name `print` //~ NOTE `print` exists only in the entry file
+    let h = host //~ ERROR undefined name `host`
+}
+-- expect --
+error[E100]: undefined name `print`
+ --> app/lib/l.kg:4:5
+  |
+4 |     print "x" //~ ERROR undefined name `print` //~ NOTE `print` exists only in the entry file
+  |     ^^^^^
+note: `print` exists only in the entry file
+ --> app/lib/l.kg:4:5
+  |
+4 |     print "x" //~ ERROR undefined name `print` //~ NOTE `print` exists only in the entry file
+  |     ^^^^^
+
+error[E100]: undefined name `host`
+ --> app/lib/l.kg:5:13
+  |
+5 |     let h = host //~ ERROR undefined name `host`
+  |             ^^^^
+note: `host` exists only in the entry file
+ --> app/lib/l.kg:5:13
+  |
+5 |     let h = host //~ ERROR undefined name `host`
+  |             ^^^^
+
+error[E407]: cannot interpolate `String?`
+ --> cmd/app/main.kg:7:12
+  |
+7 | print("x=${first}") //~ ERROR cannot interpolate `String?`
+  |            ^^^^^
+  = help: call `.display()`
+
+error[E419]: `print` is a compiler intrinsic, not a value
+  --> cmd/app/main.kg:11:9
+   |
+11 | let p = print //~ ERROR `print` is a compiler intrinsic, not a value
+   |         ^^^^^
+
+error[E400]: expected `String`, found `Int`
+  --> cmd/app/main.kg:12:8
+   |
+12 | eprint 1 //~ ERROR expected `String`, found `Int`
+   |        ^
+
+error[E100]: undefined name `n`
+  --> cmd/app/main.kg:16:9
+   |
+16 |     x + n //~ ERROR undefined name `n` //~ NOTE `n` is a script-local `let` of `main`
+   |         ^
+note: `n` is a script-local `let` of `main`; pass it as a parameter
+  --> cmd/app/main.kg:16:9
+   |
+16 |     x + n //~ ERROR undefined name `n` //~ NOTE `n` is a script-local `let` of `main`
+   |         ^
+

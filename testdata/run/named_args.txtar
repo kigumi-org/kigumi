@@ -1,0 +1,64 @@
+-- src --
+type Point = {
+    x Int
+    y Int
+}
+
+fn Point.moveBy(self, dx: Int, dy: Int) -> Point {
+    Point { x: self.x + dx, y: self.y + dy }
+}
+
+fn greet(name: String, times: Int) -> Unit {
+    let mut i = 0
+    for i < times {
+        print "hi ${name}"
+        i = i + 1
+    }
+}
+
+fn combine(a: Int, b: Int) -> Int { a + b }
+fn combine(a: Int, on: Bool) -> Int {
+    if on { a } else { 0 }
+}
+
+fn sum3(x: Int, y: Int, z: Int) -> Int { x + y + z }
+
+fn twice[T](x: T, f: fn(T) -> T) -> T { f(f(x)) }
+fn addN(x: Int, n: Int) -> Int { x + n }
+
+greet(name: "a", times: 2)
+greet(times: 1, name: "b")
+
+let p = Point { x: 1, y: 2 }
+let q = p.moveBy(dy: 10, dx: 1)
+print "${q.x} ${q.y}"
+
+let sum = combine(3, b: 4)
+let picked = combine(on: true, a: 9)
+print "${sum}"
+print "${picked}"
+
+let piped1 = 1 |> combine(b: 4)
+let piped2 = 5 |> combine(on: true)
+print "${piped1} ${piped2}"
+
+let r = q.moveBy(dx: 1, dy: 5)
+let pipedMove = 1 |> r.moveBy(dy: 5)
+print "${pipedMove.x} ${pipedMove.y}"
+
+let pipedTail = 1 |> sum3(3, z: 100)
+print "${pipedTail}"
+
+let pipedGeneric = 1 |> twice(f: (v) => addN(v, n: 10))
+print "${pipedGeneric}"
+-- stdout --
+hi a
+hi a
+hi b
+2 12
+7
+9
+5 5
+4 22
+104
+21

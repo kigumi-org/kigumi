@@ -1,0 +1,92 @@
+import binary from std/binary
+import ffi from std/ffi
+
+extern(C) {
+    fn getrandom(buf: *mut u8, buflen: usize, flags: u32) -> isize
+    fn open(path: *const u8, flags: i32) -> i32
+    fn read(fd: i32, buf: *mut u8, n: usize) -> isize
+    fn close(fd: i32) -> i32
+    fn malloc(n: usize) -> *mut u8
+    fn free(p: *mut u8) -> Unit
+}
+
+// getrandom(2) is unavailable on a kernel old enough to predate it; fill
+// the rest of the buffer by reading /dev/urandom instead.
+fn fillFromUrandom(buf: *mut u8, start: usize, n: usize) -> Unit! {
+    let path = "/dev/urandom"
+    let c = ffi.CString.new(&path)?
+    let fd = unsafe {
+        open(c.ptr(), 0)
+    }
+    if fd < 0 {
+        fail ffi.lastError()
+    }
+    let mut off = start
+    for off < n {
+        let got = unsafe {
+            read(fd, ffi.toMut(ffi.offset(ffi.toConst(buf), off.toInt() || 0)), n - off)
+        }
+        if got < 0 && ffi.errno() == eintr() {
+            continue
+        }
+        if got <= 0 {
+            _ = unsafe {
+                close(fd)
+            }
+            fail ffi.lastError()
+        }
+        off = off + (got.toUsize() || 0)
+    }
+    _ = unsafe {
+        close(fd)
+    }
+}
+
+/// n cryptographically random bytes from the OS: `getrandom(2)`, falling
+/// back to `/dev/urandom` when the syscall itself fails.
+pub fn Entropy.bytes(self, n: usize) -> Bytes! {
+    if n == 0 {
+        return "".toBytes()
+    }
+    let buf = unsafe {
+        malloc(n)
+    }
+    if ffi.isNull(ffi.toConst(buf)) {
+        fail ffi.lastError()
+    }
+    let mut off: usize = 0
+    for off < n {
+        let got = unsafe {
+            getrandom(ffi.toMut(ffi.offset(ffi.toConst(buf), off.toInt() || 0)), n - off, 0)
+        }
+        if got < 0 && ffi.errno() == eintr() {
+            continue
+        }
+        if got <= 0 {
+            break
+        }
+        off = off + (got.toUsize() || 0)
+    }
+    if off < n {
+        let filled = fillFromUrandom(buf, off, n)
+        if filled is Err(e) {
+            unsafe {
+                free(buf)
+            }
+            fail e
+        }
+    }
+    let out = unsafe {
+        ffi.bytesFrom(ffi.toConst(buf), n)
+    }
+    unsafe {
+        free(buf)
+    }
+    out
+}
+
+/// One random u64 from the OS.
+pub fn Entropy.u64(self) -> u64! {
+    let b = self.bytes(8)?
+    binary.u64Be(b, 0) || 0
+}

@@ -1,0 +1,57 @@
+-- src --
+import alloc from std/alloc
+
+type Res = resource {
+    pub handle usize
+}
+
+fn Res.drop(move self) -> Unit {
+    print "drop ${self.handle}"
+}
+
+type Holder = { mut r Res }
+
+fn takeField(h: Holder) -> usize {
+    move h.r.handle //~ ERROR cannot move `h.r.handle` out of `Res`, which defines a custom `drop`
+}
+
+fn takeFromBorrow(h: &Holder) -> Res {
+    move h.r //~ ERROR cannot move `Res` out of a borrow
+}
+
+fn takeFromIndex(xs: Array[Res]) -> Res {
+    move xs[0] //~ ERROR cannot move a value out of an index
+}
+
+fn takeFromShared(s: alloc.Shared[Res]) -> Res {
+    move s.handle //~ ERROR cannot move a value out of `Shared[Res]`
+}
+
+-- expect --
+error[E1021]: cannot move `h.r.handle` out of `Res`, which defines a custom `drop`
+  --> main/main.kg:14:10
+   |
+14 |     move h.r.handle //~ ERROR cannot move `h.r.handle` out of `Res`, which defines a custom `drop`
+   |          ^^^^^^^^^^
+   = help: add a `take`-style method that returns `h.r.handle` instead
+
+error[E517]: cannot move `Res` out of a borrow
+  --> main/main.kg:18:10
+   |
+18 |     move h.r //~ ERROR cannot move `Res` out of a borrow
+   |          ^^^
+
+error[E1022]: cannot move a value out of an index
+  --> main/main.kg:22:10
+   |
+22 |     move xs[0] //~ ERROR cannot move a value out of an index
+   |          ^^^^
+   = help: clone the element instead
+
+error[E1024]: cannot move a value out of `Shared[Res]`
+  --> main/main.kg:26:10
+   |
+26 |     move s.handle //~ ERROR cannot move a value out of `Shared[Res]`
+   |          ^^^^^^^^
+   = help: borrow its content instead
+

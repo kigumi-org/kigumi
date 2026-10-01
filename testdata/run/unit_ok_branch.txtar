@@ -1,0 +1,28 @@
+-- src --
+type Failure = {
+    text String
+}
+
+fn Failure.message(self) -> String {
+    self.text
+}
+
+fn work(flag: Bool) -> Unit! {
+    let w = 1
+    if flag {
+        _ = w
+    } else {
+        fail Failure { text: "no" }
+    }
+}
+
+fn outer(flag: Bool) -> Unit! {
+    work(flag)?
+    print "after ${flag}"
+}
+
+outer(true) || (e) => print "failed: ${e.message()}"
+outer(false) || (e) => print "failed: ${e.message()}"
+-- stdout --
+after true
+failed: no

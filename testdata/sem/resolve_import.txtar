@@ -1,0 +1,130 @@
+-- lib/util/u.kg --
+pub fn twice(x: Int) -> Int {
+    x * 2
+}
+
+pub fn twice(x: Float) -> Float {
+    x * 2.0
+}
+
+fn hidden() -> Int {
+    0
+}
+
+pub(module) fn modOnly() -> Int {
+    1
+}
+
+pub type Shape = Circle(r: Float) | Square
+-- app/main/m.kg --
+import util from lib/util //~ WARNING unused import `util`
+import {twice, Shape} from lib/util //~ WARNING unused import `twice` //~ WARNING unused import `Shape`
+import {hidden} from lib/util //~ ERROR `hidden` is not visible here (private of package `lib/util`)
+import {nope} from lib/util //~ ERROR package `lib/util` has no visible `nope`
+import missing from lib/missing //~ ERROR package `lib/missing` not found
+import prelude from std/prelude //~ ERROR `std/prelude` is imported implicitly
+import {Ordering} from lib/util //~ ERROR `Ordering` is a prelude name and cannot be imported
+import util from lib/util //~ ERROR `util` is already bound in this file
+import {modOnly} from lib/util //~ WARNING unused import `modOnly`
+import here from app/main //~ ERROR `app/main` is the current package
+import {twice} from lib/util //~ ERROR `twice` is already bound in this file
+import shape from lib/util //~ ERROR `shape` is already bound in this file
+
+fn shape() -> Int {
+    0
+}
+-- expect --
+warning[W100]: unused import `util`
+ --> app/main/m.kg:1:8
+  |
+1 | import util from lib/util //~ WARNING unused import `util`
+  |        ^^^^
+
+warning[W100]: unused import `twice`
+ --> app/main/m.kg:2:9
+  |
+2 | import {twice, Shape} from lib/util //~ WARNING unused import `twice` //~ WARNING unused import `Shape`
+  |         ^^^^^
+
+warning[W100]: unused import `Shape`
+ --> app/main/m.kg:2:16
+  |
+2 | import {twice, Shape} from lib/util //~ WARNING unused import `twice` //~ WARNING unused import `Shape`
+  |                ^^^^^
+
+error[E115]: `hidden` is not visible here (private of package `lib/util`)
+ --> app/main/m.kg:3:9
+  |
+3 | import {hidden} from lib/util //~ ERROR `hidden` is not visible here (private of package `lib/util`)
+  |         ^^^^^^
+
+error[E103]: package `lib/util` has no visible `nope`
+ --> app/main/m.kg:4:9
+  |
+4 | import {nope} from lib/util //~ ERROR package `lib/util` has no visible `nope`
+  |         ^^^^
+
+error[E102]: package `lib/missing` not found
+ --> app/main/m.kg:5:21
+  |
+5 | import missing from lib/missing //~ ERROR package `lib/missing` not found
+  |                     ^^^^^^^^^^^
+
+error[E107]: `std/prelude` is imported implicitly
+ --> app/main/m.kg:6:21
+  |
+6 | import prelude from std/prelude //~ ERROR `std/prelude` is imported implicitly
+  |                     ^^^^^^^^^^^
+
+error[E106]: `Ordering` is a prelude name and cannot be imported
+ --> app/main/m.kg:7:9
+  |
+7 | import {Ordering} from lib/util //~ ERROR `Ordering` is a prelude name and cannot be imported
+  |         ^^^^^^^^
+
+error[E105]: `util` is already bound in this file
+ --> app/main/m.kg:8:8
+  |
+8 | import util from lib/util //~ ERROR `util` is already bound in this file
+  |        ^^^^
+note: `util` was bound here
+ --> app/main/m.kg:1:8
+  |
+1 | import util from lib/util //~ WARNING unused import `util`
+  |        ^^^^
+
+warning[W100]: unused import `modOnly`
+ --> app/main/m.kg:9:9
+  |
+9 | import {modOnly} from lib/util //~ WARNING unused import `modOnly`
+  |         ^^^^^^^
+
+error[E108]: `app/main` is the current package
+  --> app/main/m.kg:10:18
+   |
+10 | import here from app/main //~ ERROR `app/main` is the current package
+   |                  ^^^^^^^^
+   = help: remove the import
+
+error[E105]: `twice` is already bound in this file
+  --> app/main/m.kg:11:9
+   |
+11 | import {twice} from lib/util //~ ERROR `twice` is already bound in this file
+   |         ^^^^^
+note: `twice` was bound here
+  --> app/main/m.kg:2:9
+   |
+ 2 | import {twice, Shape} from lib/util //~ WARNING unused import `twice` //~ WARNING unused import `Shape`
+   |         ^^^^^
+
+error[E105]: `shape` is already bound in this file
+  --> app/main/m.kg:12:8
+   |
+12 | import shape from lib/util //~ ERROR `shape` is already bound in this file
+   |        ^^^^^
+note: `shape` is declared here
+  --> app/main/m.kg:14:4
+   |
+14 | fn shape() -> Int {
+   |    ^^^^^
+

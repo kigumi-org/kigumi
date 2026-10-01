@@ -1,0 +1,113 @@
+-- src --
+type Counter = {
+    pub mut n Int
+}
+
+fn Counter.inc(mut self) -> Unit {
+    self.n += 1
+}
+
+type Cell = {
+    pub mut n Int
+}
+
+fn Cell.inc(mut self) -> Unit {
+    self.n += 1
+}
+
+type Buf = {}
+
+fn Buf.index(self, i: usize) -> Cell {
+    Cell { n: 0 }
+}
+
+fn m() -> Unit {
+    let mut arr = Array.of(Counter { n: 0 }, Counter { n: 1 })
+    arr[0].n = 9
+    arr[0].n += 1
+    arr[0].inc()
+    let ref = &mut arr[0]
+    ref.inc()
+
+    let mut b = Bytes.fromArray(&Array.of[u8](1, 2, 3))
+    let r = b[0] //~ TYPE r : u8
+    b[0] = 9 //~ ERROR index assignment is only supported for `Array[T]`
+    b[0] += 1 //~ ERROR index assignment is only supported for `Array[T]`
+    let br = &mut b[0] //~ ERROR index assignment is only supported for `Array[T]`
+
+    let mut s = "abc"
+    let c = s[0] //~ TYPE c : u8
+    s[0] = 100 //~ ERROR index assignment is only supported for `Array[T]`
+    s[0] += 1 //~ ERROR index assignment is only supported for `Array[T]`
+
+    let buf = Buf {}
+    buf[0].inc() //~ ERROR index assignment is only supported for `Array[T]`
+
+    let alias = &mut buf[0] //~ ERROR index assignment is only supported for `Array[T]`
+    alias.inc()
+
+    buf[0].n = 9 //~ ERROR index assignment is only supported for `Array[T]`
+    buf[0].n += 1 //~ ERROR index assignment is only supported for `Array[T]`
+    let field = &mut buf[0].n //~ ERROR index assignment is only supported for `Array[T]`
+}
+-- expect --
+error[E617]: index assignment is only supported for `Array[T]`
+  --> main/main.kg:33:5
+   |
+33 |     b[0] = 9 //~ ERROR index assignment is only supported for `Array[T]`
+   |     ^^^
+
+error[E617]: index assignment is only supported for `Array[T]`
+  --> main/main.kg:34:5
+   |
+34 |     b[0] += 1 //~ ERROR index assignment is only supported for `Array[T]`
+   |     ^^^
+
+error[E617]: index assignment is only supported for `Array[T]`
+  --> main/main.kg:35:19
+   |
+35 |     let br = &mut b[0] //~ ERROR index assignment is only supported for `Array[T]`
+   |                   ^^^
+
+error[E617]: index assignment is only supported for `Array[T]`
+  --> main/main.kg:39:5
+   |
+39 |     s[0] = 100 //~ ERROR index assignment is only supported for `Array[T]`
+   |     ^^^
+
+error[E617]: index assignment is only supported for `Array[T]`
+  --> main/main.kg:40:5
+   |
+40 |     s[0] += 1 //~ ERROR index assignment is only supported for `Array[T]`
+   |     ^^^
+
+error[E617]: index assignment is only supported for `Array[T]`
+  --> main/main.kg:43:5
+   |
+43 |     buf[0].inc() //~ ERROR index assignment is only supported for `Array[T]`
+   |     ^^^^^
+
+error[E617]: index assignment is only supported for `Array[T]`
+  --> main/main.kg:45:22
+   |
+45 |     let alias = &mut buf[0] //~ ERROR index assignment is only supported for `Array[T]`
+   |                      ^^^^^
+
+error[E617]: index assignment is only supported for `Array[T]`
+  --> main/main.kg:48:5
+   |
+48 |     buf[0].n = 9 //~ ERROR index assignment is only supported for `Array[T]`
+   |     ^^^^^^^^
+
+error[E617]: index assignment is only supported for `Array[T]`
+  --> main/main.kg:49:5
+   |
+49 |     buf[0].n += 1 //~ ERROR index assignment is only supported for `Array[T]`
+   |     ^^^^^^^^
+
+error[E617]: index assignment is only supported for `Array[T]`
+  --> main/main.kg:50:22
+   |
+50 |     let field = &mut buf[0].n //~ ERROR index assignment is only supported for `Array[T]`
+   |                      ^^^^^^^^
+

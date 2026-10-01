@@ -1,0 +1,14 @@
+-- src --
+fn addRef(a: &Int, b: Int) -> Int {
+    a + b
+}
+
+fn scaleRef(a: &Int, k: Int) -> Int {
+    a * k
+}
+
+let x = 3
+let u: u64 = 5
+print "${addRef(5, 10)} ${5 |> addRef(10)} ${5 |> addRef(10) |> scaleRef(2)} ${1 == &1} ${&1 == 1} ${x == &2} ${&2 == x} ${&1 == &1} ${1 < &2} ${u == &5}"
+-- stdout --
+15 15 30 true true false false true true true

@@ -1,0 +1,32 @@
+-- src --
+import json from std/json
+
+fn variantName(v: &json.Value) -> String {
+    match v {
+        json.Value.Integer(_) -> "Integer"
+        json.Value.Number(_) -> "Number"
+        _ -> "other"
+    }
+}
+
+fn show(v: json.Value) -> Unit! {
+    let text = json.render(v)?
+    let back = json.parse(text)?
+    print "text=${text} out=${variantName(&back)}"
+}
+
+show(json.Value.Number(100.0))?
+show(json.Value.Number(0.0))?
+show(json.Value.Number(-0.0))?
+show(json.Value.Number(1.0e2))?
+show(json.Value.Number(3.5))?
+show(json.Value.Number(1.0e300))?
+show(json.Value.Integer(100))?
+-- stdout --
+text=100.0 out=Number
+text=0.0 out=Number
+text=-0.0 out=Number
+text=100.0 out=Number
+text=3.5 out=Number
+text=1e+300 out=Number
+text=100 out=Integer

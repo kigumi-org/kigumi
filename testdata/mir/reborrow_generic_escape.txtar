@@ -1,0 +1,46 @@
+-- lib/reborrow.kg --
+// A type parameter unified to `&mut U` isn't a written `&mut T`, so E220
+// can't stop it escaping via a bare-T return; reborrow must not apply here
+// (L-146, own_borrowed.go's checkAliasedMutArgs doesn't see past a return).
+fn identity[T](x: T) -> T {
+    x
+}
+
+fn outer(out: &mut Array[u8]) -> Unit {
+    let r = identity(out)
+    out.push(1)
+    r.push(2)
+}
+-- expect --
+fn lib.identity(%x: T) -> T {
+  b0:
+    %t1 = move(%x)
+    nop
+    return %t1
+}
+fn lib.outer(%out: &mut Array[u8]) -> Unit {
+  b0:
+    %t1 = move(%out)
+    %t2 = call identity(%t1)
+    %r = copy(%t2)
+    %t4 = const 1: u8
+    %t5 = borrow 1(%out)
+    %t6 = call push(%t5, %t4)
+    drop(%t6)
+    %t7 = const 2: u8
+    %t8 = borrow 1(%r)
+    %t9 = call push(%t8, %t7)
+    return %t9
+}
+error[use-after-move]: `out` was moved; it cannot be used again
+  --> lib/reborrow.kg:10:5
+   |
+10 |     out.push(1)
+   |     ^^^
+
+error[move-from-borrow]: `out` is borrowed by this method and cannot be moved out; clone it or take `move self`
+ --> lib/reborrow.kg:9:22
+  |
+9 |     let r = identity(out)
+  |                      ^^^
+

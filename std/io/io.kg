@@ -1,0 +1,335 @@
+/// Source of bytes. read appends up to max bytes to into and returns how
+/// many; 0 with no error means end of input (POSIX read semantics).
+///
+/// Law: the returned n must satisfy n <= max, and into must grow by
+/// exactly n elements. readAll/copy check this and fail with IoError
+/// when it does not hold.
+pub interface Reader {
+    fn read(mut self, into: &mut Array[u8], max: usize) -> usize!
+}
+
+/// Sink for bytes. write may send fewer bytes than given (a short write);
+/// writeAll loops until all of data is sent.
+///
+/// Law: the returned n must satisfy n <= data.len(). writeAll/copy check
+/// this and fail with IoError when it does not hold.
+pub interface Writer {
+    fn write(mut self, data: Bytes) -> usize!
+}
+
+/// An I/O failure not tied to any OS error code.
+pub type IoError = {
+    pub text String
+}
+
+pub fn IoError.message(self) -> String {
+    self.text
+}
+
+/// Reads r until end of input and returns everything read.
+///
+/// Unsound if r is a `mut r: R` forwarded from the caller's own generic
+/// function and this (or writeAll/copy) is called more than once on it:
+/// R is exempt from move tracking, so each call silently gets its own
+/// copy instead of a use-after-move error.
+pub fn readAll[R: Reader](mut r: R) -> Bytes! {
+    let mut buf = Array.empty[u8]()
+    for true {
+        let before = buf.len()
+        let n = r.read(&mut buf, 4096)?
+        checkReadLaw(n, 4096, before, buf.len())?
+        if n == 0 {
+            break
+        }
+    }
+    Bytes.fromArray(&buf)
+}
+
+/// Fails with IoError when a Reader.read call broke its law: see the
+/// Reader doc comment.
+fn checkReadLaw(n: usize, max: usize, before: usize, after: usize) -> Unit! {
+    if n > max {
+        fail IoError { text: "Reader.read law violated: returned n=${n} > max=${max}" }
+    }
+    if after < before {
+        fail IoError { text: "Reader.read law violated: into shrank (before=${before}, after=${after})" }
+    }
+    let grew = after - before
+    if grew != n {
+        fail IoError { text: "Reader.read law violated: appended ${grew} bytes but returned n=${n}" }
+    }
+}
+
+/// Writes all of data to w, calling write again after each short write.
+///
+/// Unsound on a `mut w: W` forwarded from the caller's own generic
+/// function when called more than once on it (a header then a body,
+/// say): see readAll's note.
+pub fn writeAll[W: Writer](mut w: W, data: Bytes) -> Unit! {
+    let mut sent: usize = 0
+    for sent < data.len() {
+        let given = remainder(data, sent)
+        let n = w.write(given)?
+        checkWriteLaw(n, given.len())?
+        if n == 0 {
+            fail IoError { text: "write returned 0 with data remaining" }
+        }
+        sent += n
+    }
+}
+
+/// Fails with IoError when a Writer.write call broke its law: see the
+/// Writer doc comment.
+fn checkWriteLaw(n: usize, given: usize) -> Unit! {
+    if n > given {
+        fail IoError { text: "Writer.write law violated: returned n=${n} > data.len()=${given}" }
+    }
+}
+
+/// Copies every byte from r to w and returns the total copied.
+///
+/// A single call is safe (this loops via w.write directly, not writeAll,
+/// specifically to avoid the hazard below). But like readAll/writeAll,
+/// calling copy itself more than once on a `mut w: W` or `mut r: R`
+/// forwarded from the caller's own generic function is unsound: see
+/// readAll's note.
+pub fn copy[R: Reader, W: Writer](mut r: R, mut w: W) -> usize! {
+    let mut total: usize = 0
+    for true {
+        let mut chunk = Array.empty[u8]()
+        let n = r.read(&mut chunk, 4096)?
+        checkReadLaw(n, 4096, 0, chunk.len())?
+        if n == 0 {
+            break
+        }
+        // w.write directly, not writeAll(w, ...): a generic Writer passed
+        // through another function is copied, so its mutations are lost.
+        let data = Bytes.fromArray(&chunk)
+        let mut sent: usize = 0
+        for sent < data.len() {
+            let given = remainder(data, sent)
+            let wn = w.write(given)?
+            checkWriteLaw(wn, given.len())?
+            if wn == 0 {
+                fail IoError { text: "write returned 0 with data remaining" }
+            }
+            sent += wn
+        }
+        total += n
+    }
+    total
+}
+
+// Bytes has no public slice method; copy the suffix by hand rather than
+// add one just for this internal use.
+fn remainder(data: Bytes, from: usize) -> Bytes {
+    let mut out = Array.empty[u8]()
+    let mut i = from
+    for i < data.len() {
+        out.push(data.get(i) || 0)
+        i += 1
+    }
+    Bytes.fromArray(&out)
+}
+
+/// A Reader over bytes already held in memory.
+pub type BytesReader = {
+    mut data Bytes
+    mut pos usize
+}
+
+pub fn BytesReader.new(data: Bytes) -> BytesReader {
+    BytesReader {
+        data: data
+        pos: 0
+    }
+}
+
+pub fn BytesReader.read(mut self, into: &mut Array[u8], max: usize) -> usize! {
+    let mut n: usize = 0
+    for n < max {
+        if self.pos >= self.data.len() {
+            break
+        }
+        into.push(self.data.get(self.pos) || 0)
+        self.pos += 1
+        n += 1
+    }
+    n
+}
+
+/// A Writer that accumulates into an in-memory buffer.
+///
+/// Passing a BytesWriter to writeAll/copy moves it, so its buffer cannot
+/// be read back afterward with .bytes() (a real use-after-move, since
+/// this type is concrete). Call .write(...) directly instead of going
+/// through writeAll/copy when the buffer needs inspecting afterward.
+pub type BytesWriter = {
+    mut buf Array[u8]
+}
+
+pub fn BytesWriter.new() -> BytesWriter {
+    BytesWriter { buf: Array.empty[u8]() }
+}
+
+pub fn BytesWriter.write(mut self, data: Bytes) -> usize! {
+    let mut i: usize = 0
+    for i < data.len() {
+        self.buf.push(data.get(i) || 0)
+        i += 1
+    }
+    data.len()
+}
+
+/// Everything written so far.
+pub fn BytesWriter.bytes(self) -> Bytes {
+    Bytes.fromArray(&self.buf)
+}
+
+/// A Reader with a look-ahead buffer, so a caller can read up to a delimiter
+/// without reading past it. HTTP/1.1 and any other line- or record-oriented
+/// protocol needs this: the plain Reader interface cannot say "stop here".
+///
+/// BufReader is itself a Reader, so it composes with readAll and copy.
+pub type BufReader = {
+    mut src Reader
+    mut buf Array[u8]
+    mut done Bool
+}
+
+/// Wraps `r`. Nothing is read until the first call.
+pub fn BufReader.new(r: Reader) -> BufReader {
+    BufReader {
+        src: r
+        buf: Array.empty()
+        done: false
+    }
+}
+
+/// Bytes held in the buffer, not yet handed to the caller.
+pub pure noalloc fn BufReader.buffered(self) -> usize {
+    self.buf.len()
+}
+
+/// Pulls one more chunk into the buffer and returns how many bytes arrived;
+/// 0 means the source is at end of input.
+fn BufReader.fill(mut self) -> usize! {
+    if self.done {
+        return Ok(0)
+    }
+    let n = self.src.read(&mut self.buf, 4096)?
+    if n == 0 {
+        self.done = true
+    }
+    n
+}
+
+/// Everything up to and including the first `delim`, removed from the buffer.
+/// At end of input with bytes left over, returns them without the delimiter;
+/// None once the source is drained and the buffer is empty. An empty `delim`
+/// is an error, since it would never make progress.
+pub fn BufReader.readUntil(mut self, delim: Bytes) -> Bytes?! {
+    if delim.len() == 0 {
+        fail IoError { text: "BufReader.readUntil needs a non-empty delimiter" }
+    }
+    for true {
+        match findIn(&self.buf, delim) {
+            Some(at) -> {
+                let cut = at + delim.len()
+                return Ok(Some(self.takeFront(cut)))
+            }
+            None -> {
+                let n = self.fill()?
+                if n == 0 {
+                    if self.buf.len() == 0 {
+                        return Ok(None)
+                    }
+                    return Ok(Some(self.takeFront(self.buf.len())))
+                }
+            }
+        }
+    }
+    Ok(None)
+}
+
+/// One line without its terminator, which may be "\n" or "\r\n". None once the
+/// source is drained and the buffer is empty; a final line with no terminator
+/// is still returned.
+pub fn BufReader.readLine(mut self) -> String?! {
+    match self.readUntil("\n".toBytes())? {
+        Some(raw) -> {
+            let mut end = raw.len()
+            if end > 0 && raw[end - 1] == 10 {
+                end = end - 1
+            }
+            if end > 0 && raw[end - 1] == 13 {
+                end = end - 1
+            }
+            let line = raw.slice(0, end) || raw
+            Ok(Some(String.fromBytes(line)?))
+        }
+        None -> Ok(None)
+    }
+}
+
+/// Appends up to `max` buffered or freshly read bytes to `into`; satisfies
+/// `Reader`, so a BufReader can stand in for the source it wraps.
+pub fn BufReader.read(mut self, into: &mut Array[u8], max: usize) -> usize! {
+    if self.buf.len() == 0 {
+        let n = self.fill()?
+        if n == 0 {
+            return Ok(0)
+        }
+    }
+    let take = if self.buf.len() < max {
+        self.buf.len()
+    } else {
+        max
+    }
+    let front = self.takeFront(take)
+    let mut i: usize = 0
+    for i < front.len() {
+        into.push(front[i])
+        i = i + 1
+    }
+    front.len()
+}
+
+/// Removes and returns the first `count` buffered bytes.
+fn BufReader.takeFront(mut self, count: usize) -> Bytes {
+    let all = Bytes.fromArray(&self.buf)
+    let head = all.slice(0, count) || all
+    let mut rest = Array.empty[u8]()
+    let mut i = count
+    for i < self.buf.len() {
+        rest.push(self.buf[i])
+        i = i + 1
+    }
+    self.buf = rest
+    head
+}
+
+/// Byte offset of `sub` in `items`, or None.
+pure noalloc fn findIn(items: &Array[u8], sub: Bytes) -> usize? {
+    if sub.len() == 0 || sub.len() > items.len() {
+        return None
+    }
+    let last = items.len() - sub.len()
+    let mut i: usize = 0
+    for i <= last {
+        let mut j: usize = 0
+        let mut hit = true
+        for j < sub.len() {
+            if items[i + j] != sub[j] {
+                hit = false
+                break
+            }
+            j = j + 1
+        }
+        if hit {
+            return Some(i)
+        }
+        i = i + 1
+    }
+    None
+}

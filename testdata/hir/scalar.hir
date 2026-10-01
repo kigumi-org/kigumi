@@ -1,0 +1,155 @@
+fn main.fib(n: Int) -> Int
+  block: Int
+    {
+      tail
+        if: Int
+          bin <: Bool
+            local n: Int
+            lit 2: Int
+          {
+            tail
+              local n: Int
+          }
+          else
+            block: Int
+              {
+                tail
+                  bin +: Int
+                    call fib: Int
+                      bin -: Int
+                        local n: Int
+                        lit 1: Int
+                    call fib: Int
+                      bin -: Int
+                        local n: Int
+                        lit 2: Int
+              }
+    }
+fn main.clamp(x: Int, lo: Int, hi: Int) -> Int
+  block: Int
+    {
+      stmt
+        if: Unit
+          bin <: Bool
+            local x: Int
+            local lo: Int
+          {
+            tail
+              return: Never
+                local lo: Int
+          }
+      tail
+        if: Int
+          bin >: Bool
+            local x: Int
+            local hi: Int
+          {
+            tail
+              local hi: Int
+          }
+          else
+            block: Int
+              {
+                tail
+                  local x: Int
+              }
+    }
+fn main.sumTo(n: Int) -> Int
+  block: Int
+    {
+      let i: Int
+        lit 0: Int
+      let acc: Int
+        lit 0: Int
+      stmt
+        loop: Unit
+          bin <: Bool
+            local i: Int
+            local n: Int
+          {
+            i +=
+              lit 1: Int
+            acc =
+              bin +: Int
+                local acc: Int
+                local i: Int
+          }
+      tail
+        local acc: Int
+    }
+fn main.describe(n: Int) -> String
+  block: String
+    {
+      tail
+        if: String
+          and: Bool
+            bin ==: Bool
+              bin %: Int
+                local n: Int
+                lit 2: Int
+              lit 0: Int
+            bin >: Bool
+              local n: Int
+              lit 0: Int
+          {
+            tail
+              lit "even": String
+          }
+          else
+            if: String
+              bin <: Bool
+                local n: Int
+                lit 0: Int
+              {
+                tail
+                  lit "negative": String
+              }
+              else
+                block: String
+                  {
+                    tail
+                      lit "odd": String
+                  }
+    }
+fn main() -> Unit!
+  let a: Int
+    call fib: Int
+      lit 10: Int ~1->Int
+  stmt
+    builtin print: Unit
+      interp "fib \x00\x00 \x00\x00 \x00": String
+        local a: Int
+        call clamp: Int
+          lit 15: Int ~1->Int
+          lit 0: Int ~1->Int
+          lit 10: Int ~1->Int
+        call clamp: Int
+          lit -3: Int ~1->Int
+          lit 0: Int ~1->Int
+          lit 10: Int ~1->Int
+  stmt
+    builtin print: Unit
+      interp "sum \x00\x00 \x00\x00 \x00\x00 \x00": String
+        call sumTo: Int
+          lit 100: Int ~1->Int
+        call describe: String
+          lit 4: Int ~1->Int
+        call describe: String
+          lit -1: Int ~1->Int
+        call describe: String
+          lit 7: Int ~1->Int
+  stmt
+    builtin print: Unit
+      interp "\x00 \x00\x00 \x00": String
+        or: Bool
+          un !: Bool
+            wrap: Bool
+              bin >: Bool
+                local a: Int
+                lit 100: Int
+          lit false: Bool
+        un -: Int
+          local a: Int
+        bin ==: Bool
+          local a: Int
+          lit 55: Int

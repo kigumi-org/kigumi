@@ -1,0 +1,12 @@
+-- src --
+let xs = Array.of(1, 2)
+let a: u8 = 200
+print "start"
+let b = a + 100
+print "unreachable ${b}"
+-- stdout --
+start
+-- stderr --
+panic: integer overflow
+-- exit --
+2

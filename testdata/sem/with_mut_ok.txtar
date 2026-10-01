@@ -1,0 +1,27 @@
+-- app/t/t.kg --
+import alloc from std/alloc
+
+type Item = {
+    pub mut count Int
+}
+
+fn Item.update(mut self, delta: Int) -> Unit {
+    self.count = self.count + delta
+}
+
+fn bump(xs: &mut Array[Item], m: Int) -> Int? {
+    xs.withMut(0, (x: &mut Item) => {
+        x.update(m)
+        x.count = x.count + 1
+        x.count
+    })
+}
+
+fn bumpShared(cell: alloc.Shared[Item], m: Int) -> Int {
+    cell.withMut((x: &mut Item) => {
+        x.update(m)
+        x.count = x.count + 1
+        x.count
+    })
+}
+-- expect --

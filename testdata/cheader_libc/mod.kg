@@ -1,0 +1,9 @@
+Module {
+    name: "cheader-libc-sample"
+    kigumi: "0.1"
+}
+
+Header {
+    path: "strlen.h"
+    package: "clib"
+}

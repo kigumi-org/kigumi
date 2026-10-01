@@ -1,0 +1,80 @@
+-- app/t/t.kg --
+extern(C) {
+    fn puts(s: String) -> i32 //~ ERROR `String` cannot cross the C ABI
+    fn ready(flag: Bool) -> i32 //~ ERROR `Bool` cannot cross the C ABI
+    fn getpid() -> i32
+    fn bad() -> i32 { //~ ERROR `bad` is declared in an extern block and cannot have a body
+        1
+    }
+    fn printf(fmt: *const u8, ...) -> i32
+    fn cstr() -> *const u8
+}
+
+export(C) {
+    pub fn twice(x: i32) -> i32 {
+        x * 2
+    }
+    pub fn name() -> String { //~ ERROR `String` cannot cross the C ABI
+        "x"
+    }
+}
+
+fn count(...) -> Int { //~ ERROR a bare `...` parameter is C's variadic tail and belongs in an `extern(C)` block
+    0
+}
+
+fn use() -> i32 {
+    let pid = unsafe { getpid() }
+    let n = unsafe { printf(getpid(), 1, 2.0) } //~ ERROR expected `*const u8`, found `i32`
+    let bad = unsafe { printf(cstr(), "x") } //~ ERROR `String` cannot cross the C ABI
+    let ok = unsafe { printf(cstr(), 1, 2.0, cstr(), pid) }
+    pid
+}
+
+-- expect --
+error[E924]: `String` cannot cross the C ABI
+ --> app/t/t.kg:2:16
+  |
+2 |     fn puts(s: String) -> i32 //~ ERROR `String` cannot cross the C ABI
+  |                ^^^^^^
+  = help: use a fixed-width number, a raw pointer, a C function pointer or a `layout(C)` record
+
+error[E924]: `Bool` cannot cross the C ABI
+ --> app/t/t.kg:3:20
+  |
+3 |     fn ready(flag: Bool) -> i32 //~ ERROR `Bool` cannot cross the C ABI
+  |                    ^^^^
+  = help: use a fixed-width number, a raw pointer, a C function pointer or a `layout(C)` record
+
+error[E923]: `bad` is declared in an extern block and cannot have a body
+ --> app/t/t.kg:5:5
+  |
+5 |     fn bad() -> i32 { //~ ERROR `bad` is declared in an extern block and cannot have a body
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E924]: `String` cannot cross the C ABI
+  --> app/t/t.kg:16:22
+   |
+16 |     pub fn name() -> String { //~ ERROR `String` cannot cross the C ABI
+   |                      ^^^^^^
+   = help: use a fixed-width number, a raw pointer, a C function pointer or a `layout(C)` record
+
+error[E922]: a bare `...` parameter is C's variadic tail and belongs in an `extern(C)` block
+  --> app/t/t.kg:21:10
+   |
+21 | fn count(...) -> Int { //~ ERROR a bare `...` parameter is C's variadic tail and belongs in an `extern(C)` block
+   |          ^^^
+
+error[E400]: expected `*const u8`, found `i32`
+  --> app/t/t.kg:27:29
+   |
+27 |     let n = unsafe { printf(getpid(), 1, 2.0) } //~ ERROR expected `*const u8`, found `i32`
+   |                             ^^^^^^^
+
+error[E924]: `String` cannot cross the C ABI
+  --> app/t/t.kg:28:39
+   |
+28 |     let bad = unsafe { printf(cstr(), "x") } //~ ERROR `String` cannot cross the C ABI
+   |                                       ^^^
+   = help: use a fixed-width number, a raw pointer, a C function pointer or a `layout(C)` record
+

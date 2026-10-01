@@ -1,0 +1,9 @@
+-- src --
+fn nothing() -> Unit {
+}
+
+let a = nothing()
+let b = nothing()
+print "${hash(&a) == hash(&b)} ${a == b} ${a < b} ${a <= b}"
+-- stdout --
+true true false true

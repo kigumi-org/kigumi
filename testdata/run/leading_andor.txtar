@@ -1,0 +1,15 @@
+-- src --
+fn check(a: Bool, b: Bool, c: Bool, d: Bool) -> Bool {
+    (a
+        && b)
+        || (c
+        && d)
+}
+
+print "${check(true, true, false, false)}"
+print "${check(false, true, true, true)}"
+print "${check(false, false, false, false)}"
+-- stdout --
+true
+true
+false

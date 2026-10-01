@@ -1,0 +1,34 @@
+-- src --
+interface Viewer {
+    pure? fn view(self, x: Int) -> Int
+}
+
+@impl(Viewer)
+type PureV = {
+    pub tag Int
+}
+
+pure fn PureV.view(self, x: Int) -> Int {
+    x + self.tag
+}
+
+@impl(Viewer)
+type Wrap[T: Viewer] = {
+    pub inner T
+}
+
+pure fn Wrap[T].view(self, x: Int) -> Int {
+    self.inner.view(x)
+}
+
+fn callViewGeneric[T: Viewer](t: T, x: Int) -> Int {
+    t.view(x)
+}
+
+pure fn wrapPure(x: Int) -> Int {
+    callViewGeneric(Wrap { inner: PureV { tag: 1 } }, x)
+}
+
+print "${wrapPure(3)}"
+-- stdout --
+4

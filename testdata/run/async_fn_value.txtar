@@ -1,0 +1,36 @@
+-- src --
+import task from std/task
+
+async fn fetch(x: Int) -> Int {
+    print "fetch ${x}"
+    x + 1
+}
+
+fn apply[A, R](f: fn(A) -> Future[R], a: A) -> Future[R] {
+    f(a)
+}
+
+type Job = {
+    id Int
+}
+
+async fn Job.run(self) -> Int {
+    print "job ${self.id}"
+    self.id * 10
+}
+
+async fn driver() -> Int {
+    let f = fetch
+    let a = await apply(f, 5)
+    let job = Job { id: 3 }
+    let m = job.run
+    let b = await m()
+    a + b
+}
+
+let ex = task.local()
+print "${ex.run(driver())}"
+-- stdout --
+fetch 5
+job 3
+36

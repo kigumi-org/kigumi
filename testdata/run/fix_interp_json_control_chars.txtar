@@ -1,0 +1,15 @@
+-- src --
+import json from std/json
+
+let s = "a\tb\rc\u{7}\u{b}"
+let encoded = json.encode(s)?
+print encoded
+let back = json.decode[String](encoded)?
+if back == s {
+    print "roundtrip ok"
+} else {
+    print "roundtrip MISMATCH"
+}
+-- stdout --
+"a\tb\rc\u0007\u000b"
+roundtrip ok

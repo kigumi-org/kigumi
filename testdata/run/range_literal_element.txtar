@@ -1,0 +1,45 @@
+-- src --
+let mut n = 0
+for i in 0..3 {
+    n = n + i
+}
+print "${n}"
+
+let mut u: usize = 0
+for i in 0..3 {
+    u = u + i
+}
+print "${u}"
+
+let mut w: i32 = 0
+for i in 0..3 {
+    w = w + i
+}
+print "${w}"
+
+let mut a = 0
+for i in 0..3 {
+    let x = i + 1
+    a = a + x
+}
+print "${a}"
+
+let mut b = 0
+for i in 0..3 {
+    b = i * 2 + b
+}
+print "${b}"
+
+let mut c = 0
+for i in 0..3 {
+    let y = 1 + i
+    c = c + y
+}
+print "${c}"
+-- stdout --
+3
+3
+3
+6
+6
+6

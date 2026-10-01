@@ -1,0 +1,37 @@
+-- src --
+fn lastU8(lo: u8, hi: u8) -> u8 {
+    let mut n: u8 = 0
+    for i in lo..=hi { n = i }
+    n
+}
+
+fn lastI8(lo: i8, hi: i8) -> i8 {
+    let mut n: i8 = 0
+    for i in lo..=hi { n = i }
+    n
+}
+
+fn countUsize(lo: usize, hi: usize) -> usize {
+    let mut n: usize = 0
+    for _ in lo..=hi { n = n + 1 }
+    n
+}
+
+fn classify(n: u8) -> String {
+    match n {
+        250..=255 -> "high"
+        _ -> "low"
+    }
+}
+
+print "${lastU8(250, 255)}"
+print "${lastI8(120, 127)}"
+print "${countUsize(18446744073709551612, 18446744073709551615)}"
+print classify(255)
+print classify(249)
+-- stdout --
+255
+127
+4
+high
+low

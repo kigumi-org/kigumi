@@ -1,0 +1,40 @@
+-- src --
+import io from std/io
+
+// copy's internal chunk size is 4096; this pins that writing the second
+// chunk still lands on the same accumulated Writer state as the first.
+type LogWriter = {
+    mut buf Array[u8]
+}
+
+fn LogWriter.write(mut self, data: Bytes) -> usize! {
+    let mut i: usize = 0
+    for i < data.len() {
+        self.buf.push(data.get(i) || 0)
+        i += 1
+    }
+    print "chunk len=${data.len()} cumulative=${self.buf.len()}"
+    data.len()
+}
+
+let mut bytes = Array.empty[u8]()
+let mut i: usize = 0
+for i < 5000 {
+    bytes.push(65)
+    i += 1
+}
+let src = Bytes.fromArray(&bytes)
+
+let mut r = io.BytesReader.new(src)
+let mut w = LogWriter { buf: Array.empty[u8]() }
+let n = io.copy(r, w)?
+print "copy n=${n}"
+
+let mut r2 = io.BytesReader.new(src)
+let all = io.readAll(r2)?
+print "readAll len=${all.len()}"
+-- stdout --
+chunk len=4096 cumulative=4096
+chunk len=904 cumulative=5000
+copy n=5000
+readAll len=5000

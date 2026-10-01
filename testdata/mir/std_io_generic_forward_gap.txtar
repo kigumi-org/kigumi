@@ -1,0 +1,66 @@
+-- lib/gap.kg --
+// Ledger L-08/L-25: `%w` is an interface-constrained type parameter, so it
+// is affine like any move-only type unless `W: Copy`. The second call
+// below reuses `w` after the first `writeAll` moved it, so it is a
+// use-after-move, exactly like the identical pattern on a concrete
+// (non-generic) receiver type. See std_io_generic_forward_hazard in
+// testdata/run for the runtime consequence this closes.
+import io from std/io
+
+fn sendTwice[W: io.Writer](mut w: W, a: Bytes, b: Bytes) -> Unit! {
+    io.writeAll(w, a)?
+    io.writeAll(w, b)?
+}
+-- expect --
+fn lib.sendTwice(%w: W, %a: Bytes, %b: Bytes, %$w:W:write: fn(Bytes) -> usize!) -> Unit! {
+  b0:
+    %t4 = move(%w)
+    %t5 = copy(%a)
+    %t6 = copy(%$w:W:write)
+    %t7 = call writeAll(%t4, %t5, %t6)
+    %t8 = isvariant Ok(%t7)
+    branch %t8 ? b1 : b2
+  b1:
+    %t11 = payload 0(%t7)
+    drop(%t7)
+    drop(%t11)
+    %t12 = move(%w)
+    %t13 = copy(%b)
+    %t14 = copy(%$w:W:write)
+    %t15 = call writeAll(%t12, %t13, %t14)
+    %t16 = isvariant Ok(%t15)
+    branch %t16 ? b3 : b4
+  b2:
+    %t9 = payload 0(%t7)
+    drop(%t7)
+    drop(%$w:W:write)
+    drop(%b)
+    drop(%a)
+    nop
+    %t10 = variant Err(%t9)
+    return %t10
+  b3:
+    %t19 = payload 0(%t15)
+    drop(%t15)
+    %t20 = variant Ok(%t19)
+    drop(%$w:W:write)
+    drop(%b)
+    drop(%a)
+    nop
+    return %t20
+  b4:
+    %t17 = payload 0(%t15)
+    drop(%t15)
+    drop(%$w:W:write)
+    drop(%b)
+    drop(%a)
+    nop
+    %t18 = variant Err(%t17)
+    return %t18
+}
+error[use-after-move]: `w` was moved; it cannot be used again
+  --> lib/gap.kg:11:17
+   |
+11 |     io.writeAll(w, b)?
+   |                 ^
+

@@ -1,0 +1,43 @@
+-- src --
+let xs = Array.of(1, 2, 3) //~ TYPE xs : Array[Int]
+let n = xs.len() //~ TYPE n : usize
+let first = xs[0] //~ TYPE first : Int
+let s = "abc"
+let b = s[0] //~ TYPE b : u8
+let sub = s[0..2] //~ TYPE sub : String
+let bad = xs["a"] //~ ERROR index must be `usize` or `Range[usize]`, found `String`
+let bad2 = n[0] //~ ERROR `usize` is not indexable
+let m = xs.len //~ ERROR cannot form a method value on move-only `Array[Int]`
+let two = xs.map((x) => x * 2) //~ TYPE two : Array[Int]
+let three = xs.map((x) => x > 1) //~ TYPE three : Array[Bool]
+let r = 0..n //~ TYPE r : Range[usize]
+let bad3 = 0..1.5 //~ ERROR range operands must be the same integer type
+for i in 0..3 {
+    let v = xs[i] //~ TYPE v : Int
+}
+-- expect --
+error[E615]: index must be `usize` or `Range[usize]`, found `String`
+ --> main/main.kg:7:14
+  |
+7 | let bad = xs["a"] //~ ERROR index must be `usize` or `Range[usize]`, found `String`
+  |              ^^^
+
+error[E614]: `usize` is not indexable
+ --> main/main.kg:8:12
+  |
+8 | let bad2 = n[0] //~ ERROR `usize` is not indexable
+  |            ^^^
+
+error[E416]: cannot form a method value on move-only `Array[Int]`
+ --> main/main.kg:9:9
+  |
+9 | let m = xs.len //~ ERROR cannot form a method value on move-only `Array[Int]`
+  |         ^^^^^^
+  = help: write a lambda
+
+error[E613]: range operands must be the same integer type
+  --> main/main.kg:13:12
+   |
+13 | let bad3 = 0..1.5 //~ ERROR range operands must be the same integer type
+   |            ^^^^^^
+

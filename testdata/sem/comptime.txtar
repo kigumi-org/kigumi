@@ -1,0 +1,34 @@
+-- app/t/t.kg --
+const K = 3
+
+type P = {
+    a Int
+}
+
+fn f(x: Int) -> Int {
+    let y = comptime {
+        K * 2
+    }
+    let z = comptime {
+        x + 1 //~ ERROR `x` is a runtime value
+    }
+    let p = comptime { //~ ERROR a comptime block must produce a number, Bool, Char, String or Bytes, not `P`
+        P { a: 1 }
+    }
+    y + z + p.a
+}
+
+-- expect --
+error[E921]: `x` is a runtime value
+  --> app/t/t.kg:12:9
+   |
+12 |         x + 1 //~ ERROR `x` is a runtime value
+   |         ^
+   = help: a comptime block can use consts, functions and its own bindings
+
+error[E918]: a comptime block must produce a number, Bool, Char, String or Bytes, not `P`
+  --> app/t/t.kg:14:13
+   |
+14 |     let p = comptime { //~ ERROR a comptime block must produce a number, Bool, Char, String or Bytes, not `P`
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+

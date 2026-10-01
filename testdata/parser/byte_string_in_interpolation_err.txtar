@@ -1,0 +1,22 @@
+-- src --
+let ab = 1
+print "${ab"x"}"
+-- expect --
+File
+  Let
+    pattern: PatBind ab
+    init: IntLit 1
+  ExprStmt
+    WsCall
+      Ident print
+      List
+        StringLit "${ab"x"}"
+          List
+            Ident ab
+-- diagnostics --
+error: unexpected `string` in interpolation
+ --> byte_string_in_interpolation_err.txtar:2:12
+  |
+2 | print "${ab"x"}"
+  |            ^^^
+

@@ -1,0 +1,33 @@
+#!/usr/bin/env kigumi
+
+import json from std/json
+
+type Author = {
+    pub name String
+    pub commits Int
+}
+
+type Report = {
+    pub total Int {
+        json.name("total_commits")
+    }
+
+    pub authors Array[Author]
+
+    pub note String? {
+        json.omitNone()
+    }
+}
+
+let report = Report {
+    total: 3
+    authors: Array.of(Author {
+        name: "alice"
+        commits: 2
+    }, Author {
+        name: "bob"
+        commits: 1
+    })
+    note: None
+}
+print json.encode(report)?

@@ -1,0 +1,25 @@
+-- app/t/t.kg --
+import ffi from std/ffi
+
+fn wrap[U](v: U) -> U {
+    let cv = ffi.CValue.new(v) //~ ERROR `U` cannot be a `CValue` element
+    cv.get() //~ ERROR `U` cannot be a `CValue` element
+}
+
+fn useWrap() -> Unit! {
+    let _ = wrap(1)
+}
+
+-- expect --
+error[E967]: `U` cannot be a `CValue` element: use a fixed-width number, `Bool`, `Char`, a pointer or a `layout(C)` record
+ --> app/t/t.kg:4:14
+  |
+4 |     let cv = ffi.CValue.new(v) //~ ERROR `U` cannot be a `CValue` element
+  |              ^^^^^^^^^^^^^^^^
+
+error[E967]: `U` cannot be a `CValue` element: use a fixed-width number, `Bool`, `Char`, a pointer or a `layout(C)` record
+ --> app/t/t.kg:5:5
+  |
+5 |     cv.get() //~ ERROR `U` cannot be a `CValue` element
+  |     ^^^^^^^
+

@@ -1,0 +1,235 @@
+-- lib/poly.kg --
+type App = {
+    pub view pure? fn(Int) -> Int
+}
+
+pure fn pureView(x: Int) -> Int {
+    x + 1
+}
+
+fn plainView(x: Int) -> Int {
+    x + 1
+}
+
+pure fn withPureView() -> Int {
+    let app = App { view: pureView }
+    app.view(1)
+}
+
+pure fn withPlainView() -> Int {
+    let app = App { view: plainView }
+    app.view(1) //~ ERROR `app.view` may be impure
+}
+
+// app is a parameter: withParam is polymorphic in its `view` field, so a
+// caller's own actual argument decides purity (L-156), not this body.
+pure fn withParam(app: App) -> Int {
+    app.view(1)
+}
+
+fn callWithImpure() -> Int {
+    withParam(App { view: plainView })
+}
+
+pure fn callWithImpureFromPure() -> Int {
+    withParam(App { view: plainView }) //~ ERROR `App { view: plainView` may be impure
+}
+
+// useApp is a plain fn deferring its own purity to the caller's argument,
+// same as withParam above but undeclared: erasing it into a fixed `pure
+// fn` value has no argument left to resolve against and must be rejected
+// (L-157), even though a direct call resolves fine either way.
+fn useApp(app: App, x: Int) -> Int {
+    app.view(x)
+}
+
+fn erasedFieldParam() -> Int {
+    let g: pure fn(App, Int) -> Int = useApp //~ ERROR `useApp` is not `pure` (calls `app.view`)
+    g(App { view: plainView }, 1)
+}
+
+// outerHop/innerHop forward `app` through a second function that is
+// declared, and so body-checked, after the caller: forwarding must not
+// depend on which of the two checkBodies reaches first (L-159).
+pure fn callChainWithImpure(x: Int) -> Int {
+    outerHop(App { view: plainView }, x) //~ ERROR `App { view: plainView` may be impure
+}
+
+fn outerHop(app: App, x: Int) -> Int {
+    innerHop(app, x)
+}
+
+fn innerHop(app: App, x: Int) -> Int {
+    app.view(x)
+}
+
+pure fn callChainWithPure(x: Int) -> Int {
+    outerHop(App { view: pureView }, x)
+}
+
+// overloadHop/relayOverload is callChainWithImpure's shape again, but the
+// inner call's target name is overloaded: the pre-pass used to give up on
+// any overloaded callee and drop the edge outright, reopening the same
+// declaration-order hole L-159 closed, one hop later (L-160).
+pure fn callChainOverload(x: Int) -> Int {
+    overloadHop(App { view: plainView }, x) //~ ERROR `App { view: plainView` may be impure
+}
+
+fn overloadHop(app: App, x: Int) -> Int {
+    relayOverload(app, x)
+}
+
+fn relayOverload(app: App, x: Int) -> Int {
+    app.view(x)
+}
+
+fn relayOverload(s: String) -> Int {
+    0
+}
+
+pure fn callChainOverloadWithPure(x: Int) -> Int {
+    overloadHop(App { view: pureView }, x)
+}
+
+// sameArityRelay's two overloads share one arity, unlike relayOverload
+// above: candidateFnBindings can no longer tell them apart by arity
+// alone, so the pre-pass must filter by the forwarded argument's declared
+// type instead (L-160 revised). sameArityHopString forwards a String and
+// must resolve only to the non-forwarding overload, never inheriting
+// sameArityRelay's App overload's field requirement.
+fn sameArityRelay(a: App, x: Int) -> Int {
+    a.view(x)
+}
+
+fn sameArityRelay(s: String, x: Int) -> Int {
+    x
+}
+
+fn sameArityHopString(s: String, x: Int) -> Int {
+    sameArityRelay(s, x)
+}
+
+fn sameArityHopApp(a: App, x: Int) -> Int {
+    sameArityRelay(a, x)
+}
+
+pure fn callSameArityOverloadString(x: Int) -> Int {
+    sameArityHopString("s", x)
+}
+
+pure fn callSameArityOverloadAppImpure(x: Int) -> Int {
+    sameArityHopApp(App { view: plainView }, x) //~ ERROR `App { view: plainView` may be impure
+}
+
+pure fn callSameArityOverloadAppPure(x: Int) -> Int {
+    sameArityHopApp(App { view: pureView }, x)
+}
+
+// multiParamRelay's two overloads share the forwarded position's type
+// (App) and differ only at the other parameter (mode: Bool vs Int): the
+// per-position filter above only excludes a candidate by the forwarded
+// argument's own type, so it kept the Bool overload's field requirement
+// even though mode's declared Int type means real overload resolution can
+// only ever pick the Int overload, which never touches `view` (L-160
+// revised a second time). multiParamHopBool forwards a Bool and must still
+// pick, and be held to, the Bool overload's field requirement.
+fn multiParamRelay(a: App, mode: Bool) -> Int {
+    a.view(1)
+}
+
+fn multiParamRelay(a: App, mode: Int) -> Int {
+    mode
+}
+
+fn multiParamHop(a: App, mode: Int) -> Int {
+    multiParamRelay(a, mode)
+}
+
+pure fn callMultiParamHop(x: Int) -> Int {
+    multiParamHop(App { view: plainView }, x)
+}
+
+fn multiParamHopBool(a: App, mode: Bool) -> Int {
+    multiParamRelay(a, mode)
+}
+
+pure fn callMultiParamHopBoolRejected(x: Int) -> Int {
+    multiParamHopBool(App { view: plainView }, true) //~ ERROR `App { view: plainView` may be impure
+}
+
+// literalParamHopBool/literalParamHopInt are multiParamHopBool/
+// multiParamHop's shape again, but mode is a literal at the hop's call
+// site instead of a forwarded identifier: the filter must type a literal
+// argument itself, not only bare identifiers naming the caller's own
+// parameters (L-160 revised a third time).
+fn literalParamHopBool(a: App) -> Int {
+    multiParamRelay(a, true)
+}
+
+pure fn callLiteralParamHopBoolRejected(x: Int) -> Int {
+    literalParamHopBool(App { view: plainView }) //~ ERROR `App { view: plainView` may be impure
+}
+
+fn literalParamHopInt(a: App) -> Int {
+    multiParamRelay(a, 1)
+}
+
+pure fn callLiteralParamHopIntAccepted(x: Int) -> Int {
+    literalParamHopInt(App { view: plainView })
+}
+-- expect --
+error[E901]: `app.view` may be impure
+  --> lib/poly.kg:20:5
+   |
+20 |     app.view(1) //~ ERROR `app.view` may be impure
+   |     ^^^^^^^^^^
+   = help: declare it `pure fn(...)`
+
+error[E901]: `App { view: plainView` may be impure
+  --> lib/poly.kg:34:15
+   |
+34 |     withParam(App { view: plainView }) //~ ERROR `App { view: plainView` may be impure
+   |               ^^^^^^^^^^^^^^^^^^^^^
+   = help: declare it `pure fn(...)`
+
+error[E423]: `useApp` is not `pure` (calls `app.view`)
+  --> lib/poly.kg:46:39
+   |
+46 |     let g: pure fn(App, Int) -> Int = useApp //~ ERROR `useApp` is not `pure` (calls `app.view`)
+   |                                       ^^^^^^
+
+error[E901]: `App { view: plainView` may be impure
+  --> lib/poly.kg:54:14
+   |
+54 |     outerHop(App { view: plainView }, x) //~ ERROR `App { view: plainView` may be impure
+   |              ^^^^^^^^^^^^^^^^^^^^^
+   = help: declare it `pure fn(...)`
+
+error[E901]: `App { view: plainView` may be impure
+  --> lib/poly.kg:74:17
+   |
+74 |     overloadHop(App { view: plainView }, x) //~ ERROR `App { view: plainView` may be impure
+   |                 ^^^^^^^^^^^^^^^^^^^^^
+   = help: declare it `pure fn(...)`
+
+error[E901]: `App { view: plainView` may be impure
+   --> lib/poly.kg:120:21
+    |
+120 |     sameArityHopApp(App { view: plainView }, x) //~ ERROR `App { view: plainView` may be impure
+    |                     ^^^^^^^^^^^^^^^^^^^^^
+    = help: declare it `pure fn(...)`
+
+error[E901]: `App { view: plainView` may be impure
+   --> lib/poly.kg:156:23
+    |
+156 |     multiParamHopBool(App { view: plainView }, true) //~ ERROR `App { view: plainView` may be impure
+    |                       ^^^^^^^^^^^^^^^^^^^^^
+    = help: declare it `pure fn(...)`
+
+error[E901]: `App { view: plainView` may be impure
+   --> lib/poly.kg:169:25
+    |
+169 |     literalParamHopBool(App { view: plainView }) //~ ERROR `App { view: plainView` may be impure
+    |                         ^^^^^^^^^^^^^^^^^^^^^
+    = help: declare it `pure fn(...)`
+

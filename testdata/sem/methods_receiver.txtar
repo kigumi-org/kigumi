@@ -1,0 +1,150 @@
+-- lib/recv.kg --
+type Buf = {
+    pub mut n Int
+}
+
+fn Buf.push(mut self) -> Unit {
+    self.n += 1
+}
+
+fn Buf.take(move self) -> Int {
+    self.n
+}
+
+fn Buf.peek(self) -> Int {
+    self.n
+}
+
+fn Buf.make() -> Buf {
+    Buf { n: 0 }
+}
+
+type Res = resource {
+    pub fd Int
+}
+
+fn Res.drop(move self) -> Unit {}
+
+fn Res.id(self) -> Int {
+    self.fd
+}
+
+fn use(b: Buf, mut m: Buf, r: &Buf, w: &mut Buf, res: Res) -> Unit {
+    b.push() //~ ERROR `push` takes `mut self` but `b` is immutable
+    m.push()
+    r.push() //~ ERROR `push` takes `mut self` but `r` is immutable
+    w.push()
+    let t = b.take() //~ TYPE t : Int
+    let u = r.take() //~ ERROR cannot move `Buf` out of a borrow
+    let p = r.peek() //~ TYPE p : Int
+    let q = Buf.make().take() //~ TYPE q : Int
+    let v = b.peek //~ TYPE v : fn() -> Int
+    let z = v() //~ TYPE z : Int
+    let id = res.id //~ ERROR cannot form a method value on move-only `Res`
+    let lam = () => res.id()
+    let n = b.n
+    b.n = 1 //~ ERROR `b` is immutable
+    m.n = 1
+    w.n = 2
+    r.n = 3 //~ ERROR `r` is immutable
+}
+
+type Outer = {
+    mut inner Buf
+}
+
+type Frozen = {
+    inner Buf
+}
+
+fn Outer.make() -> Outer {
+    Outer { inner: Buf { n: 0 } }
+}
+
+fn useField(o: Outer, mut f: Frozen) -> Unit {
+    let lb = Buf.make()
+    lb.push() //~ ERROR `push` takes `mut self` but `lb` is immutable
+    let lo = Outer.make()
+    lo.inner.push() //~ ERROR `push` takes `mut self` but `lo.inner` is immutable
+    o.inner.push() //~ ERROR `push` takes `mut self` but `o.inner` is immutable
+    f.inner.push() //~ ERROR `push` takes `mut self` but `f.inner` is immutable
+    let fz = Frozen { inner: Buf { n: 0 } }
+    fz.inner.push() //~ ERROR `push` takes `mut self` but `fz.inner` is immutable
+}
+-- expect --
+error[E515]: `push` takes `mut self` but `b` is immutable
+  --> lib/recv.kg:32:5
+   |
+32 |     b.push() //~ ERROR `push` takes `mut self` but `b` is immutable
+   |     ^
+   = help: declare `mut b` in the parameter list
+
+error[E515]: `push` takes `mut self` but `r` is immutable
+  --> lib/recv.kg:34:5
+   |
+34 |     r.push() //~ ERROR `push` takes `mut self` but `r` is immutable
+   |     ^
+   = help: annotate `r` as `&mut Buf`
+
+error[E517]: cannot move `Buf` out of a borrow
+  --> lib/recv.kg:37:13
+   |
+37 |     let u = r.take() //~ ERROR cannot move `Buf` out of a borrow
+   |             ^
+
+error[E416]: cannot form a method value on move-only `Res`
+  --> lib/recv.kg:42:14
+   |
+42 |     let id = res.id //~ ERROR cannot form a method value on move-only `Res`
+   |              ^^^^^^
+   = help: write a lambda
+
+error[E701]: `b` is immutable
+  --> lib/recv.kg:45:5
+   |
+45 |     b.n = 1 //~ ERROR `b` is immutable
+   |     ^
+   = help: declare `let mut b`
+
+error[E701]: `r` is immutable
+  --> lib/recv.kg:48:5
+   |
+48 |     r.n = 3 //~ ERROR `r` is immutable
+   |     ^
+   = help: declare `let mut r`
+
+error[E515]: `push` takes `mut self` but `lb` is immutable
+  --> lib/recv.kg:65:5
+   |
+65 |     lb.push() //~ ERROR `push` takes `mut self` but `lb` is immutable
+   |     ^^
+   = help: declare `let mut lb = ...`
+
+error[E515]: `push` takes `mut self` but `lo.inner` is immutable
+  --> lib/recv.kg:67:5
+   |
+67 |     lo.inner.push() //~ ERROR `push` takes `mut self` but `lo.inner` is immutable
+   |     ^^^^^^^^
+   = help: declare `let mut lo = ...`
+
+error[E515]: `push` takes `mut self` but `o.inner` is immutable
+  --> lib/recv.kg:68:5
+   |
+68 |     o.inner.push() //~ ERROR `push` takes `mut self` but `o.inner` is immutable
+   |     ^^^^^^^
+   = help: declare `mut o` in the parameter list
+
+error[E515]: `push` takes `mut self` but `f.inner` is immutable
+  --> lib/recv.kg:69:5
+   |
+69 |     f.inner.push() //~ ERROR `push` takes `mut self` but `f.inner` is immutable
+   |     ^^^^^^^
+   = help: declare `mut inner` on the field
+
+error[E515]: `push` takes `mut self` but `fz.inner` is immutable
+  --> lib/recv.kg:71:5
+   |
+71 |     fz.inner.push() //~ ERROR `push` takes `mut self` but `fz.inner` is immutable
+   |     ^^^^^^^^
+   = help: declare `mut inner` on the field, and declare `let mut fz = ...`
+

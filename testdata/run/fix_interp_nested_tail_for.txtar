@@ -1,0 +1,60 @@
+-- src --
+type Failure = Bad | Other
+
+fn Failure.message(self) -> String {
+    match self {
+        Bad -> "bad"
+        Other -> "other"
+    }
+}
+
+type Counter = {
+    pub mut n Int
+}
+
+fn Counter.tryBump(mut self, useLoop: Bool, failEarly: Bool, failLate: Bool) -> Result[Unit, Failure] {
+    if failEarly {
+        fail Bad
+    } else {
+        if useLoop {
+            for i in 0..3 {
+                self.n = self.n + 1
+            }
+        } else {
+            if failLate {
+                fail Other
+            } else {
+                self.n = self.n + 100
+            }
+        }
+    }
+}
+
+let mut c1 = Counter { n: 0 }
+match c1.tryBump(false, true, false) {
+    Ok(_) -> print "c1 ok n=${c1.n}"
+    Err(e) -> print "c1 err=${e.message()} n=${c1.n}"
+}
+
+let mut c2 = Counter { n: 0 }
+match c2.tryBump(true, false, false) {
+    Ok(_) -> print "c2 ok n=${c2.n}"
+    Err(e) -> print "c2 err=${e.message()} n=${c2.n}"
+}
+
+let mut c3 = Counter { n: 0 }
+match c3.tryBump(false, false, true) {
+    Ok(_) -> print "c3 ok n=${c3.n}"
+    Err(e) -> print "c3 err=${e.message()} n=${c3.n}"
+}
+
+let mut c4 = Counter { n: 0 }
+match c4.tryBump(false, false, false) {
+    Ok(_) -> print "c4 ok n=${c4.n}"
+    Err(e) -> print "c4 err=${e.message()} n=${c4.n}"
+}
+-- stdout --
+c1 err=bad n=0
+c2 ok n=3
+c3 err=other n=0
+c4 ok n=100

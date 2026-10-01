@@ -1,0 +1,68 @@
+-- src --
+import map from std/map
+import array from std/array
+
+type Point = {
+    x f64
+    y f64
+}
+
+fn eqG[T: Eq](a: T, b: &T) -> Bool { a == b }
+fn ltG[T: Ord](a: T, b: &T) -> Bool { a < b }
+
+fn main() -> Unit! {
+    let z: f64 = 0.0
+    let nan = z / z
+    let negz: f64 = -0.0
+    let one: f64 = 1.0
+
+    print "IEEE nan == nan: ${nan == nan}"
+    print "protocol nan.equals(&nan): ${nan.equals(&nan)}"
+    print "protocol nan.compareTo(&nan): ${debug(&nan.compareTo(&nan))}"
+    print "protocol one.compareTo(&nan): ${debug(&one.compareTo(&nan))}"
+    print "protocol z.equals(&negz): ${z.equals(&negz)}"
+
+    print "generic eqG(nan, &nan): ${eqG(nan, &nan)}"
+    print "generic ltG(one, &nan): ${ltG(one, &nan)}"
+    print "generic ltG(nan, &one): ${ltG(nan, &one)}"
+
+    let mut m = map.empty[f64, i64]()
+    m.set(nan, 1)
+    m.set(negz, 2)
+    m.set(one, 3)
+    print "map len: ${m.len()}"
+    print "map.get(nan): ${debug(m.get(nan))}"
+    print "map.get(z): ${debug(m.get(z))}"
+
+    let arr = Array.of[f64](3.0, nan, negz, one, nan)
+    let sorted = array.sortedBy(&arr, (a, b) => a.compareTo(b))
+    let mut i: usize = 0
+    for i < sorted.len() {
+        print "sorted[${i}]=${debug(sorted.get(i))}"
+        i = i + 1
+    }
+
+    let p1 = Point { x: nan, y: one }
+    let p2 = Point { x: nan, y: one }
+    print "derived Eq (record with NaN field) p1 == p2: ${p1 == p2}"
+    print "derived hash equal: ${hash(&p1) == hash(&p2)}"
+}
+-- stdout --
+IEEE nan == nan: false
+protocol nan.equals(&nan): true
+protocol nan.compareTo(&nan): Equal
+protocol one.compareTo(&nan): Less
+protocol z.equals(&negz): true
+generic eqG(nan, &nan): true
+generic ltG(one, &nan): true
+generic ltG(nan, &one): false
+map len: 3
+map.get(nan): Some(1)
+map.get(z): Some(2)
+sorted[0]=Some(-0)
+sorted[1]=Some(1)
+sorted[2]=Some(3)
+sorted[3]=Some(NaN)
+sorted[4]=Some(NaN)
+derived Eq (record with NaN field) p1 == p2: true
+derived hash equal: true

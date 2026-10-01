@@ -1,0 +1,83 @@
+-- lib/ov.kg --
+fn f(x: u8) -> Unit {}
+
+fn f(x: u16) -> Unit {}
+
+fn g(x: Int) -> Unit {}
+
+fn g(x: String) -> Unit {}
+
+fn h[T](x: T, y: Int) -> Unit {}
+
+fn h[T](x: Int, y: T) -> Unit {}
+
+fn apply(h: fn(Int) -> Int) -> Int {
+    h(1)
+}
+
+fn apply(h: fn(String) -> String) -> String {
+    h("s")
+}
+
+fn use() -> Unit {
+    f(1) //~ ERROR no overload of `f` takes (Int)
+    let x: u8 = 1
+    f(x)
+    h(1, 2) //~ ERROR call to `h` is ambiguous: `fn(T, Int) -> Unit`, `fn(Int, T) -> Unit`
+    h("s", 2)
+    g(true) //~ ERROR no overload of `g` takes (Bool)
+    g(1, 2) //~ ERROR `g` expects 1 arguments, 2 given
+    let v = g //~ ERROR `g` is overloaded
+    apply((x) => x) //~ ERROR annotate the lambda parameters: `apply` is overloaded
+    let r = apply((x: Int) => x + 1) //~ TYPE r : Int
+    let s = apply((x: String) => x) //~ TYPE s : String
+    let t: fn(Bool) -> Unit = g //~ ERROR `g` is overloaded
+}
+-- expect --
+error[E502]: no overload of `f` takes (Int)
+  --> lib/ov.kg:22:5
+   |
+22 |     f(1) //~ ERROR no overload of `f` takes (Int)
+   |     ^^^
+   = help: candidates: `fn(u8) -> Unit`, `fn(u16) -> Unit`
+
+error[E503]: call to `h` is ambiguous: `fn(T, Int) -> Unit`, `fn(Int, T) -> Unit`
+  --> lib/ov.kg:25:5
+   |
+25 |     h(1, 2) //~ ERROR call to `h` is ambiguous: `fn(T, Int) -> Unit`, `fn(Int, T) -> Unit`
+   |     ^^^^^^
+   = help: annotate the arguments
+
+error[E502]: no overload of `g` takes (Bool)
+  --> lib/ov.kg:27:5
+   |
+27 |     g(true) //~ ERROR no overload of `g` takes (Bool)
+   |     ^^^^^^
+   = help: candidates: `fn(Int) -> Unit`, `fn(String) -> Unit`
+
+error[E501]: `g` expects 1 arguments, 2 given
+  --> lib/ov.kg:28:5
+   |
+28 |     g(1, 2) //~ ERROR `g` expects 1 arguments, 2 given
+   |     ^^^^^^
+
+error[E420]: `g` is overloaded
+  --> lib/ov.kg:29:13
+   |
+29 |     let v = g //~ ERROR `g` is overloaded
+   |             ^
+   = help: annotate the function type
+
+error[E504]: annotate the lambda parameters: `apply` is overloaded
+  --> lib/ov.kg:30:5
+   |
+30 |     apply((x) => x) //~ ERROR annotate the lambda parameters: `apply` is overloaded
+   |     ^^^^^^^^^^^^^^
+
+error[E420]: `g` is overloaded
+  --> lib/ov.kg:33:31
+   |
+33 |     let t: fn(Bool) -> Unit = g //~ ERROR `g` is overloaded
+   |                               ^
+   = help: annotate the function type
+

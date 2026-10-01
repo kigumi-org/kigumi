@@ -1,0 +1,18 @@
+-- src --
+type Item = {
+    pub mut count Int
+}
+
+fn Item.update(mut self, delta: Int) -> Unit {
+    self.count = self.count + delta
+}
+
+let mut xs = Array.of(Item { count: 1 }, Item { count: 2 })
+let r = xs.withMut(0, (x: &mut Item) => {
+    x.update(100)
+    x.count
+})
+xs.push(Item { count: 3 })
+print "r=${r || 0} len=${xs.len()}"
+-- stdout --
+r=101 len=3

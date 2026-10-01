@@ -1,0 +1,13 @@
+-- src --
+fn main() -> Unit! {
+    let a = 1.wrappingAdd(2)
+    let b = 65.toChar()
+    let c = 18446744073709551615.wrappingAdd(1) //~ ERROR `18446744073709551615` does not fit `Int`
+}
+-- expect --
+error[E402]: `18446744073709551615` does not fit `Int`
+ --> main/main.kg:4:13
+  |
+4 |     let c = 18446744073709551615.wrappingAdd(1) //~ ERROR `18446744073709551615` does not fit `Int`
+  |             ^^^^^^^^^^^^^^^^^^^^
+

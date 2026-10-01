@@ -1,0 +1,28 @@
+-- src --
+// Ledger L-181: `for x in &f()` borrows a collection that is itself a
+// temporary, owned by nobody; the loop must still drop it exactly once,
+// after the last iteration and before the statement that follows.
+type Res = resource {
+    pub id Int
+}
+
+fn Res.drop(move self) -> Unit {
+    print "drop ${self.id}"
+}
+
+fn makeArr() -> Array[Res] {
+    Array.of(Res { id: 7 }, Res { id: 8 })
+}
+
+fn main() -> Unit! {
+    for x in &makeArr() {
+        print "see ${x.id}"
+    }
+    print "after loop"
+}
+-- stdout --
+see 7
+see 8
+drop 8
+drop 7
+after loop

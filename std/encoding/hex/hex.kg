@@ -1,0 +1,55 @@
+/// Hexadecimal for byte strings, per RFC 4648 (lower case on output).
+const lower: String = "0123456789abcdef"
+
+pub type DecodeError = {
+    pub text String
+}
+
+pub fn DecodeError.message(self) -> String {
+    self.text
+}
+
+/// Two lower-case digits per byte.
+pub pure fn encode(data: Bytes) -> String {
+    let d = lower.bytes()
+    let mut out = Array.empty[u8]()
+    let mut i: usize = 0
+    for i < data.len() {
+        let b = data[i].toUsize()
+        out.push(d[b / 16])
+        out.push(d[b % 16])
+        i = i + 1
+    }
+    String.fromBytes(Bytes.fromArray(&out)) || ""
+}
+
+/// Bytes of a hexadecimal string; both cases are accepted. An odd length or a
+/// character outside `0-9a-fA-F` is an error.
+pub pure fn decode(text: String) -> Result[Bytes, DecodeError] {
+    let src = text.toBytes()
+    if src.len() % 2 != 0 {
+        fail DecodeError { text: "odd length" }
+    }
+    let mut out = Array.empty[u8]()
+    let mut i: usize = 0
+    for i < src.len() {
+        let hi = nibble(src[i])?
+        let lo = nibble(src[i + 1])?
+        out.push(((hi * 16) + lo).toU8() || 0)
+        i = i + 2
+    }
+    Bytes.fromArray(&out)
+}
+
+pure fn nibble(c: u8) -> Result[usize, DecodeError] {
+    let v = c.toUsize()
+    if v >= 48 && v <= 57 {
+        v - 48
+    } else if v >= 97 && v <= 102 {
+        v - 87
+    } else if v >= 65 && v <= 70 {
+        v - 55
+    } else {
+        fail DecodeError { text: "not a hex digit" }
+    }
+}

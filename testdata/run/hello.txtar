@@ -1,0 +1,13 @@
+-- src --
+let name = "world"
+let n = 3
+print "hello, ${name}!"
+print "n=${n} half=${n / 2} big=${n * 1000000000000}"
+print("bool=${n > 2} char=${'x'} float=${1.5 * 2}")
+let s = "abc"
+print "len=${s.len()} first=${s[0]} slice=${s[1..3]}"
+-- stdout --
+hello, world!
+n=3 half=1 big=3000000000000
+bool=true char=x float=3
+len=3 first=97 slice=bc

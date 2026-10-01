@@ -1,0 +1,30 @@
+-- lib/multi.kg --
+type Counter = {
+    n Int
+}
+
+type Frozen = {
+    inner Counter
+}
+
+fn use() -> Unit {
+    let c = Counter { n: 1 }
+    c.n = 2 //~ ERROR field `n` is immutable
+    let fz = Frozen { inner: Counter { n: 1 } }
+    fz.inner = Counter { n: 3 } //~ ERROR field `inner` is immutable
+}
+-- expect --
+error[E702]: field `n` is immutable
+  --> lib/multi.kg:11:5
+   |
+11 |     c.n = 2 //~ ERROR field `n` is immutable
+   |     ^^^
+   = help: declare `mut n`, and declare `let mut c`
+
+error[E702]: field `inner` is immutable
+  --> lib/multi.kg:13:5
+   |
+13 |     fz.inner = Counter { n: 3 } //~ ERROR field `inner` is immutable
+   |     ^^^^^^^^
+   = help: declare `mut inner`, and declare `let mut fz`
+

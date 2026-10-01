@@ -1,0 +1,4 @@
+Module {
+    name: "fibonacci"
+    kigumi: "0.1"
+}

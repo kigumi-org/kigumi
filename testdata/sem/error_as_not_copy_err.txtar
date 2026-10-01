@@ -1,0 +1,25 @@
+-- app/t/t.kg --
+import error from std/error
+
+type ResError = resource {
+    pub id Int
+}
+
+fn ResError.drop(move self) -> Unit {
+}
+
+fn ResError.message(self) -> String {
+    "res ${self.id}"
+}
+
+fn useIt(e: &Error) -> Unit {
+    let _ = error.as[ResError](e) //~ ERROR cannot move `ResError` out of a borrow
+}
+
+-- expect --
+error[E517]: cannot move `ResError` out of a borrow
+  --> app/t/t.kg:15:13
+   |
+15 |     let _ = error.as[ResError](e) //~ ERROR cannot move `ResError` out of a borrow
+   |             ^^^^^^^^^^^^^^^^^^^^
+

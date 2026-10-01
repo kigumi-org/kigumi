@@ -1,0 +1,32 @@
+-- src --
+interface Viewer {
+    pure? fn view(self, x: Int) -> Int
+}
+
+@impl(Viewer)
+type PureV = {
+    pub tag Int
+}
+
+pure fn PureV.view(self, x: Int) -> Int {
+    x + self.tag
+}
+
+@impl(Viewer)
+type ImpureV = {
+    pub tag Int
+}
+
+fn ImpureV.view(self, x: Int) -> Int {
+    x * self.tag
+}
+
+fn callView(v: Viewer, x: Int) -> Int {
+    v.view(x)
+}
+
+let p = PureV { tag: 1 }
+let q = ImpureV { tag: 2 }
+print "p=${callView(p, 3)} q=${callView(q, 3)}"
+-- stdout --
+p=4 q=6

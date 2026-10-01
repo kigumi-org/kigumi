@@ -1,0 +1,4 @@
+import bf from c/bf
+
+let sum = unsafe { bf.bitfield_byvalue_add(3, 4) }
+print "${sum}"

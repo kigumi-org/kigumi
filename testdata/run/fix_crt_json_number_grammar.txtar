@@ -1,0 +1,20 @@
+-- src --
+import json from std/json
+
+fn tryDecode(s: String) -> Unit {
+    match json.decode[Int](s) {
+        Ok(x) -> print "ok:${x}"
+        Err(_) -> print "err"
+    }
+}
+tryDecode("0123")
+tryDecode("+123")
+tryDecode("123")
+tryDecode("999999999999999999999999999999")
+tryDecode("-0")
+-- stdout --
+err
+err
+ok:123
+err
+ok:0

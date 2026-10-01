@@ -1,0 +1,47 @@
+-- lib/reuse.kg --
+// Pins the flip side of std_io_generic_forward_gap: BytesWriter is a
+// concrete (non-generic) type, so passing it by value into io.copy/
+// io.writeAll DOES move it, and using it again afterward is a real
+// use-after-move error, not silent corruption (docs/limitations_v1.md,
+// ledger L-25). This makes BytesWriter unusable through these helpers
+// for its evident purpose of being inspected after use; the caller has
+// no way to keep both a Writer view and access to the underlying buffer.
+import io from std/io
+
+fn afterCopy(r: io.BytesReader, w: io.BytesWriter) -> Bytes! {
+    io.copy(r, w)?
+    w.bytes()
+}
+-- expect --
+fn lib.afterCopy(%r: BytesReader, %w: BytesWriter) -> Bytes! {
+  b0:
+    %t2 = copy(%r)
+    %t3 = move(%w)
+    %t4 = bind read
+    %t5 = bind write
+    %t6 = call copy(%t2, %t3, %t4, %t5)
+    %t7 = isvariant Ok(%t6)
+    branch %t7 ? b1 : b2
+  b1:
+    %t10 = payload 0(%t6)
+    drop(%t6)
+    drop(%t10)
+    %t11 = call bytes(%w)
+    %t12 = variant Ok(%t11)
+    nop
+    drop(%r)
+    return %t12
+  b2:
+    %t8 = payload 0(%t6)
+    drop(%t6)
+    nop
+    drop(%r)
+    %t9 = variant Err(%t8)
+    return %t9
+}
+error[use-after-move]: `w` was moved; it cannot be used again
+  --> lib/reuse.kg:12:5
+   |
+12 |     w.bytes()
+   |     ^^^^^^^^
+

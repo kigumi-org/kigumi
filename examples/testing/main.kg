@@ -1,0 +1,8 @@
+#!/usr/bin/env kigumi
+
+import {gcd, lcm} from testing/numbers
+
+// Library code lives in numbers/; `kigumi test` runs numbers/numbers_test.kg.
+// This file is the entry: files at the module root form package main.
+print "gcd(84, 36) = ${gcd(84, 36)}"
+print "lcm(4, 6) = ${lcm(4, 6)}"

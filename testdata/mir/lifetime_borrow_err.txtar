@@ -1,0 +1,127 @@
+-- lib/lt.kg --
+type Res = resource {
+    pub id Int
+}
+
+type View['a] = { pub data &'a Res, pub off usize }
+
+fn head['a](b: &'a Res) -> View['a] {
+    View { data: b, off: 0 }
+}
+
+fn mutateWhileViewed(mut buf: Bytes) -> u8 {
+    let v = headBytes(&buf)
+    buf = Bytes.zeros(8)
+    v.data[0]
+}
+
+type ViewBytes['a] = { pub data &'a Bytes, pub off usize }
+
+fn headBytes['a](b: &'a Bytes) -> ViewBytes['a] {
+    ViewBytes { data: b, off: 0 }
+}
+
+fn moveWhileViewed(buf: Res) -> Int {
+    let v = head(&buf)
+    let taken = buf
+    _ = taken
+    v.data.id
+}
+
+fn identity['a](v: ViewBytes['a]) -> ViewBytes['a] {
+    v
+}
+
+fn mutateWhileIdentityViewed(mut buf: Bytes) -> u8 {
+    let v = identity(headBytes(&buf))
+    buf = Bytes.zeros(8)
+    v.data[0]
+}
+-- expect --
+fn lib.head(%b: &Res) -> View['a] {
+  b0:
+    %t1 = copy(%b)
+    %t2 = const 0: usize
+    %t3 = record View(%t1, %t2)
+    return %t3
+}
+fn lib.mutateWhileViewed(%buf: Bytes) -> u8 {
+  b0:
+    %t1 = borrow 0(%buf)
+    %t2 = call headBytes(%t1)
+    %v = copy(%t2)
+    %t4 = const 8: usize
+    %t5 = call zeros(%t4)
+    drop(%buf)
+    %buf = copy(%t5)
+    %t6 = field 0(%v)
+    %t7 = const 0: usize
+    %t8 = index(%t6, %t7)
+    drop(%v)
+    drop(%buf)
+    return %t8
+}
+fn lib.headBytes(%b: &Bytes) -> ViewBytes['a] {
+  b0:
+    %t1 = copy(%b)
+    %t2 = const 0: usize
+    %t3 = record ViewBytes(%t1, %t2)
+    return %t3
+}
+fn lib.moveWhileViewed(%buf: Res) -> Int {
+  b0:
+    %t1 = borrow 0(%buf)
+    %t2 = call head(%t1)
+    %v = copy(%t2)
+    %t4 = move(%buf)
+    %taken = copy(%t4)
+    %t6 = move(%taken)
+    drop(%t6)
+    %t7 = field 0(%v)
+    %t8 = field 0(%t7)
+    nop
+    drop(%v)
+    nop
+    return %t8
+}
+fn lib.identity(%v: ViewBytes['a]) -> ViewBytes['a] {
+  b0:
+    %t1 = copy(%v)
+    drop(%v)
+    return %t1
+}
+fn lib.mutateWhileIdentityViewed(%buf: Bytes) -> u8 {
+  b0:
+    %t1 = borrow 0(%buf)
+    %t2 = call headBytes(%t1)
+    %t3 = call identity(%t2)
+    %v = copy(%t3)
+    %t5 = const 8: usize
+    %t6 = call zeros(%t5)
+    drop(%buf)
+    %buf = copy(%t6)
+    %t7 = field 0(%v)
+    %t8 = const 0: usize
+    %t9 = index(%t7, %t8)
+    drop(%v)
+    drop(%buf)
+    return %t9
+}
+error[borrow-conflict]: `buf` is borrowed and cannot be mutated here
+  --> lib/lt.kg:13:5
+   |
+13 |     buf = Bytes.zeros(8)
+   |     ^^^
+
+error[move-while-borrowed]: `buf` is borrowed and cannot be moved or dropped here
+  --> lib/lt.kg:25:17
+   |
+25 |     let taken = buf
+   |                 ^^^
+
+error[borrow-conflict]: `buf` is borrowed and cannot be mutated here
+  --> lib/lt.kg:36:5
+   |
+36 |     buf = Bytes.zeros(8)
+   |     ^^^
+

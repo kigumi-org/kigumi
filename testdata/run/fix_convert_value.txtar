@@ -1,0 +1,15 @@
+-- src --
+fn bump(n: i64) -> i64 {
+    n + 1
+}
+
+let unrelated = bump(10)
+let x: i64 = 300
+let f = x.toI32
+let r = f()
+let big: i64 = 5000000000
+let g = big.toI32
+let h = (v: i64) => v.toU8() || 0
+print "${unrelated} r=${r || -1} ${g() is None} ${h(7)} ${h(300)}"
+-- stdout --
+11 r=300 true 7 0

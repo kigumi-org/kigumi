@@ -1,0 +1,84 @@
+-- lib/pipe.kg --
+type Options = {
+    pub n Int
+}
+
+fn convert(s: String, o: Options) -> String {
+    s
+}
+
+fn two(s: String) -> Unit {}
+
+fn two(n: Int) -> Unit {}
+
+fn use(o: Options, r: &Options) -> Unit {
+    "x" |> convert //~ ERROR `convert` expects 2 arguments, 1 given
+    "x" |> convert("y", o) //~ ERROR `convert` expects 2 arguments, 3 given
+    "x" |> o //~ ERROR `Options` is not callable
+    "x" |> 5 //~ ERROR right-hand side of `|>` must be a call, a function name or a lambda
+    "x" |> (a, b) => a //~ ERROR lambda takes 2 parameters, `fn(String) -> _` expects 1
+    1 |> (v: String) => v //~ ERROR parameter `v` is `String`, expected `Int`
+    "x" |> two
+    true |> two //~ ERROR no overload of `two` takes (Bool)
+    let f = (n: Int) => n
+    let z = "x" |> f //~ ERROR expected `Int`, found `String`
+    "x" |> convert(o).n //~ ERROR right-hand side of `|>` must be a call, a function name or a lambda
+}
+-- expect --
+error[E501]: `convert` expects 2 arguments, 1 given
+  --> lib/pipe.kg:14:5
+   |
+14 |     "x" |> convert //~ ERROR `convert` expects 2 arguments, 1 given
+   |     ^^^^^^^^^^^^^^
+
+error[E501]: `convert` expects 2 arguments, 3 given
+  --> lib/pipe.kg:15:12
+   |
+15 |     "x" |> convert("y", o) //~ ERROR `convert` expects 2 arguments, 3 given
+   |            ^^^^^^^^^^^^^^
+
+error[E500]: `Options` is not callable
+  --> lib/pipe.kg:16:5
+   |
+16 |     "x" |> o //~ ERROR `Options` is not callable
+   |     ^^^^^^^^
+
+error[E618]: right-hand side of `|>` must be a call, a function name or a lambda
+  --> lib/pipe.kg:17:12
+   |
+17 |     "x" |> 5 //~ ERROR right-hand side of `|>` must be a call, a function name or a lambda
+   |            ^
+   = help: the left operand becomes the first argument
+
+error[E409]: lambda takes 2 parameters, `fn(String) -> _` expects 1
+  --> lib/pipe.kg:18:12
+   |
+18 |     "x" |> (a, b) => a //~ ERROR lambda takes 2 parameters, `fn(String) -> _` expects 1
+   |            ^^^^^^^^^^^
+
+error[E411]: parameter `v` is `String`, expected `Int`
+  --> lib/pipe.kg:19:11
+   |
+19 |     1 |> (v: String) => v //~ ERROR parameter `v` is `String`, expected `Int`
+   |           ^^^^^^^^^
+
+error[E502]: no overload of `two` takes (Bool)
+  --> lib/pipe.kg:21:5
+   |
+21 |     true |> two //~ ERROR no overload of `two` takes (Bool)
+   |     ^^^^^^^^^^^
+   = help: candidates: `fn(String) -> Unit`, `fn(Int) -> Unit`
+
+error[E400]: expected `Int`, found `String`
+  --> lib/pipe.kg:23:13
+   |
+23 |     let z = "x" |> f //~ ERROR expected `Int`, found `String`
+   |             ^^^
+
+error[E618]: right-hand side of `|>` must be a call, a function name or a lambda
+  --> lib/pipe.kg:24:12
+   |
+24 |     "x" |> convert(o).n //~ ERROR right-hand side of `|>` must be a call, a function name or a lambda
+   |            ^^^^^^^^^^^^
+   = help: the left operand becomes the first argument
+

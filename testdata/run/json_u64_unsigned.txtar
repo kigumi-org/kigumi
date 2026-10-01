@@ -1,0 +1,30 @@
+-- src --
+import json from std/json
+
+let big: u64 = 18446744073709551615
+print "big=${json.encode(big)?}"
+print "big-roundtrip=${json.decode[u64](json.encode(big)?)? == big}"
+
+let small: u64 = 42
+print "small=${json.encode(small)?}"
+
+let sz: usize = 18446744073709551615
+print "sz=${json.encode(sz)?}"
+print "sz-roundtrip=${json.decode[usize](json.encode(sz)?)? == sz}"
+
+match json.decode[u64]("99999999999999999999999999") {
+    Ok(_) -> print "unexpected"
+    Err(e) -> print "error: ${e.message()}"
+}
+match json.decode[i64]("18446744073709551615") {
+    Ok(_) -> print "unexpected"
+    Err(e) -> print "error: ${e.message()}"
+}
+-- stdout --
+big=18446744073709551615
+big-roundtrip=true
+small=42
+sz=18446744073709551615
+sz-roundtrip=true
+error: integer literal 99999999999999999999999999 is out of range for u64 (max 18446744073709551615)
+error: expected integer, found number

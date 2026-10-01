@@ -1,0 +1,28 @@
+-- lib/twice.kg --
+// Ledger L-08/L-116: the `T: Copy` constraint opts a type parameter back
+// into copying, so the identical double-use `own_borrowed.go` rejects
+// for a bare `T` (affine_type_param_double_consume.txtar) type-checks
+// here: IsCopy sees the constraint witness and lowers each use to a copy.
+fn consume[T: Copy](x: T) -> Unit {}
+
+fn twice[T: Copy](w: T) -> Unit {
+    consume(w)
+    consume(w)
+}
+-- expect --
+fn lib.consume(%x: T) -> Unit {
+  b0:
+    %t1 = unit
+    drop(%x)
+    return %t1
+}
+fn lib.twice(%w: T) -> Unit {
+  b0:
+    %t1 = copy(%w)
+    %t2 = call consume(%t1)
+    drop(%t2)
+    %t3 = copy(%w)
+    %t4 = call consume(%t3)
+    drop(%w)
+    return %t4
+}

@@ -1,0 +1,9 @@
+-- src --
+let z: f64 = 0.0
+let nan = z / z
+let one: f64 = 1.0
+print "${nan < one} ${nan <= one} ${nan > one} ${nan >= one} ${nan == nan} ${nan != nan}"
+print "${nan <= nan} ${nan >= nan} ${one <= one} ${one >= one} ${one < nan}"
+-- stdout --
+false false false false false true
+false false true true false

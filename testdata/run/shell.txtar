@@ -1,0 +1,39 @@
+-- src --
+import shell from std/shell
+import coreutil from std/shell/coreutil
+import fs from std/fs
+import json from std/json
+import text from std/text
+
+type Row = {
+    pub name String { json.name("n") }
+    pub count Int
+    pub tags Array[String]
+    pub note String?
+}
+
+let sh = host.shell()
+let word = "needle"
+let plan = $"printf 'hay\nneedle one\nhay\nneedle two\n'" |> coreutil.grep(word)
+let captured = (plan |> shell.capture(sh))?
+let out = String.fromBytes(captured.stdout)?
+for line in text.lines(out) {
+    print "got: ${line}"
+}
+let status = ($"true" |> shell.run(sh))?
+shell.check(status)?
+let files = host.files()
+let path = fs.Path.fromString("out.txt")?
+let mut f = files.create(path)?
+errdefer _ = files.remove(path)
+_ = f.write("written".toBytes())?
+f.close()?
+files.remove(path)?
+let row = Row { name: "a", count: 2, tags: Array.of("x", "y"), note: None }
+print json.encode(row)?
+print "args=${host.args().get(1) || "?"} ${host.args().get(5) || "none"}"
+-- stdout --
+got: needle one
+got: needle two
+{"n":"a","count":2,"tags":["x","y"],"note":null}
+args=one none

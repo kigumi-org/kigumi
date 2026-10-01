@@ -1,0 +1,119 @@
+/// The build program's capability. Every method only records a step in the build
+/// graph; `kigumi build` resolves targets, compiles, links and runs tools after `configure` returns.
+/// `configure` runs in the comptime sandbox: no files, processes or network beyond these methods.
+pub type Builder
+
+/// The `kigumi build` invocation this run of `configure` serves.
+pub type Request
+
+/// A target triple such as `"x86_64-linux-musl"` or `"x86_64-freestanding"`; the host when empty.
+/// Resolved when the graph executes, so a bad triple is a build error there, never a `configure` failure.
+pub type Target
+
+/// A provider-namespaced Framework (`b.framework("intel/sgx-sdk", "2.30")`) whose descriptor lists the
+/// external tools `runTool` may call.
+pub type Framework
+
+/// An opaque build secret (a signing key). `configure` never sees its bytes; `runTool` binds it to a
+/// `$secret:<i>` argument for one tool run.
+pub type Secret
+
+/// A file inside the root module, a required module or the build output directory.
+pub type FilePath
+
+/// A declared executable or library artifact.
+pub type Artifact
+
+/// The request `kigumi build` is carrying out.
+pub fn Builder.request(self) -> Request
+
+/// The machine `kigumi build` runs on, whatever `--target` says.
+pub fn Builder.hostTarget(self) -> Target
+
+/// Names a target by triple (`--sys` is derived; `x86_64-freestanding` gives the freestanding layer).
+pub fn Builder.target(self, triple: String) -> Target
+
+/// The target `--target` / `--sys` selected, or the host.
+pub fn Request.target(self) -> Target
+
+/// Whether `--<name>` was given after `--` on the command line.
+pub fn Request.flag(self, name: String) -> Bool
+
+/// References a Framework; whether the toolchain has it is checked once a tool step depends on it.
+pub fn Builder.framework(self, name: String, version: String) -> Framework
+
+/// A handle to the named build secret, resolved only when a tool run needs it.
+pub fn Builder.secret(self, name: String) -> Secret
+
+/// An existing file, relative to the module root; fails outside the root module, the required modules
+/// and the build output directory.
+pub fn Builder.file(self, path: String) -> FilePath!
+
+/// A file named `name` in the build output directory holding content, written when the graph executes.
+pub fn Builder.write(self, name: String, content: String) -> FilePath!
+
+/// Declares an executable compiled from the package tree at dir (root-relative, one entry file) for target.
+pub fn Builder.executable(self, name: String, dir: String, target: Target) -> Artifact!
+
+/// Declares a library: an archive with a `kigumi_main` entry for an embedder. target must be freestanding
+/// or `--sys none`.
+pub fn Builder.library(self, name: String, dir: String, target: Target) -> Artifact!
+
+/// This artifact's compiled output, usable as a later step's input.
+pub fn Artifact.output(self) -> FilePath
+
+/// Builds other first and merges its C sources and link flags into self.
+pub fn Artifact.uses(self, other: Artifact) -> Unit
+
+/// Adds a C source compiled into self, alongside `mod.kg`'s `Source` records.
+pub fn Artifact.addSource(self, file: FilePath) -> Unit
+
+/// Adds a link flag alongside `mod.kg`'s `Link` records: library is a `-l` name, search a `-L` directory.
+pub fn Artifact.addLink(self, library: String, search: String) -> Unit
+
+/// Sets self's linker script (`-T`); a later call replaces it. Needs a hosted target: never a freestanding
+/// one, which links as an archive instead.
+pub fn Artifact.linkerScript(self, file: FilePath) -> Unit
+
+/// Adds flags to self's link step, such as `-nostdlib` or `-static-pie`; later calls add to the list.
+pub fn Artifact.linkFlags(self, flags: Array[String]) -> Unit
+
+/// Sets self's link entry symbol; a later call replaces it.
+pub fn Artifact.entry(self, name: String) -> Unit
+
+/// Restricts which std packages self's package graph may import: deny
+/// bars each listed path outright, ceiling caps every std package to that layer or lower (`"core"`,
+/// `"alloc"`, `"sys"` or `"tool"`; `""` for no ceiling). A barred package is unavailable transitively
+/// too, reported at the importing package. A later call adds to deny and replaces a non-empty ceiling.
+/// Each deny path must name a real std package; an unknown path aborts configure.
+pub fn Artifact.availability(self, deny: Array[String], ceiling: String) -> Unit
+
+/// Runs one of the tools fw's descriptor registers. args are literal except `$in:<i>`, `$out:<i>` and
+/// `$secret:<i>`, replaced with real paths just before the process starts. Nothing runs during `configure`.
+pub fn Builder.runTool(self, fw: Framework, tool: String, args: Array[String], inputs: Array[FilePath], outputs: Array[String], secrets: Array[Secret]) -> Array[FilePath]!
+
+/// Runs a host executable artifact built earlier in this graph, as a tool step: same placeholder and
+/// trusted-mode rules as `runTool`, but no secrets and no Framework, since the artifact is the program.
+pub fn Builder.runArtifact(self, artifact: Artifact, args: Array[String], inputs: Array[FilePath], outputs: Array[String]) -> Array[FilePath]!
+
+/// The `cc` and `ld` of the toolchain `kigumi build` itself links with (zig, when installed), as a Framework
+/// named `"toolchain"`; the same value `b.framework("toolchain", "")` would return.
+pub fn Builder.toolchain(self) -> Framework {
+    self.framework("toolchain", "")
+}
+
+/// Error raised when a tool declares outputs but the run produced none.
+pub type NoToolOutput = {
+    pub tool String
+}
+
+/// The failure text.
+pub fn NoToolOutput.message(self) -> String {
+    "tool ${self.tool} declared one output but produced none"
+}
+
+/// `runTool` for a tool with exactly one declared output.
+pub fn Builder.runToolOutput(self, fw: Framework, tool: String, args: Array[String], inputs: Array[FilePath], output: String, secrets: Array[Secret]) -> FilePath! {
+    let outs = self.runTool(fw, tool, args, inputs, Array.of(output), secrets)?
+    outs.get(0) || fail NoToolOutput { tool: tool }
+}

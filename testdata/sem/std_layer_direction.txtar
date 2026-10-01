@@ -1,0 +1,16 @@
+-- std/test/test.kg --
+import time from std/time //~ ERROR
+
+pub fn probe() -> time.Instant {
+    time.now()
+}
+-- src --
+fn main() -> Unit! {}
+-- expect --
+error[E966]: `std/time` is a higher dependency layer than `std/test`
+ --> std/test/test.kg:1:18
+  |
+1 | import time from std/time //~ ERROR
+  |                  ^^^^^^^^
+  = help: a std package may import only its own layer or lower
+

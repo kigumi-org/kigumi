@@ -1,0 +1,142 @@
+-- app/t/t.kg --
+pub type UserId = Int
+
+fn takesUser(id: UserId) -> Int {
+    id
+}
+
+fn wrap(x: Int) -> String {
+    "nope"
+}
+
+fn use() -> Unit {
+    _ = takesUser("not an id") //~ ERROR expected `UserId`, found `String`
+    let n: UserId = "also not an id" //~ ERROR expected `UserId`, found `String`
+}
+
+fn useCall() -> Unit {
+    let id: UserId = wrap(1) //~ ERROR expected `UserId`, found `String`
+}
+
+fn useNestedCall() -> Unit {
+    _ = takesUser(wrap(1)) //~ ERROR expected `UserId`, found `String`
+}
+
+type Choice = A | B
+
+fn useIf(b: Bool) -> Unit {
+    let id: UserId = if b {
+        "bad" //~ ERROR expected `UserId`, found `String`
+    } else {
+        "still bad" //~ ERROR expected `UserId`, found `String`
+    }
+}
+
+fn useIfCallThenBranch(b: Bool) -> Unit {
+    let id: UserId = if b {
+        wrap(1) //~ ERROR expected `UserId`, found `String`
+    } else {
+        "still bad" //~ ERROR expected `UserId`, found `String`
+    }
+}
+
+fn useMatch(c: Choice) -> Unit {
+    let id: UserId = match c {
+        A -> "bad" //~ ERROR expected `UserId`, found `String`
+        B -> "still bad" //~ ERROR expected `UserId`, found `String`
+    }
+}
+
+fn useBlock() -> Unit {
+    let id: UserId = {
+        let x = 1
+        "bad" //~ ERROR expected `UserId`, found `String`
+    }
+}
+
+fn useArgIf(b: Bool) -> Unit {
+    _ = takesUser(if b {
+        "bad" //~ ERROR expected `UserId`, found `String`
+    } else {
+        "still bad" //~ ERROR expected `UserId`, found `String`
+    })
+}
+-- expect --
+error[E400]: expected `UserId`, found `String`
+  --> app/t/t.kg:12:19
+   |
+12 |     _ = takesUser("not an id") //~ ERROR expected `UserId`, found `String`
+   |                   ^^^^^^^^^^^
+
+error[E400]: expected `UserId`, found `String`
+  --> app/t/t.kg:13:21
+   |
+13 |     let n: UserId = "also not an id" //~ ERROR expected `UserId`, found `String`
+   |                     ^^^^^^^^^^^^^^^^
+
+error[E400]: expected `UserId`, found `String`
+  --> app/t/t.kg:17:22
+   |
+17 |     let id: UserId = wrap(1) //~ ERROR expected `UserId`, found `String`
+   |                      ^^^^^^
+
+error[E400]: expected `UserId`, found `String`
+  --> app/t/t.kg:21:19
+   |
+21 |     _ = takesUser(wrap(1)) //~ ERROR expected `UserId`, found `String`
+   |                   ^^^^^^
+
+error[E400]: expected `UserId`, found `String`
+  --> app/t/t.kg:28:9
+   |
+28 |         "bad" //~ ERROR expected `UserId`, found `String`
+   |         ^^^^^
+
+error[E400]: expected `UserId`, found `String`
+  --> app/t/t.kg:30:9
+   |
+30 |         "still bad" //~ ERROR expected `UserId`, found `String`
+   |         ^^^^^^^^^^^
+
+error[E400]: expected `UserId`, found `String`
+  --> app/t/t.kg:36:9
+   |
+36 |         wrap(1) //~ ERROR expected `UserId`, found `String`
+   |         ^^^^^^
+
+error[E400]: expected `UserId`, found `String`
+  --> app/t/t.kg:38:9
+   |
+38 |         "still bad" //~ ERROR expected `UserId`, found `String`
+   |         ^^^^^^^^^^^
+
+error[E400]: expected `UserId`, found `String`
+  --> app/t/t.kg:44:14
+   |
+44 |         A -> "bad" //~ ERROR expected `UserId`, found `String`
+   |              ^^^^^
+
+error[E400]: expected `UserId`, found `String`
+  --> app/t/t.kg:45:14
+   |
+45 |         B -> "still bad" //~ ERROR expected `UserId`, found `String`
+   |              ^^^^^^^^^^^
+
+error[E400]: expected `UserId`, found `String`
+  --> app/t/t.kg:52:9
+   |
+52 |         "bad" //~ ERROR expected `UserId`, found `String`
+   |         ^^^^^
+
+error[E400]: expected `UserId`, found `String`
+  --> app/t/t.kg:58:9
+   |
+58 |         "bad" //~ ERROR expected `UserId`, found `String`
+   |         ^^^^^
+
+error[E400]: expected `UserId`, found `String`
+  --> app/t/t.kg:60:9
+   |
+60 |         "still bad" //~ ERROR expected `UserId`, found `String`
+   |         ^^^^^^^^^^^
+

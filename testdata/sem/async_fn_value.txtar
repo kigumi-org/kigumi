@@ -1,0 +1,37 @@
+-- app/t/t.kg --
+async fn fetch(x: Int) -> Int {
+    x + 1
+}
+
+fn apply[A, R](f: fn(A) -> Future[R], a: A) -> Future[R] {
+    f(a)
+}
+
+fn wrongAnnotation() -> Unit {
+    let g: fn(Int) -> Int = fetch //~ ERROR expected `fn(Int) -> Int`, found `fn(Int) -> Future[Int]`
+}
+
+fn awaitOutside() -> Unit {
+    let f = fetch
+    let p = f(1)
+    let x = await p //~ ERROR `await` is only allowed inside an `async fn`
+}
+
+async fn driver() -> Int {
+    let f = fetch
+    await apply(f, 1)
+}
+-- expect --
+error[E400]: expected `fn(Int) -> Int`, found `fn(Int) -> Future[Int]`
+  --> app/t/t.kg:10:29
+   |
+10 |     let g: fn(Int) -> Int = fetch //~ ERROR expected `fn(Int) -> Int`, found `fn(Int) -> Future[Int]`
+   |                             ^^^^^
+
+error[E925]: `await` is only allowed inside an `async fn`
+  --> app/t/t.kg:16:13
+   |
+16 |     let x = await p //~ ERROR `await` is only allowed inside an `async fn`
+   |             ^^^^^^^
+   = help: use `task.local().run(...)` elsewhere
+

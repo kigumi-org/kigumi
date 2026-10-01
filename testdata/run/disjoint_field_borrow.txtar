@@ -1,0 +1,27 @@
+-- src --
+import io from std/io
+
+// crypto_http_language_requests_v1.md §2.12: src and buf are disjoint
+// fields, so borrowing one `&mut` and the other `&mut` (or `&`) at the
+// same time no longer needs a local go-between.
+type Buffered = {
+    mut src io.Reader
+    mut buf Array[u8]
+}
+
+fn Buffered.new(r: io.Reader) -> Buffered {
+    Buffered { src: r, buf: Array.empty[u8]() }
+}
+
+fn Buffered.fill(mut self, max: usize) -> usize! {
+    self.src.read(&mut self.buf, max)
+}
+
+let mut bytes = Array.empty[u8]()
+bytes.push(72)
+bytes.push(105)
+let mut b = Buffered.new(io.BytesReader.new(Bytes.fromArray(&bytes)))
+let n = b.fill(8)?
+print "n=${n} buf_len=${b.buf.len()}"
+-- stdout --
+n=2 buf_len=2

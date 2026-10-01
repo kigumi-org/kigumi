@@ -1,0 +1,35 @@
+-- src --
+import text from std/text
+import array from std/array
+
+fn show(xs: Array[String]) -> String {
+    let quoted = xs.map((s) => "<${s}>")
+    array.join(&quoted, ",")
+}
+
+let s = "héllo wörld"
+print "contains: ${s.contains("")} ${s.contains("wör")} ${s.contains("xyz")} ${"".contains("")}"
+print "starts: ${s.startsWith("hé")} ${s.startsWith("héllo wörld!")} ${"".startsWith("")} ${s.endsWith("rld")} ${s.endsWith("x")}"
+print "trim: <${"  \t a b \r\n".trim()}> <${"".trim()}> <${"   ".trim()}> <${"x".trim()}>"
+print "split: ${show("a,b,,c,".split(","))} | ${show("abc".split(""))} | ${show("".split(","))} | ${show(",".split(","))} | ${show("a::b".split("::"))} | ${show("wörld".split("ö"))} | ${show("aaa".split("aa"))}"
+print "case: ${s.toUpper()} ${"ÀBC Ünï".toLower()} ${"MiXeD 123".toUpper()}"
+print "repeat: <${"ab".repeat(3)}> <${"x".repeat(0)}> <${"".repeat(5)}>"
+print "concat: <${"ab".concat("cd")}> <${"".concat("")}>"
+print "indexOf: ${text.indexOf(s, 'ö') || 99} ${text.indexOf(s, 'z') || 99} ${text.indexOf("", 'a') || 99} ${text.indexOf("aa", 'a') || 99}"
+print "lines: ${show(text.lines(""))} | ${show(text.lines("\n"))} | ${show(text.lines("a"))} | ${show(text.lines("a\n"))} | ${show(text.lines("a\n\nb\n"))} | ${show(text.lines("\n\n"))}"
+print "graphemes: ${show(text.graphemes("aé日😀"))} | ${show(text.graphemes(""))}"
+print "parseInt: ${text.parseInt(" 42 ") || -1} ${text.parseInt("+7") || -1} ${text.parseInt("-0") || -1} ${text.parseInt("12a") || -1} ${text.parseInt("") || -1} ${text.parseInt("9223372036854775807") || -1} ${text.parseInt("9223372036854775808") || -1} ${text.parseInt("\t-15\t") || -1} ${text.parseInt("1 2") || -1} ${text.parseInt("-9223372036854775808") || -1} ${text.parseInt("007") || -1} ${text.parseInt("-") || -1} ${text.parseInt(" ") || -1}"
+print "replace: <${text.replace("aaa", "aa", "b")}> <${text.replace("abc", "", "x")}> <${text.replace("a.b.c", ".", "")}> <${text.replace("wörld", "ö", "o")}> <${text.replace("", "a", "b")}> <${text.replace("abab", "ab", "abab")}>"
+-- stdout --
+contains: true true false true
+starts: true false true true false
+trim: <a b> <> <> <x>
+split: <a>,<b>,<>,<c>,<> | <abc> | <> | <>,<> | <a>,<b> | <w>,<rld> | <>,<a>
+case: HéLLO WöRLD Àbc Ünï MIXED 123
+repeat: <ababab> <> <>
+concat: <abcd> <>
+indexOf: 8 99 99 0
+lines:  |  | <a> | <a> | <a>,<>,<b> | <>,<>
+graphemes: <a>,<é>,<日>,<😀> | 
+parseInt: 42 7 0 -1 -1 9223372036854775807 -1 -15 -1 -9223372036854775808 7 -1 -1
+replace: <ba> <abc> <abc> <world> <> <abababab>

@@ -1,0 +1,4 @@
+Module {
+    name: "shell_pipeline"
+    kigumi: "0.1"
+}

@@ -1,0 +1,25 @@
+-- src --
+let big: Int = 300
+let neg: Int = -5
+let wide: u64 = 18446744073709551615
+let small: u8 = 200
+let half: Float = 2.75
+let huge: Float = 1e30
+let nan: Float = huge - huge + (0.0 / 1.0)
+print "${big.toU8() || 0} ${big.toI8() || -1} ${big.toI16() || 0} ${neg.toU32() || 9} ${neg.toI8() || 0}"
+print "${small.toI16()} ${small.toU16()} ${small.toInt()} ${small.toI8() || -1} ${small.toChar()}"
+print "${wide.toInt() || -1} ${wide.toUsize()} ${wide.toU32() || 0} ${(wide.toFloat() > 1e19)}"
+print "${half.toInt() || 0} ${(0.0 - half).toInt() || 0} ${huge.toInt() || -2} ${nan.toInt() || -3} ${half.toF32()}"
+let f: f32 = half.toF32()
+print "${f.toF64()} ${f.toInt() || 0} ${neg.toFloat()} ${big.toF32()}"
+print "${'k'.toInt()} ${Char.fromInt(128512) || '?'} ${Char.fromInt(55296) is None} ${Char.fromInt(1114112) is None}"
+let idx: usize = 7
+print "${idx.toInt() || 0} ${idx.toIsize() || 0} ${idx.toU16() || 0} ${(neg.toIsize()).toInt()}"
+-- stdout --
+0 -1 300 9 -5
+200 200 200 -1 È
+-1 18446744073709551615 0 true
+2 -2 -2 0 2.75
+2.75 2 -5 300
+107 😀 true true
+7 7 7 -5

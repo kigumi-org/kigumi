@@ -1,0 +1,44 @@
+-- src --
+let i32Max: i32 = 2147483647
+let i32Min: i32 = -2147483648
+let one: i32 = 1
+let negOne: i32 = -1
+let five: i32 = 5
+let three: i32 = 3
+let four: i32 = 4
+let addR = i32Max.addWithOverflow(one)
+let addOkR = five.addWithOverflow(three)
+let subR = i32Min.subWithOverflow(one)
+let mulR = i32Min.mulWithOverflow(negOne)
+let mulOkR = three.mulWithOverflow(four)
+print "${addR.value} ${addR.overflowed} ${addOkR.value} ${addOkR.overflowed}"
+print "${subR.value} ${subR.overflowed} ${mulR.value} ${mulR.overflowed} ${mulOkR.value} ${mulOkR.overflowed}"
+
+let u32Max: u32 = 4294967295
+let uOne: u32 = 1
+let uZero: u32 = 0
+let uAddR = u32Max.addWithOverflow(uOne)
+let uSubR = uZero.subWithOverflow(uOne)
+print "${uAddR.value} ${uAddR.overflowed} ${uSubR.value} ${uSubR.overflowed}"
+
+let intFive: Int = 5
+let intThree: Int = 3
+let intR = intFive.addWithOverflow(intThree)
+print "${intR.value} ${intR.overflowed}"
+
+let i8Max: i8 = 127
+let i8One: i8 = 1
+let i8R = i8Max.addWithOverflow(i8One)
+print "${i8R.value} ${i8R.overflowed}"
+
+let u8Max: u8 = 255
+let u8One: u8 = 1
+let u8R = u8Max.addWithOverflow(u8One)
+print "${u8R.value} ${u8R.overflowed}"
+-- stdout --
+-2147483648 true 8 false
+2147483647 true -2147483648 true 12 false
+0 true 4294967295 true
+8 false
+-128 true
+0 true

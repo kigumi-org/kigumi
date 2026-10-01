@@ -1,0 +1,23 @@
+-- src --
+fn f() -> Unit {
+    && b
+}
+-- expect --
+File
+  FnDecl
+    attrs: -
+    vis: -
+    recv: -
+    name: f
+    generics: -
+    params: List
+    ret: TypePath
+      Path Unit
+    body: Block
+-- diagnostics --
+error: expected expression, found `&&`
+ --> errors_leading_andor.txtar:2:5
+  |
+2 |     && b
+  |     ^^
+

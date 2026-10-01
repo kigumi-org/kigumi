@@ -1,0 +1,40 @@
+-- src --
+import b64 from std/encoding/base64
+import hex from std/encoding/hex
+
+fn rt(s: String) -> String {
+    let e = b64.encode(s.toBytes())
+    match b64.decode(e) {
+        Ok(b) -> "${e}|${String.fromBytes(b) || "?"}"
+        Err(er) -> "${e}|ERR"
+    }
+}
+
+// RFC 4648 §10 の vector
+print rt("")
+print rt("f")
+print rt("fo")
+print rt("foo")
+print rt("foob")
+print rt("fooba")
+print rt("foobar")
+print "alphabets=${b64.encode(b"\xfb\xff\xfe")},${b64.encodeUrl(b"\xfb\xff\xfe")}"
+print "urlrt=${hex.encode(b64.decodeUrl(b64.encodeUrl(b"\xfb\xff\xfe")).unwrap())}"
+print "unpadded=${b64.decode("Zm9vYmE").unwrap().len()},${b64.decode("Zm9vYmE=").unwrap().len()}"
+print "crossalphabet=${b64.decodeUrl("+//+") is Err(_)},${b64.decode("-__-") is Err(_)}"
+print "errors=${b64.decode("Zm9!") is Err(_)},${b64.decode("Zm9vYg==Z") is Err(_)}"
+print "empty=${b64.encode("".toBytes())}|${b64.decode("").unwrap().len()}"
+-- stdout --
+|
+Zg==|f
+Zm8=|fo
+Zm9v|foo
+Zm9vYg==|foob
+Zm9vYmE=|fooba
+Zm9vYmFy|foobar
+alphabets=+//+,-__-
+urlrt=fbfffe
+unpadded=5,5
+crossalphabet=true,true
+errors=true,true
+empty=|0

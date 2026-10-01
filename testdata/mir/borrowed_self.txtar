@@ -1,0 +1,67 @@
+-- lib/self.kg --
+type Nat = {
+    pub digits Array[Int]
+}
+
+fn Nat.shl(self, bits: Int) -> Nat {
+    if bits == 0 {
+        return self
+    }
+    Nat { digits: self.digits.clone() }
+}
+
+fn Nat.keep(self) -> Nat {
+    Nat { digits: self.digits.clone() }
+}
+
+type Counter = {
+    pub n Int
+}
+
+fn Counter.bump(mut self) -> Unit {
+    _ = self
+}
+
+-- expect --
+fn lib.Nat.shl(%self: Nat, %bits: Int) -> Nat {
+  b0:
+    %t2 = const 0: Int
+    %t3 = bin ==(%bits, %t2)
+    branch %t3 ? b1 : b2
+  b1:
+    %t5 = move(%self)
+    drop(%bits)
+    return %t5
+  b2:
+    %t7 = unit
+    %t4 = copy(%t7)
+    jump b3
+  b3:
+    drop(%t4)
+    %t8 = field 0(%self)
+    %t9 = call clone(%t8)
+    %t10 = record Nat(%t9)
+    drop(%bits)
+    return %t10
+  b4:
+    %t6 = unit
+    jump b3
+}
+fn lib.Nat.keep(%self: Nat) -> Nat {
+  b0:
+    %t1 = field 0(%self)
+    %t2 = call clone(%t1)
+    %t3 = record Nat(%t2)
+    return %t3
+}
+fn lib.Counter.bump(%self: Counter) -> Unit {
+  b0:
+    %t1 = unit
+    return %t1
+}
+error[move-from-borrow]: `self` is borrowed by this method and cannot be moved out; clone it or take `move self`
+ --> lib/self.kg:7:16
+  |
+7 |         return self
+  |                ^^^^
+

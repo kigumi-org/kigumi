@@ -1,0 +1,44 @@
+-- lib/gen.kg --
+interface Show {
+    fn show(self) -> String
+}
+
+type P = {
+    pub x Int
+}
+
+fn P.show(self) -> String {
+    "p"
+}
+
+type Wrap[T: Eq] = {
+    pub v T
+}
+
+fn same[T: Eq](a: T, b: T) -> Bool {
+    a == b
+}
+
+fn call[F: Fn[fn(Int) -> Int]](f: F) -> Int {
+    f(1)
+}
+
+fn showIt[T: Show](x: T) -> String {
+    x.show()
+}
+
+fn copyTwice[T: Copy](x: T) -> Array[T] {
+    Array.of(x, x)
+}
+
+fn use(p: P) -> Unit {
+    let a = same(1, 2) //~ TYPE a : Bool
+    let b = same("x", "y")
+    let c = call((x) => x + 1) //~ TYPE c : Int
+    let d = call((x: Int) => x)
+    let s = showIt(p) //~ TYPE s : String
+    let w = Wrap { v: 1 } //~ TYPE w : Wrap[Int]
+    let cc = copyTwice(1) //~ TYPE cc : Array[Int]
+    let sv = showIt[P](p)
+}
+-- expect --

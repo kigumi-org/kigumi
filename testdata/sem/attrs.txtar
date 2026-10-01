@@ -1,0 +1,88 @@
+-- app/web/w.kg --
+pub type Metadata = {
+    tag String
+}
+
+/// Marks a controller with its route prefix.
+pub pure fn controller(prefix: String) -> Metadata {
+    Metadata { tag: prefix }
+}
+
+pub pure fn get(path: String) -> Metadata {
+    Metadata { tag: path }
+}
+
+pub pure fn param(name: String) -> Metadata {
+    Metadata { tag: name }
+}
+
+pub fn notSchema(x: Int) -> Int {
+    x
+}
+-- app/t/t.kg --
+import web from app/web
+
+@web.controller("/users")
+pub type Users = {
+    pub count Int
+}
+
+@web.get("/:id")
+pub fn Users.show(self, @web.param("id") id: Int) -> Int {
+    id
+}
+
+@web.controller("/dup")
+@web.controller("/dup") //~ ERROR duplicate metadata item `web.controller`
+pub type Twice = {
+    pub n Int
+}
+
+@web.notSchema(1) //~ ERROR `web.notSchema` is not a metadata schema (a function returning `Metadata`)
+pub const A: Int = 1
+
+@bogus //~ ERROR unknown attribute `@bogus`
+pub const B: Int = 2
+
+@impl(Display) //~ ERROR `@impl` applies to type declarations only
+pub fn plain() -> Int {
+    3
+}
+
+@web.get(web.notSchema(1)) //~ ERROR
+pub fn dyn() -> Int {
+    4
+}
+
+-- expect --
+error[E243]: duplicate metadata item `web.controller`
+  --> app/t/t.kg:14:1
+   |
+14 | @web.controller("/dup") //~ ERROR duplicate metadata item `web.controller`
+   | ^^^^^^^^^^^^^^^^^^^^^^
+
+error[E254]: `web.notSchema` is not a metadata schema (a function returning `Metadata`)
+  --> app/t/t.kg:19:2
+   |
+19 | @web.notSchema(1) //~ ERROR `web.notSchema` is not a metadata schema (a function returning `Metadata`)
+   |  ^^^^^^^^^^^^^
+
+error[E209]: unknown attribute `@bogus`
+  --> app/t/t.kg:22:1
+   |
+22 | @bogus //~ ERROR unknown attribute `@bogus`
+   | ^^^^^^
+   = help: bare names are compiler-known (`@impl`), metadata is dotted (`@json.name(...)`)
+
+error[E210]: `@impl` applies to type declarations only
+  --> app/t/t.kg:25:1
+   |
+25 | @impl(Display) //~ ERROR `@impl` applies to type declarations only
+   | ^^^^^^^^^^^^^
+
+error[E238]: this expression is not a compile-time constant
+  --> app/t/t.kg:30:10
+   |
+30 | @web.get(web.notSchema(1)) //~ ERROR
+   |          ^^^^^^^^^^^^^^^
+

@@ -1,0 +1,4 @@
+Module {
+    name: "async"
+    kigumi: "0.1"
+}

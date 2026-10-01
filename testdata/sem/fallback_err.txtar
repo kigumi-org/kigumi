@@ -1,0 +1,71 @@
+-- lib/fb.kg --
+fn find(id: Int) -> Int? {
+    None
+}
+
+fn flag() -> Bool? {
+    None
+}
+
+fn use() -> Int {
+    let a = 5 || 0 //~ ERROR `Int` is not a Fallback (no `fn branch(move self) -> Branch[V, R]`)
+    let b = find(1) || "x" //~ ERROR expected `Int`, found `String`
+    let c = find(1) || (a, b) => 0 //~ ERROR fallback handler takes exactly one parameter
+    let d = find(1) || (e: Int) => 0 //~ ERROR fallback handler parameter is `Unit`, annotated `Int`
+    let e = find(1) || (e) => "s" //~ ERROR expected `Int`, found `String`
+    let f = flag() || true //~ WARNING `Option[Bool] ||`: `Some(false)` is a hit
+    let g = find(1) || fail 1 //~ ERROR `fail` requires a `Result` return type
+    let h = find(1)? //~ ERROR `?` needs a `Result`
+    a
+}
+-- expect --
+error[E621]: `Int` is not a Fallback (no `fn branch(move self) -> Branch[V, R]`)
+  --> lib/fb.kg:10:13
+   |
+10 |     let a = 5 || 0 //~ ERROR `Int` is not a Fallback (no `fn branch(move self) -> Branch[V, R]`)
+   |             ^
+
+error[E400]: expected `Int`, found `String`
+  --> lib/fb.kg:11:24
+   |
+11 |     let b = find(1) || "x" //~ ERROR expected `Int`, found `String`
+   |                        ^^^
+
+error[E622]: fallback handler takes exactly one parameter
+  --> lib/fb.kg:12:24
+   |
+12 |     let c = find(1) || (a, b) => 0 //~ ERROR fallback handler takes exactly one parameter
+   |                        ^^^^^^^^^^^
+
+error[E623]: fallback handler parameter is `Unit`, annotated `Int`
+  --> lib/fb.kg:13:28
+   |
+13 |     let d = find(1) || (e: Int) => 0 //~ ERROR fallback handler parameter is `Unit`, annotated `Int`
+   |                            ^^^
+
+error[E400]: expected `Int`, found `String`
+  --> lib/fb.kg:14:31
+   |
+14 |     let e = find(1) || (e) => "s" //~ ERROR expected `Int`, found `String`
+   |                               ^^^
+
+warning[W601]: `Option[Bool] ||`: `Some(false)` is a hit
+  --> lib/fb.kg:15:13
+   |
+15 |     let f = flag() || true //~ WARNING `Option[Bool] ||`: `Some(false)` is a hit
+   |             ^^^^^^^^^^^^^^
+
+error[E709]: `fail` requires a `Result` return type
+  --> lib/fb.kg:16:24
+   |
+16 |     let g = find(1) || fail 1 //~ ERROR `fail` requires a `Result` return type
+   |                        ^^^^^^
+   = help: this returns `Int`
+
+error[E710]: `?` needs a `Result`
+  --> lib/fb.kg:17:13
+   |
+17 |     let h = find(1)? //~ ERROR `?` needs a `Result`
+   |             ^^^^^^^^
+   = help: use `|| fail ...` for an `Option`
+

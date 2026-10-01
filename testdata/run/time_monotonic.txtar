@@ -1,0 +1,8 @@
+-- src --
+import time from std/time
+
+let a = time.monotonic()
+let b = time.monotonic()
+print "non-decreasing=${b.diffMillis(a) >= 0} elapsed-ok=${a.elapsedMillis() >= 0}"
+-- stdout --
+non-decreasing=true elapsed-ok=true

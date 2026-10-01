@@ -1,0 +1,44 @@
+# Reusable: format check, type check and `test` blocks of a Kigumi module.
+# Call it from another repository with
+#   uses: kigumi-org/kigumi/.github/workflows/kigumi-test.yml@master
+name: kigumi test
+
+on:
+  workflow_call:
+    inputs:
+      module-root:
+        description: Directory holding mod.kg, relative to the repository root.
+        type: string
+        default: .
+      kigumi-version:
+        description: Git ref of the kigumi toolchain to build, or `local` to build the calling repository itself.
+        type: string
+        default: main
+      zig-version:
+        description: Zig version for `kigumi build`; empty skips the native build.
+        type: string
+        default: ""
+      fmt:
+        description: Fail when a source file is not in canonical form.
+        type: boolean
+        default: true
+      runs-on:
+        description: Runner label.
+        type: string
+        default: ubuntu-latest
+
+jobs:
+  test:
+    runs-on: ${{ inputs.runs-on }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: kigumi-org/kigumi/.github/actions/setup-kigumi@master
+        with:
+          version: ${{ inputs.kigumi-version }}
+          zig-version: ${{ inputs.zig-version }}
+      - if: inputs.fmt
+        run: kigumi fmt --check "${{ inputs.module-root }}"
+      - run: kigumi check "${{ inputs.module-root }}"
+      - run: kigumi test "${{ inputs.module-root }}"
+      - if: inputs.zig-version != ''
+        run: kigumi build "${{ inputs.module-root }}" -o "$RUNNER_TEMP/kigumi-build-out"

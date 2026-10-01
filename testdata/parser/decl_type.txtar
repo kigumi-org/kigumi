@@ -1,0 +1,224 @@
+-- src --
+type User = {
+    name String
+    age Int
+}
+pub type Point = { x Float, y Float, mut score Int }
+type Shape = Circle(radius: Float) | Rect(w: Float, h: Float)
+pub type Problem = Missing(Int) | Empty
+type Cmd =
+    | Serve(ServeFlags)
+    | Version
+type Cmd2 =
+    Serve(ServeFlags)
+    | Version
+type UserId = Int
+type Callback = pure fn(Event) -> Unit
+type File = resource {
+    handle usize
+}
+type CPoint layout(C) = {
+    x i32
+    y i32
+}
+@impl(Display, Identified)
+pub type Named = {
+    pub id Int {
+        json.name("id")
+    }
+
+    pub nickname String? {
+        json.name("nickname")
+        json.omitNone
+    }
+}
+@impl(Display)
+@impl(Identified)
+pub type Twice = { pub id Int }
+pub type Pair[T] = {
+    pub first T
+    pub second T
+}
+type Bad = {
+    x Int
+    fn method(self) -> Int { 1 }
+}
+-- expect --
+File
+  TypeDecl
+    name: User
+    body: RecordBody
+      Field name
+        type: TypePath
+          Path String
+      Field age
+        type: TypePath
+          Path Int
+  TypeDecl
+    vis: Visibility
+    name: Point
+    body: RecordBody
+      Field x
+        type: TypePath
+          Path Float
+      Field y
+        type: TypePath
+          Path Float
+      Field score
+        flags: mut
+        type: TypePath
+          Path Int
+  TypeDecl
+    name: Shape
+    body: AdtBody
+      Variant Circle
+        List
+          VariantField radius named
+            TypePath
+              Path Float
+      Variant Rect
+        List
+          VariantField w named
+            TypePath
+              Path Float
+          VariantField h named
+            TypePath
+              Path Float
+  TypeDecl
+    vis: Visibility
+    name: Problem
+    body: AdtBody
+      Variant Missing
+        List
+          VariantField Int
+            TypePath
+              Path Int
+      Variant Empty
+  TypeDecl
+    name: Cmd
+    body: AdtBody
+      Variant Serve
+        List
+          VariantField ServeFlags
+            TypePath
+              Path ServeFlags
+      Variant Version
+  TypeDecl
+    name: Cmd2
+    body: AdtBody
+      Variant Serve
+        List
+          VariantField ServeFlags
+            TypePath
+              Path ServeFlags
+      Variant Version
+  TypeDecl
+    name: UserId
+    body: AliasBody
+      TypePath
+        Path Int
+  TypeDecl
+    name: Callback
+    body: AliasBody
+      TypeFn
+        mods: pure
+        params: List
+          TypePath
+            Path Event
+        ret: TypePath
+          Path Unit
+  TypeDecl
+    name: File
+    body: ResourceBody
+      Field handle
+        type: TypePath
+          Path usize
+  TypeDecl
+    name: CPoint
+    layout: Layout
+      List
+        Ident C
+    body: RecordBody
+      Field x
+        type: TypePath
+          Path i32
+      Field y
+        type: TypePath
+          Path i32
+  TypeDecl
+    attrs: List
+      Attr
+        Path impl
+        List
+          Ident Display
+          Ident Identified
+    vis: Visibility
+    name: Named
+    body: RecordBody
+      Field id
+        vis: Visibility
+        type: TypePath
+          Path Int
+        metadata: Metadata
+          MetaItem
+            Path json.name
+            List
+              StringLit "id"
+      Field nickname
+        vis: Visibility
+        type: TypeOptional
+          TypePath
+            Path String
+        metadata: Metadata
+          MetaItem
+            Path json.name
+            List
+              StringLit "nickname"
+          MetaItem
+            Path json.omitNone
+  TypeDecl
+    attrs: List
+      Attr
+        Path impl
+        List
+          Ident Display
+      Attr
+        Path impl
+        List
+          Ident Identified
+    vis: Visibility
+    name: Twice
+    body: RecordBody
+      Field id
+        vis: Visibility
+        type: TypePath
+          Path Int
+  TypeDecl
+    vis: Visibility
+    name: Pair
+    generics: List
+      GenericParam T
+    body: RecordBody
+      Field first
+        vis: Visibility
+        type: TypePath
+          Path T
+      Field second
+        vis: Visibility
+        type: TypePath
+          Path T
+  TypeDecl
+    name: Bad
+    body: RecordBody
+      Field x
+        type: TypePath
+          Path Int
+      Field 
+
+-- diagnostics --
+error: methods cannot be declared inside a type body; write `fn Type.name(self)` at top level (§5.1)
+  --> decl_type.txtar:43:5
+   |
+43 |     fn method(self) -> Int { 1 }
+   |     ^^
+

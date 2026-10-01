@@ -1,0 +1,27 @@
+-- src --
+/// First line.
+/// Second line.
+pub type Arena
+/// Creates an arena.
+pub fn Arena.create() -> Arena!
+/// Scope of the arena.
+pub fn Arena.scope(self) -> Unit
+pub fn Arena.drop(move self) -> Unit
+pub fn Arena.reset(mut self) -> Unit
+
+pub fn Arena.size(self) -> usize
+-- expect --
+/// First line.
+/// Second line.
+pub type Arena
+
+/// Creates an arena.
+pub fn Arena.create() -> Arena!
+
+/// Scope of the arena.
+pub fn Arena.scope(self) -> Unit
+
+pub fn Arena.drop(move self) -> Unit
+pub fn Arena.reset(mut self) -> Unit
+
+pub fn Arena.size(self) -> usize

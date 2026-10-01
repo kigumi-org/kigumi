@@ -1,0 +1,51 @@
+-- src --
+import text from std/text
+
+type Box = {
+    pub n Int
+}
+
+fn Box.scale(self, by: Int, extra: Int) -> Int {
+    self.n * by + extra
+}
+
+fn add(a: Int, b: Int) -> Int {
+    a + b
+}
+
+fn parse(s: String, base: Int) -> Int! {
+    if base == 0 {
+        fail Oops { text: "zero" }
+    }
+    (s.len().toInt() || 0) + base
+}
+
+type Oops = {
+    pub text String
+}
+
+fn Oops.message(self) -> String {
+    self.text
+}
+
+fn describe(n: Int) -> String {
+    "n=${n}"
+}
+
+fn describe(s: String) -> String {
+    "s=${s}"
+}
+
+fn tryIt() -> Int! {
+    let v = "abcd" |> parse(10)?
+    v
+}
+
+let box = Box { n: 2 }
+print "${1 |> add(2)} ${3 |> box.scale(4)} ${5 |> describe} ${"x" |> describe}"
+print "${1 |> add(2) |> add(3)} ${("hello" |> text.slice(1, 3)) || "?"} ${(7 |> Some |> (o) => o) || 0}"
+print "${tryIt() || -1} ${"abc" |> text.replace("b", "B")} ${4 |> add 5}"
+-- stdout --
+3 10 n=5 s=x
+6 el 7
+14 aBc 9

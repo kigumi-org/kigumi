@@ -1,0 +1,55 @@
+-- src --
+fn helper() -> Unit! {
+    let x = 1
+}
+
+fn helperControl() -> Unit! {
+    let x = 1
+    print "control"
+}
+
+fn elseHelper(b: Bool) -> Unit! {
+    if b {
+        print "then"
+    } else {
+        let x = 1
+    }
+}
+
+fn matchHelper(b: Bool) -> Unit! {
+    match b {
+        true -> print "true"
+        false -> {
+            let x = 1
+        }
+    }
+}
+
+fn helperOpt() -> Unit? {
+    let x = 1
+}
+
+let f: fn() -> Unit! = () => {
+    let x = 1
+}
+
+print "${debug(&helper())}"
+print "${debug(&helperControl())}"
+print "${debug(&elseHelper(false))}"
+print "${debug(&elseHelper(true))}"
+print "${debug(&matchHelper(false))}"
+print "${debug(&matchHelper(true))}"
+print "${debug(&f())}"
+print "${debug(&helperOpt())}"
+-- stdout --
+Ok(())
+control
+Ok(())
+Ok(())
+then
+Ok(())
+Ok(())
+true
+Ok(())
+Ok(())
+Some(())

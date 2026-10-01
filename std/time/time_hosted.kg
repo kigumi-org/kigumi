@@ -1,0 +1,51 @@
+import ffi from std/ffi
+
+type Timespec layout(C) = {
+    pub sec i64
+    pub nsec i64
+}
+
+extern(C) {
+    fn clock_gettime(clock: i32, ts: *mut Timespec) -> i32
+    fn nanosleep(req: *const Timespec, rem: *mut Timespec) -> i32
+}
+
+/// The current time.
+pub fn now() -> Instant {
+    let cv = ffi.CValue.new(Timespec {
+        sec: 0
+        nsec: 0
+    })
+    _ = unsafe {
+        clock_gettime(0, cv.ptr())
+    }
+    let ts = cv.get()
+    Instant { ms: ts.sec * 1000 + ts.nsec / 1000000 }
+}
+
+/// The current reading of the monotonic clock (`CLOCK_MONOTONIC`).
+pub fn monotonic() -> Monotonic {
+    let cv = ffi.CValue.new(Timespec {
+        sec: 0
+        nsec: 0
+    })
+    _ = unsafe {
+        clock_gettime(1, cv.ptr())
+    }
+    let ts = cv.get()
+    Monotonic { ticks: ts.sec * 1000 + ts.nsec / 1000000 }
+}
+
+/// Pauses the current thread for millis milliseconds.
+pub fn sleep(millis: i64) -> Unit {
+    if millis <= 0 {
+        return
+    }
+    let cv = ffi.CValue.new(Timespec {
+        sec: millis / 1000
+        nsec: millis % 1000 * 1000000
+    })
+    _ = unsafe {
+        nanosleep(ffi.toConst(cv.ptr()), ffi.toMut(ffi.null[Timespec]()))
+    }
+}

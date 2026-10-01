@@ -1,0 +1,79 @@
+-- lib/borrow.kg --
+type Res = resource {
+    pub id Int
+}
+
+fn Res.drop(move self) -> Unit {
+    _ = self
+}
+
+type Decl = {
+    pub name String
+    pub attrs Array[String]?
+    pub slot Res?
+}
+
+fn hasAttr(d: &Decl, name: String) -> Bool {
+    match d.attrs {
+        Some(attrs) -> attrs.contains(name)
+        None -> false
+    }
+}
+
+fn slotId(d: &Decl) -> Int {
+    if d.slot is Some(r) {
+        return r.id
+    }
+    0
+}
+
+fn Decl.nameLen(self) -> usize {
+    let Decl { name, attrs } = self
+    let n = self.name
+    if attrs is Some(list) {
+        return name.len() + list.len() + n.len()
+    }
+    name.len()
+}
+
+fn firstLen(o: &Option[String]) -> usize {
+    match o {
+        Some(s) -> s.len()
+        None -> 0
+    }
+}
+
+fn sameInt(a: &Int, b: Int) -> Bool {
+    a == b
+}
+
+fn find[T: Eq](xs: &Array[T], key: T) -> Bool {
+    let mut i: usize = 0
+    for i < xs.len() {
+        if xs.with(i, (x: &T) => x == key) is Some(true) {
+            return true
+        }
+        i = i + 1
+    }
+    false
+}
+
+fn findRef[T: Eq](xs: &Array[T], key: &T) -> usize? {
+    let mut i: usize = 0
+    for i < xs.len() {
+        if xs.with(i, (x: &T) => x == key) is Some(true) {
+            return Some(i)
+        }
+        i = i + 1
+    }
+    None
+}
+
+fn use() -> Unit {
+    let xs = Array.of("a", "b")
+    _ = find(&xs, "b")
+    _ = findRef(&xs, &"a")
+    _ = sameInt(&1, 1)
+    _ = Some("x").with((s: &String) => s.len())
+}
+-- expect --

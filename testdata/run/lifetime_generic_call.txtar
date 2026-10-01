@@ -1,0 +1,38 @@
+-- src --
+// Ledger L-186: a function generic over its own `'a` can take a
+// lifetime-carrying value produced by another declaration (`identity`,
+// `wrapIt`), and the lifetime keeps flowing through a two-level
+// pass-through (`passThrough` calling `identity`).
+type View['a] = { pub data &'a Bytes, pub off usize }
+type Wrap['a] = { pub v View['a] }
+
+fn head['a](b: &'a Bytes) -> View['a] {
+    View { data: b, off: 0 }
+}
+
+fn View['a].at(self, i: usize) -> u8 {
+    self.data[self.off + i]
+}
+
+fn identity['a](v: View['a]) -> View['a] {
+    v
+}
+
+fn wrapIt['a](v: View['a]) -> Wrap['a] {
+    Wrap { v: v }
+}
+
+fn passThrough['a](v: View['a]) -> View['a] {
+    identity(v)
+}
+
+fn main() -> Unit! {
+    let buf = Bytes.fromArray(&Array.of(10, 20, 30, 40))
+    let v = head(&buf)
+    let same = identity(v)
+    let wrapped = wrapIt(same)
+    let through = passThrough(v)
+    print "same=${same.at(0)} wrapped=${wrapped.v.at(1)} through=${through.at(2)}"
+}
+-- stdout --
+same=10 wrapped=20 through=30

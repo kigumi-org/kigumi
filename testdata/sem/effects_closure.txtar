@@ -1,0 +1,92 @@
+-- lib/cl.kg --
+import fs from std/fs
+
+fn apply(f: pure fn(Int) -> Int) -> Int {
+    f(1)
+}
+
+fn double(x: Int) -> Int {
+    x * 2
+}
+
+fn impureDouble(x: Int) -> Int {
+    unsafe { x * 2 }
+}
+
+fn use(files: fs.Files, p: fs.Path) -> Unit {
+    let a = apply((x) => x + 1)
+    let b = apply((x) => { //~ ERROR closure is not `pure` (calls `remove`)
+        _ = files.remove(p)
+        x
+    })
+    let e: pure fn(Int) -> Int = (x) => x * 2
+    let f: pure fn(Int) -> Int = (x) => { //~ ERROR closure is not `pure` (calls `remove`)
+        _ = files.remove(p)
+        x
+    }
+    let g: noalloc fn(Int) -> String = (x) => "${x}" //~ ERROR closure is not `noalloc` (allocates)
+    let h: pure fn(Int) -> Int = double
+    let i: pure fn(Int) -> Int = impureDouble //~ ERROR `impureDouble` is not `pure` (contains `unsafe`)
+    let mut n = 0
+    let inc = () => {
+        n += 1
+    }
+    let j: pure fn() -> Unit = inc //~ ERROR closure captures `n` (assigned inside the closure) and cannot be a plain `fn`
+    let k = (x: Int) => x + n
+    let m: pure fn(Int) -> Int = k //~ ERROR closure captures `n` (assigned inside the closure) and cannot be a plain `fn`
+}
+
+pure fn callsClosure(x: Int) -> Int {
+    let f = (y: Int) => y + 1
+    f(x)
+}
+
+pure fn callsImpureClosure(x: Int) -> Int {
+    let f = (y: Int) => unsafe { y }
+    f(x) //~ ERROR `f` is not `pure`
+}
+-- expect --
+error[E422]: closure is not `pure` (calls `remove`)
+  --> lib/cl.kg:17:19
+   |
+17 |     let b = apply((x) => { //~ ERROR closure is not `pure` (calls `remove`)
+   |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E422]: closure is not `pure` (calls `remove`)
+  --> lib/cl.kg:22:34
+   |
+22 |     let f: pure fn(Int) -> Int = (x) => { //~ ERROR closure is not `pure` (calls `remove`)
+   |                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E422]: closure is not `noalloc` (allocates)
+  --> lib/cl.kg:26:40
+   |
+26 |     let g: noalloc fn(Int) -> String = (x) => "${x}" //~ ERROR closure is not `noalloc` (allocates)
+   |                                        ^^^^^^^^^^^^^
+
+error[E423]: `impureDouble` is not `pure` (contains `unsafe`)
+  --> lib/cl.kg:28:34
+   |
+28 |     let i: pure fn(Int) -> Int = impureDouble //~ ERROR `impureDouble` is not `pure` (contains `unsafe`)
+   |                                  ^^^^^^^^^^^^
+
+error[E413]: closure captures `n` (assigned inside the closure) and cannot be a plain `fn`
+  --> lib/cl.kg:33:32
+   |
+33 |     let j: pure fn() -> Unit = inc //~ ERROR closure captures `n` (assigned inside the closure) and cannot be a plain `fn`
+   |                                ^^^
+   = help: use `F: Fn[...]`
+
+error[E413]: closure captures `n` (assigned inside the closure) and cannot be a plain `fn`
+  --> lib/cl.kg:35:34
+   |
+35 |     let m: pure fn(Int) -> Int = k //~ ERROR closure captures `n` (assigned inside the closure) and cannot be a plain `fn`
+   |                                  ^
+   = help: use `F: Fn[...]`
+
+error[E900]: `f` is not `pure`
+  --> lib/cl.kg:45:5
+   |
+45 |     f(x) //~ ERROR `f` is not `pure`
+   |     ^^^
+

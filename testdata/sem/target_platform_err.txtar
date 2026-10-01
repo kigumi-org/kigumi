@@ -1,0 +1,11 @@
+-- module --
+target: freestanding
+-- app/main.kg --
+import time from std/time //~ ERROR
+-- expect --
+error[E920]: `std/time` is not available on a freestanding target
+ --> app/main.kg:1:18
+  |
+1 | import time from std/time //~ ERROR
+  |                  ^^^^^^^^
+

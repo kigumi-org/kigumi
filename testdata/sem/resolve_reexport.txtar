@@ -1,0 +1,84 @@
+-- lib/inner/i.kg --
+pub type Token = {
+    pub v Int
+}
+
+pub(module) fn modFn() -> Int {
+    1
+}
+
+pub fn f() -> Int {
+    1
+}
+-- lib/facade/f.kg --
+pub import {Token, f} from lib/inner //~ ERROR re-exported `Token` collides with a declaration of this package
+pub import {modFn} from lib/inner //~ ERROR re-export of `modFn` widens its visibility (pub(module) to pub)
+pub(module) import inner from lib/inner
+
+pub type Token = {
+    pub w Int
+}
+-- app/use/u.kg --
+import {Token, f} from lib/facade //~ WARNING unused import `Token` //~ WARNING unused import `f`
+import facade from lib/facade //~ WARNING unused import `facade`
+import {inner} from lib/facade //~ WARNING unused import `inner`
+import {modFn} from lib/facade //~ WARNING unused import `modFn`
+-- lib/cyc1/a.kg --
+pub import {X} from lib/cyc2 //~ ERROR re-export cycle: X
+-- lib/cyc2/b.kg --
+pub import {X} from lib/cyc1 //~ ERROR re-export cycle: X
+-- expect --
+warning[W100]: unused import `Token`
+ --> app/use/u.kg:1:9
+  |
+1 | import {Token, f} from lib/facade //~ WARNING unused import `Token` //~ WARNING unused import `f`
+  |         ^^^^^
+
+warning[W100]: unused import `f`
+ --> app/use/u.kg:1:16
+  |
+1 | import {Token, f} from lib/facade //~ WARNING unused import `Token` //~ WARNING unused import `f`
+  |                ^
+
+warning[W100]: unused import `facade`
+ --> app/use/u.kg:2:8
+  |
+2 | import facade from lib/facade //~ WARNING unused import `facade`
+  |        ^^^^^^
+
+warning[W100]: unused import `inner`
+ --> app/use/u.kg:3:9
+  |
+3 | import {inner} from lib/facade //~ WARNING unused import `inner`
+  |         ^^^^^
+
+warning[W100]: unused import `modFn`
+ --> app/use/u.kg:4:9
+  |
+4 | import {modFn} from lib/facade //~ WARNING unused import `modFn`
+  |         ^^^^^
+
+error[E112]: re-export cycle: X
+ --> lib/cyc1/a.kg:1:13
+  |
+1 | pub import {X} from lib/cyc2 //~ ERROR re-export cycle: X
+  |             ^
+
+error[E112]: re-export cycle: X
+ --> lib/cyc2/b.kg:1:13
+  |
+1 | pub import {X} from lib/cyc1 //~ ERROR re-export cycle: X
+  |             ^
+
+error[E111]: re-exported `Token` collides with a declaration of this package
+ --> lib/facade/f.kg:1:13
+  |
+1 | pub import {Token, f} from lib/inner //~ ERROR re-exported `Token` collides with a declaration of this package
+  |             ^^^^^
+
+error[E110]: re-export of `modFn` widens its visibility (pub(module) to pub)
+ --> lib/facade/f.kg:2:13
+  |
+2 | pub import {modFn} from lib/inner //~ ERROR re-export of `modFn` widens its visibility (pub(module) to pub)
+  |             ^^^^^
+

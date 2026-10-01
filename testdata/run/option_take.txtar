@@ -1,0 +1,51 @@
+-- src --
+type Res = resource {
+    pub id Int
+}
+
+fn Res.drop(move self) -> Unit {
+    print "drop ${self.id}"
+}
+
+type Item = {
+    pub id usize
+    mut value Int?
+}
+
+type Holder = {
+    mut slot Res?
+}
+
+fn takeAndSum(items: &mut Array[Item]) -> Int {
+    let mut total = 0
+    let mut i: usize = 0
+    for i < items.len() {
+        total = total + (items[i].value.take() || 0)
+        i = i + 1
+    }
+    total
+}
+
+let mut single: Int? = Some(10)
+print "${debug(single.take())} ${debug(single.take())} ${debug(single)}"
+
+let mut box = Item { id: 1, value: Some(42) }
+print "${debug(box.value.take())} ${debug(box.value)}"
+
+let mut items = Array.of(Item { id: 1, value: Some(1) }, Item { id: 2, value: None }, Item { id: 3, value: Some(3) })
+let sum = takeAndSum(&mut items)
+print "${sum} ${debug(items[0].value)} ${debug(items[1].value)} ${debug(items[2].value)}"
+
+let mut noneVal: Int? = None
+print "${debug(noneVal.take())} ${debug(noneVal)}"
+
+let mut h = Holder { slot: Some(Res { id: 9 }) }
+let taken = h.slot.take()
+print "${h.slot is None} ${taken is Some(_)}"
+-- stdout --
+Some(10) None None
+Some(42) None
+4 None None None
+None None
+true true
+drop 9

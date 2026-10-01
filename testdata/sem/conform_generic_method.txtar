@@ -1,0 +1,85 @@
+-- lib/cf.kg --
+pub interface Render {
+    fn render(self) -> String
+}
+
+pub interface R {
+    fn render(self, x: Int) -> String
+}
+
+type W = {
+    pub n Int
+}
+
+fn W.render[T](self) -> String {
+    "x"
+}
+
+type V = {
+    pub n Int
+}
+
+fn V.render[T](self, x: T) -> String {
+    "v"
+}
+
+type U = {
+    pub n Int
+}
+
+fn U.render[T, X](self, x: T) -> String {
+    "u"
+}
+
+type Z = {
+    pub n Int
+}
+
+fn Z.render[T, X](self) -> String {
+    "z"
+}
+
+pub interface Cshow {
+    fn show(self) -> String
+}
+
+type Y = {
+    pub n Int
+}
+
+fn Y.render[T: Cshow](self, x: T) -> String {
+    "y"
+}
+
+fn use(w: W, v: V, u: U, z: Z, y: Y) -> Unit {
+    let a: Render = w //~ ERROR generic method `render[T]` cannot satisfy `Render.render`: `T` is not determined by the requirement
+    let b: R = v //~ TYPE b : R
+    let c: R = u //~ ERROR generic method `render[T, X]` cannot satisfy `R.render`: `X` is not determined by the requirement
+    let d: Render = z //~ ERROR generic method `render[T, X]` cannot satisfy `Render.render`: `T`, `X` are not determined by the requirement
+    let e: R = y //~ ERROR generic method `render[T]` cannot satisfy `R.render`: `T` is determined as `Int`, which does not satisfy its own constraint
+}
+-- expect --
+error[E308]: `W` does not implement `Render`: generic method `render[T]` cannot satisfy `Render.render`: `T` is not determined by the requirement
+  --> lib/cf.kg:54:21
+   |
+54 |     let a: Render = w //~ ERROR generic method `render[T]` cannot satisfy `Render.render`: `T` is not determined by the requirement
+   |                     ^
+
+error[E308]: `U` does not implement `R`: generic method `render[T, X]` cannot satisfy `R.render`: `X` is not determined by the requirement
+  --> lib/cf.kg:56:16
+   |
+56 |     let c: R = u //~ ERROR generic method `render[T, X]` cannot satisfy `R.render`: `X` is not determined by the requirement
+   |                ^
+
+error[E308]: `Z` does not implement `Render`: generic method `render[T, X]` cannot satisfy `Render.render`: `T`, `X` are not determined by the requirement
+  --> lib/cf.kg:57:21
+   |
+57 |     let d: Render = z //~ ERROR generic method `render[T, X]` cannot satisfy `Render.render`: `T`, `X` are not determined by the requirement
+   |                     ^
+
+error[E308]: `Y` does not implement `R`: generic method `render[T]` cannot satisfy `R.render`: `T` is determined as `Int`, which does not satisfy its own constraint: missing `fn show(self) -> String`
+  --> lib/cf.kg:58:16
+   |
+58 |     let e: R = y //~ ERROR generic method `render[T]` cannot satisfy `R.render`: `T` is determined as `Int`, which does not satisfy its own constraint
+   |                ^
+

@@ -1,0 +1,42 @@
+-- app/t/t.kg --
+import map from std/map
+
+type Res = resource {
+    pub id Int
+}
+
+fn use(xs: &Array[Res], m: &map.Map[String, Res], nums: &Array[Int]) -> Unit {
+    _ = nums.get(0)
+    _ = xs.get(0) //~ ERROR `Res` does not satisfy `Copy`
+    _ = xs.clone() //~ ERROR `Res` does not satisfy `Copy`
+    _ = m.get(&"a") //~ ERROR `Res` does not satisfy `Copy`
+    _ = m.entries() //~ ERROR `Res` does not satisfy `Copy`
+    let n = xs.with(0, (r) => r.id) || 0
+    _ = n
+}
+
+-- expect --
+error[E300]: `Res` does not satisfy `Copy`: it is move-only
+ --> app/t/t.kg:9:9
+  |
+9 |     _ = xs.get(0) //~ ERROR `Res` does not satisfy `Copy`
+  |         ^^^^^^^^
+
+error[E300]: `Res` does not satisfy `Copy`: it is move-only
+  --> app/t/t.kg:10:9
+   |
+10 |     _ = xs.clone() //~ ERROR `Res` does not satisfy `Copy`
+   |         ^^^^^^^^^
+
+error[E300]: `Res` does not satisfy `Copy`: it is move-only
+  --> app/t/t.kg:11:9
+   |
+11 |     _ = m.get(&"a") //~ ERROR `Res` does not satisfy `Copy`
+   |         ^^^^^^^^^^
+
+error[E300]: `Res` does not satisfy `Copy`: it is move-only
+  --> app/t/t.kg:12:9
+   |
+12 |     _ = m.entries() //~ ERROR `Res` does not satisfy `Copy`
+   |         ^^^^^^^^^^
+

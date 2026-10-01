@@ -1,0 +1,4 @@
+/// Sends a request; a bare target has no network.
+pub fn Http.post(self, url: String, body: String) -> Response! {
+    panic()
+}

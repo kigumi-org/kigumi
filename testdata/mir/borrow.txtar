@@ -1,0 +1,123 @@
+-- lib/bw.kg --
+type Buf = {
+    pub mut n Int
+}
+
+fn Buf.push(mut self) -> Unit {
+    self.n += 1
+}
+
+fn Buf.len(self) -> Int {
+    self.n
+}
+
+fn sharedThenMutate(mut b: Buf) -> Int {
+    let r = &b
+    b.push()
+    r.len()
+}
+
+fn exclusiveThenRead(mut b: Buf) -> Int {
+    let m = &mut b
+    let k = b.len()
+    m.push()
+    k
+}
+
+fn fine(mut b: Buf) -> Int {
+    let r = &b
+    let n = r.len()
+    b.push()
+    b.len() + n
+}
+
+fn escape(mut b: Buf) -> Unit {
+    let r = &b
+    let xs = Array.of(r)
+}
+-- expect --
+fn lib.Buf.push(%self: Buf) -> Unit {
+  b0:
+    %t1 = field 0(%self)
+    %t2 = const 1: Int
+    %t3 = bin +(%t1, %t2)
+    setfield 0(%self, %t3)
+    %t4 = unit
+    return %t4
+}
+fn lib.Buf.len(%self: Buf) -> Int {
+  b0:
+    %t1 = field 0(%self)
+    return %t1
+}
+fn lib.sharedThenMutate(%b: Buf) -> Int {
+  b0:
+    %t1 = borrow 0(%b)
+    %r = copy(%t1)
+    %t3 = borrow 1(%b)
+    %t4 = call push(%t3)
+    drop(%t4)
+    %t5 = call len(%r)
+    drop(%b)
+    return %t5
+}
+fn lib.exclusiveThenRead(%b: Buf) -> Int {
+  b0:
+    %t1 = borrow 1(%b)
+    %m = copy(%t1)
+    %t3 = call len(%b)
+    %k = copy(%t3)
+    %t5 = borrow 1(%m)
+    %t6 = call push(%t5)
+    drop(%t6)
+    %t7 = copy(%k)
+    drop(%k)
+    drop(%b)
+    return %t7
+}
+fn lib.fine(%b: Buf) -> Int {
+  b0:
+    %t1 = borrow 0(%b)
+    %r = copy(%t1)
+    %t3 = call len(%r)
+    %n = copy(%t3)
+    %t5 = borrow 1(%b)
+    %t6 = call push(%t5)
+    drop(%t6)
+    %t7 = call len(%b)
+    %t8 = bin +(%t7, %n)
+    drop(%n)
+    drop(%b)
+    return %t8
+}
+fn lib.escape(%b: Buf) -> Unit {
+  b0:
+    %t1 = borrow 0(%b)
+    %r = copy(%t1)
+    %t3 = copy(%r)
+    %t4 = array(%t3)
+    %t5 = call of(%t4)
+    %xs = copy(%t5)
+    drop(%xs)
+    %t7 = unit
+    drop(%b)
+    return %t7
+}
+error[borrow-conflict]: `b` is borrowed and cannot be mutated here
+  --> lib/bw.kg:15:5
+   |
+15 |     b.push()
+   |     ^
+
+error[borrow-conflict]: `b` is exclusively borrowed and cannot be used here
+  --> lib/bw.kg:21:13
+   |
+21 |     let k = b.len()
+   |             ^^^^^^
+
+error[borrow-escape]: a borrow cannot be stored
+  --> lib/bw.kg:35:14
+   |
+35 |     let xs = Array.of(r)
+   |              ^^^^^^^^^^
+

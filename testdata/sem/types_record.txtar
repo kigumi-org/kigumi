@@ -1,0 +1,120 @@
+-- lib/rec.kg --
+pub type User = {
+    pub id Int
+    pub name String
+    pub nick String?
+}
+
+type Summary = {
+    pub id Int
+    pub name String
+}
+
+type Big = {
+    pub id Int
+    pub name String
+    pub extra Bool
+}
+
+fn mk() -> User {
+    User { id: 1, name: "a", nick: None }
+}
+
+fn spread(u: User, b: Big) -> Summary {
+    let s = Summary { ..u }
+    let t = Summary { ..b, name: "x" }
+    let x = Summary { id: 1 } //~ ERROR missing field `name` in `Summary` literal
+    let y = Summary { id: 1, name: "a", nme: "b" } //~ ERROR `Summary` has no field `nme`
+    let z = Summary { id: 1, id: 2, name: "a" } //~ ERROR field `id` is given twice
+    let w = Summary { id: "s", name: "a" } //~ ERROR expected `Int`, found `String`
+    let v = Summary { .."s" } //~ ERROR cannot spread a value of type `String`
+    let q = u.id //~ TYPE q : Int
+    let r = u.nick //~ TYPE r : String?
+    let e = u.missing //~ ERROR `User` has no field or method `missing`
+    s
+}
+
+type Shape = Circle(r: Float) | Square
+
+fn shapes() -> Shape {
+    let c = Circle(1.0)
+    let s = Square
+    let t = Square() //~ ERROR `Square` has no payload
+    let u = Circle() //~ ERROR `Circle` takes 1 payload value, 0 given
+    let v = Circle //~ ERROR `Circle` needs a payload
+    let w = Shape { r: 1.0 } //~ ERROR `Shape` is a type
+    let a = User(1) //~ ERROR `User` is a type, not a value
+    let q = Shape.Circle(2.0) //~ TYPE q : Shape
+    c
+}
+-- expect --
+error[E817]: missing field `name` in `Summary` literal
+  --> lib/rec.kg:25:13
+   |
+25 |     let x = Summary { id: 1 } //~ ERROR missing field `name` in `Summary` literal
+   |             ^^^^^^^^^^^^^^^
+
+error[E818]: `Summary` has no field `nme`
+  --> lib/rec.kg:26:41
+   |
+26 |     let y = Summary { id: 1, name: "a", nme: "b" } //~ ERROR `Summary` has no field `nme`
+   |                                         ^^^^^^^^
+   = help: did you mean `name`?
+
+error[E819]: field `id` is given twice
+  --> lib/rec.kg:27:30
+   |
+27 |     let z = Summary { id: 1, id: 2, name: "a" } //~ ERROR field `id` is given twice
+   |                              ^^^^^
+
+error[E400]: expected `Int`, found `String`
+  --> lib/rec.kg:28:27
+   |
+28 |     let w = Summary { id: "s", name: "a" } //~ ERROR expected `Int`, found `String`
+   |                           ^^^
+
+error[E822]: cannot spread a value of type `String`
+  --> lib/rec.kg:29:25
+   |
+29 |     let v = Summary { .."s" } //~ ERROR cannot spread a value of type `String`
+   |                         ^^^
+
+error[E510]: `User` has no field or method `missing`
+  --> lib/rec.kg:32:13
+   |
+32 |     let e = u.missing //~ ERROR `User` has no field or method `missing`
+   |             ^^^^^^^^^
+
+error[E508]: `Square` has no payload
+  --> lib/rec.kg:41:13
+   |
+41 |     let t = Square() //~ ERROR `Square` has no payload
+   |             ^^^^^^^
+   = help: write `Square` without parentheses
+
+error[E522]: `Circle` takes 1 payload value, 0 given
+  --> lib/rec.kg:42:13
+   |
+42 |     let u = Circle() //~ ERROR `Circle` takes 1 payload value, 0 given
+   |             ^^^^^^^
+
+error[E424]: `Circle` needs a payload
+  --> lib/rec.kg:43:13
+   |
+43 |     let v = Circle //~ ERROR `Circle` needs a payload
+   |             ^^^^^^
+   = help: write `(x) => Circle(x)`
+
+error[E815]: `Shape` is a type
+  --> lib/rec.kg:44:13
+   |
+44 |     let w = Shape { r: 1.0 } //~ ERROR `Shape` is a type
+   |             ^^^^^
+   = help: a record literal needs a record type
+
+error[E123]: `User` is a type, not a value
+  --> lib/rec.kg:45:13
+   |
+45 |     let a = User(1) //~ ERROR `User` is a type, not a value
+   |             ^^^^
+

@@ -1,0 +1,6 @@
+/// Reports whether a and b have equal length and equal bytes, computed
+/// without a data-dependent branch or early exit so the running time leaks
+/// nothing about where two secrets (MAC tags, password hashes) first
+/// differ. Only the C runtime gives this guarantee: the interpreter and VM
+/// backends exist for correctness, not timing, and make no such promise.
+pub pure noalloc fn constantTimeEq(a: Bytes, b: Bytes) -> Bool

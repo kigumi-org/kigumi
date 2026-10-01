@@ -1,0 +1,101 @@
+-- lib/ex.kg --
+const low = 3
+const high = 8
+const LOW = 30
+const HIGH = 40
+
+fn ints(n: Int) -> Int {
+    match n {
+        low..high -> 1
+        LOW..HIGH -> 2
+        20..=25 -> 2
+        _ -> 0
+    }
+}
+
+fn nonConst(n: Int, bound: Int) -> Int {
+    match n {
+        bound..10 -> 1 //~ ERROR range pattern bounds must be integer literals or named constants
+        _ -> 0
+    }
+}
+
+fn badOrder(n: Int) -> Int {
+    match n {
+        10..5 -> 1 //~ ERROR range pattern's low bound is greater than its high bound
+        _ -> 0
+    }
+}
+
+fn badScrutinee(n: Bool) -> Int {
+    match n {
+        0..1 -> 1 //~ ERROR a range pattern needs an integer scrutinee, found `Bool`
+        _ -> 2
+    }
+}
+
+fn boundMismatch(n: u8) -> Int {
+    match n {
+        0..300 -> 1 //~ ERROR `300` does not fit `u8`
+        _ -> 0
+    }
+}
+
+fn notExhaustive(n: Int) -> Int {
+    match n { //~ ERROR non-exhaustive match: `_` is not covered
+        0..10 -> 1
+        10..20 -> 2
+    }
+}
+
+fn overlapIsFine(n: Int) -> Int {
+    match n {
+        0..10 -> 1
+        5..15 -> 2
+        _ -> 0
+    }
+}
+
+fn unreachableAfterWildcard(n: Int) -> Int {
+    match n {
+        _ -> 0
+        0..10 -> 1 //~ WARNING unreachable pattern
+    }
+}
+-- expect --
+error[E824]: range pattern bounds must be integer literals or named constants
+  --> lib/ex.kg:17:9
+   |
+17 |         bound..10 -> 1 //~ ERROR range pattern bounds must be integer literals or named constants
+   |         ^^^^^
+
+error[E825]: range pattern's low bound is greater than its high bound
+  --> lib/ex.kg:24:9
+   |
+24 |         10..5 -> 1 //~ ERROR range pattern's low bound is greater than its high bound
+   |         ^^^^^
+
+error[E823]: a range pattern needs an integer scrutinee, found `Bool`
+  --> lib/ex.kg:31:9
+   |
+31 |         0..1 -> 1 //~ ERROR a range pattern needs an integer scrutinee, found `Bool`
+   |         ^^^^
+
+error[E402]: `300` does not fit `u8`
+  --> lib/ex.kg:38:12
+   |
+38 |         0..300 -> 1 //~ ERROR `300` does not fit `u8`
+   |            ^^^
+
+error[E814]: non-exhaustive match: `_` is not covered
+  --> lib/ex.kg:44:5
+   |
+44 |     match n { //~ ERROR non-exhaustive match: `_` is not covered
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning[W801]: unreachable pattern
+  --> lib/ex.kg:61:9
+   |
+61 |         0..10 -> 1 //~ WARNING unreachable pattern
+   |         ^^^^^
+

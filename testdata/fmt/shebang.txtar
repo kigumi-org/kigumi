@@ -1,0 +1,9 @@
+-- src --
+#!/usr/bin/env kigumi
+import text from std/text
+print text.fromChar('x')
+-- expect --
+#!/usr/bin/env kigumi
+
+import text from std/text
+print text.fromChar('x')

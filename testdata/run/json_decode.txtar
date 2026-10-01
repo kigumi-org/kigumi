@@ -1,0 +1,49 @@
+-- src --
+import json from std/json
+import map from std/map
+
+type Author = {
+    pub name String
+    pub commits Int
+}
+
+type Report = {
+    pub total Int { json.name("total_commits") }
+    pub ratio Float
+    pub active Bool
+    pub authors Array[Author]
+    pub note String? { json.omitNone() }
+    pub tags map.Map[String, Int]
+    pub order Ordering
+}
+
+let text = "{\"total_commits\": 3, \"ratio\": 0.5, \"active\": true, \"authors\": [{\"name\": \"alice\", \"commits\": 2}, {\"name\": \"bob\", \"commits\": 1}], \"tags\": {\"x\": 1, \"y\": 2}, \"order\": \"Less\", \"extra\": null}"
+let report = json.decode[Report](text)?
+print "total=${report.total} active=${report.active} authors=${report.authors.len()} first=${(report.authors.first() || Author { name: "?", commits: 0 }).name}"
+print "note=${report.note || "none"} tags=${report.tags.len()} y=${report.tags.get(&"y") || 0} order=${report.order is Ordering.Less} ratio-half=${report.ratio * 2.0 == 1.0}"
+print "roundtrip=${json.encode(report)?}"
+let nums = json.decode[Array[Int]]("[1, 2, 3]")?
+print "nums=${nums.len()} sum=${nums.fold(0, (a, b) => a + b)}"
+let maybe = json.decode[Int?]("null")?
+print "maybe=${maybe || -1}"
+match json.decode[Report]("{\"ratio\": 1.0}") {
+    Ok(_) -> print "unexpected"
+    Err(e) -> print "error: ${e.message()}"
+}
+match json.decode[Array[Int]]("[1, \"two\"]") {
+    Ok(_) -> print "unexpected"
+    Err(e) -> print "error: ${e.message()}"
+}
+match json.decode[Int]("{") {
+    Ok(_) -> print "unexpected"
+    Err(e) -> print "error: ${e.message()}"
+}
+-- stdout --
+total=3 active=true authors=2 first=alice
+note=none tags=2 y=2 order=true ratio-half=true
+roundtrip={"total_commits":3,"ratio":0.5,"active":true,"authors":[{"name":"alice","commits":2},{"name":"bob","commits":1}],"tags":{"x":1,"y":2},"order":"Less"}
+nums=3 sum=6
+maybe=-1
+error: missing field `total_commits` of Report
+error: expected integer, found string
+error: invalid JSON

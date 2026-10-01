@@ -1,0 +1,55 @@
+-- lib/nar.kg --
+fn arms(x: Int?, y: Int?, r: Result[Int, String]) -> Int {
+    let Some(v) = x else { return 0 }
+    match x {
+        Some(w) -> w
+    }
+    match r {
+        Ok(v) -> v
+        Err(e) -> match r {
+            Err(f) -> 0
+        }
+    }
+    for i in 0..3 {
+        if x is None { return 1 } //~ WARNING `x` is known not to be `None`
+        if y is None { return 1 }
+    }
+    match y { //~ ERROR non-exhaustive match: `None` is not covered
+        Some(v) -> v
+    }
+    let f = () => {
+        if y is None { return 0 }
+        match y {
+            Some(v) -> v
+        }
+    }
+    match y { //~ ERROR non-exhaustive match: `None` is not covered
+        Some(v) -> v
+    }
+    if y is Some(a) {
+        let g = () => match y {
+            Some(b) -> b
+        }
+        return g()
+    }
+    0
+}
+-- expect --
+warning[W803]: `x` is known not to be `None`
+  --> lib/nar.kg:13:12
+   |
+13 |         if x is None { return 1 } //~ WARNING `x` is known not to be `None`
+   |            ^^^^^^^^^
+
+error[E814]: non-exhaustive match: `None` is not covered
+  --> lib/nar.kg:16:5
+   |
+16 |     match y { //~ ERROR non-exhaustive match: `None` is not covered
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E814]: non-exhaustive match: `None` is not covered
+  --> lib/nar.kg:25:5
+   |
+25 |     match y { //~ ERROR non-exhaustive match: `None` is not covered
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+

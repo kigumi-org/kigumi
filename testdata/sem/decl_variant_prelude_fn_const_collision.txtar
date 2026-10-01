@@ -1,0 +1,28 @@
+-- module --
+std: none
+-- std/prelude/probe.kg --
+// std/prelude has no real pub fn/const today (grep confirms), so this
+// inline stub is what makes the case reachable: fillPrelude (collect_decls.go)
+// copies any pub top-level binding into r.prelude, fn included, the same way
+// it copies types.
+pub fn Speak() -> Int { 0 }
+pub const Pi: Int = 3
+-- app/t/t.kg --
+type Node = Speak(Int) | Leaf(Int) //~ ERROR variant `Speak` collides with the prelude function `Speak`
+
+type Circle = Pi(Int) | Origin //~ ERROR variant `Pi` collides with the prelude const `Pi`
+-- expect --
+error[E255]: variant `Speak` collides with the prelude function `Speak`
+ --> app/t/t.kg:1:13
+  |
+1 | type Node = Speak(Int) | Leaf(Int) //~ ERROR variant `Speak` collides with the prelude function `Speak`
+  |             ^^^^^^^^^
+  = help: rename it
+
+error[E255]: variant `Pi` collides with the prelude const `Pi`
+ --> app/t/t.kg:3:15
+  |
+3 | type Circle = Pi(Int) | Origin //~ ERROR variant `Pi` collides with the prelude const `Pi`
+  |               ^^^^^^
+  = help: rename it
+

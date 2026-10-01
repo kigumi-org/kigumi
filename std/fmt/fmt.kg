@@ -1,0 +1,100 @@
+import text from std/text
+
+/// Rendering a number as text. String interpolation covers base 10 with no
+/// padding; this is for the rest.
+const digits: String = "0123456789abcdefghijklmnopqrstuvwxyz"
+
+/// `v` in `base`, left-padded with '0' to at least `width` digits. A base
+/// below 2 or above 36 renders as base 10; a value of 0 is one digit.
+pub pure fn uint(v: u64, base: usize, width: usize) -> String {
+    let b = if base < 2 || base > 36 {
+        10
+    } else {
+        base
+    }
+    let radix = b.toU64()
+    let mut out = Array.empty[u8]()
+    let mut n = v
+    for true {
+        let d = (n % radix).toUsize()
+        out.push(digits[d])
+        n = n / radix
+        if n == 0 {
+            break
+        }
+    }
+    for out.len() < width {
+        out.push(48)
+    }
+    String.fromBytes(Bytes.fromArray(&reversed(&out))) || ""
+}
+
+/// `v` in lower-case hexadecimal, left-padded with '0' to `width` digits.
+pub pure fn hex(v: u64, width: usize) -> String {
+    uint(v, 16, width)
+}
+
+/// `v` in base 10, left-padded with '0' to `width` digits; a negative value
+/// keeps its sign outside the padding.
+pub pure fn int(v: i64, width: usize) -> String {
+    if v >= 0 {
+        return uint(v.toU64() || 0, 10, width)
+    }
+    // Why not negate first: `0 - v` overflows for the most negative i64, and
+    // `i64.toU64` rejects a negative. Taking digits off the negative value
+    // keeps every intermediate in range.
+    let d = digits.bytes()
+    let mut out = Array.empty[u8]()
+    let mut n = v
+    for true {
+        let r = 0 - (n % 10)
+        out.push(d[r.toUsize() || 0])
+        n = n / 10
+        if n == 0 {
+            break
+        }
+    }
+    for out.len() < width {
+        out.push(48)
+    }
+    out.push(45)
+    String.fromBytes(Bytes.fromArray(&reversed(&out))) || ""
+}
+
+pure fn reversed(items: &Array[u8]) -> Array[u8] {
+    let mut out = Array.empty[u8]()
+    let mut i = items.len()
+    for i > 0 {
+        i = i - 1
+        out.push(items[i])
+    }
+    out
+}
+
+/// `s` padded on the left with `fill` until it holds `to` characters.
+/// Counts Unicode scalar values, not display cells.
+pub pure fn padLeft(s: String, to: usize, fill: Char) -> String {
+    let gap = missing(s, to)
+    if gap == 0 {
+        return s
+    }
+    text.fromChar(fill).repeat(gap).concat(s)
+}
+
+/// `s` padded on the right with `fill` until it holds `to` characters.
+pub pure fn padRight(s: String, to: usize, fill: Char) -> String {
+    let gap = missing(s, to)
+    if gap == 0 {
+        return s
+    }
+    s.concat(text.fromChar(fill).repeat(gap))
+}
+
+pure fn missing(s: String, to: usize) -> usize {
+    let have = s.chars().len()
+    if have >= to {
+        0
+    } else {
+        to - have
+    }
+}

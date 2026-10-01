@@ -1,0 +1,44 @@
+-- src --
+let a = "x\u{110000}y"
+let b = "x\u{D800}y"
+let c = "x\u{ZZ}y"
+let d = "x\u{}y"
+-- expect --
+File
+  Let
+    pattern: PatBind a
+    init: StringLit "x\u{110000}y"
+  Let
+    pattern: PatBind b
+    init: StringLit "x\u{D800}y"
+  Let
+    pattern: PatBind c
+    init: StringLit "x\u{ZZ}y"
+  Let
+    pattern: PatBind d
+    init: StringLit "x\u{}y"
+-- diagnostics --
+error: invalid escape sequence
+ --> lit_string_escape_unicode_err.txtar:1:11
+  |
+1 | let a = "x\u{110000}y"
+  |           ^^^^^^^^^^
+
+error: invalid escape sequence
+ --> lit_string_escape_unicode_err.txtar:2:11
+  |
+2 | let b = "x\u{D800}y"
+  |           ^^^^^^^^
+
+error: invalid escape sequence
+ --> lit_string_escape_unicode_err.txtar:3:11
+  |
+3 | let c = "x\u{ZZ}y"
+  |           ^^^^^^
+
+error: invalid escape sequence
+ --> lit_string_escape_unicode_err.txtar:4:11
+  |
+4 | let d = "x\u{}y"
+  |           ^^^^
+

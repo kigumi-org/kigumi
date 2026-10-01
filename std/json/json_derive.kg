@@ -1,0 +1,112 @@
+import map from std/map
+
+/// Builder the derived `toJson` of a record uses: fields in declaration order, `omitNone` fields skipped when None.
+pub type Fields = {
+    mut fields map.Map[String, Value]
+}
+
+pub fn Fields.new() -> Fields {
+    Fields { fields: map.empty[String, Value]() }
+}
+
+pub fn Fields.put(mut self, key: String, value: Value) -> Unit {
+    self.fields.set(key, value)
+}
+
+pub fn Fields.finish(move self) -> Value {
+    Value.Object(self.fields)
+}
+
+/// The object a derived `fromJson` of a record reads; fields are taken out by their JSON key.
+pub type Record = {
+    pub owner String
+    mut fields map.Map[String, Value]
+}
+
+pub fn Record.expect(value: Value, typeName: String) -> Record! {
+    match value {
+        Value.Object(m) -> Ok(Record {
+            owner: typeName
+            fields: m
+        })
+        other -> mismatch("object", other)
+    }
+}
+
+pub fn Record.field[T: Decode](mut self, key: String) -> T! {
+    match self.fields.take(&key) {
+        Some(v) -> T.fromJson(v)
+        None -> fail Error { text: "missing field `${key}` of ${self.owner}" }
+    }
+}
+
+pub fn Record.optional[T: Decode](mut self, key: String) -> Option[T]! {
+    match self.fields.take(&key) {
+        Some(v) -> Option[T].fromJson(v)
+        None -> Ok(None)
+    }
+}
+
+/// A variant as JSON: its name as a string, or `{"Name": [payload...]}` when it carries one.
+pub fn tag(variant: String) -> Value {
+    Value.Text(variant)
+}
+
+pub fn tagged(variant: String, payload: Array[Value]) -> Value {
+    let mut fields = map.empty[String, Value]()
+    fields.set(variant, Value.List(payload))
+    Value.Object(fields)
+}
+
+/// The variant a derived `fromJson` of an ADT reads: the name and its payload values in order.
+pub type Tagged = {
+    pub owner String
+    pub name String
+    mut payload Array[Value]
+}
+
+pub fn Tagged.expect(value: Value, typeName: String) -> Tagged! {
+    match value {
+        Value.Text(name) -> Ok(Tagged {
+            owner: typeName
+            name: name
+            payload: Array.empty[Value]()
+        })
+        Value.Object(m) -> {
+            let mut fields = m
+            let keys = fields.keys()
+            if keys.len() != 1 {
+                fail Error { text: "expected variant for ${typeName}, found object" }
+            }
+            let name = keys.get(0) || ""
+            match fields.take(&name) || Value.Null {
+                Value.List(items) -> Ok(Tagged {
+                    owner: typeName
+                    name: name
+                    payload: items
+                })
+                _ -> fail Error { text: "expected variant for ${typeName}, found object" }
+            }
+        }
+        other -> fail Error { text: "expected variant for ${typeName}, found ${kindOf(other)}" }
+    }
+}
+
+/// Checks the payload count of the variant named in the JSON.
+pub fn Tagged.arity(self, count: Int) -> Unit! {
+    if (self.payload.len().toInt() || 0) != count {
+        fail Error { text: "`${self.name}` takes ${count} payload value(s), found ${self.payload.len()}" }
+    }
+}
+
+/// Takes the next payload value, in order.
+pub fn Tagged.next[T: Decode](mut self) -> T! {
+    match self.payload.takeAt(0) {
+        Some(v) -> T.fromJson(v)
+        None -> fail Error { text: "`${self.name}` is missing a payload value" }
+    }
+}
+
+pub fn Tagged.unknown[T](self) -> T! {
+    fail Error { text: "`${self.name}` is not a variant of ${self.owner}" }
+}

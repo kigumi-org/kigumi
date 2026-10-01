@@ -1,0 +1,51 @@
+-- src --
+import shell from std/shell
+import fs from std/fs
+
+let sh = host.shell()
+let files = host.files()
+
+fn read(files: fs.Files, name: String) -> String! {
+    let p = fs.Path.fromString(name)?
+    files.read(p)
+}
+
+// `>a >b` opens and truncates both in source order; only the last takes stdout.
+let r1 = ($"printf both > a.txt > b.txt" |> shell.capture(sh))?
+print "captured=[${String.fromBytes(r1.stdout)?}] a=[${read(files, "a.txt")?}] b=[${read(files, "b.txt")?}]"
+
+// `2>&1 >file` and `>file 2>&1` must differ (§10.6 source-order application).
+let r2 = ($"sh -c 'echo E >&2; echo O' 2>&1 > c.txt" |> shell.capture(sh))?
+print "orderA=[${String.fromBytes(r2.stdout)?}] c=[${read(files, "c.txt")?}]"
+let r3 = ($"sh -c 'echo E >&2; echo O' > d.txt 2>&1" |> shell.capture(sh))?
+print "orderB=[${String.fromBytes(r3.stdout)?}] d=[${read(files, "d.txt")?}]"
+
+let _a1 = ($"printf x >> e.txt" |> shell.capture(sh))?
+let _a2 = ($"printf y >> e.txt" |> shell.capture(sh))?
+print "append=[${read(files, "e.txt")?}]"
+
+// A stage whose stdout is redirected feeds the next stage nothing.
+let r4 = ($"printf gone > f.txt | cat" |> shell.capture(sh))?
+print "piped=[${String.fromBytes(r4.stdout)?}] f=[${read(files, "f.txt")?}]"
+
+let r5 = ($"cat < b.txt" |> shell.capture(sh))?
+print "stdin=[${String.fromBytes(r5.stdout)?}]"
+
+let r6 = ($"printf z > /nonexistent-dir-kigumi/out" |> shell.capture(sh))
+if r6 is Err(_) {
+    print "openfail=true"
+} else {
+    print "openfail=false"
+}
+-- stdout --
+captured=[] a=[] b=[both]
+orderA=[E
+] c=[O
+]
+orderB=[] d=[E
+O
+]
+append=[xy]
+piped=[] f=[gone]
+stdin=[both]
+openfail=true

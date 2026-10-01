@@ -1,0 +1,48 @@
+-- src --
+// Ledger L-172 (amended): a compound pattern that binds only PART of a
+// resource-bearing place by value, leaving another field/payload slot to a
+// wildcard, dropped wrong under --engine interp only. Marking the whole
+// scrutinee place Moved after any by-value bind double-dropped the bound
+// record field (its clone plus the untouched original) and leaked the
+// unbound variant payload (never dropped at all). VM/native were correct.
+type Res = resource {
+    pub id Int
+}
+
+fn Res.drop(move self) -> Unit {
+    print "drop ${self.id}"
+}
+
+type Pair = {
+    pub a Res,
+    pub b Res,
+}
+
+fn Pair.first(move self) -> Res {
+    match self {
+        Pair { a, b: _ } -> a
+    }
+}
+
+type Choice = Both(Res, Res)
+
+fn Choice.firstOf(move self) -> Res {
+    match self {
+        Both(a, _) -> a
+    }
+}
+
+let p = Pair { a: Res { id: 1 }, b: Res { id: 2 } }
+let x = p.first()
+print "got ${x.id}"
+
+let c = Choice.Both(Res { id: 3 }, Res { id: 4 })
+let y = c.firstOf()
+print "got ${y.id}"
+-- stdout --
+drop 2
+got 1
+drop 4
+got 3
+drop 3
+drop 1

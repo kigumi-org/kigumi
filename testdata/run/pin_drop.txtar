@@ -1,0 +1,33 @@
+-- src --
+import ffi from std/ffi
+
+type Res = resource {
+    pub id Int
+}
+
+fn Res.drop(move self) -> Unit {
+    print "drop ${self.id}"
+}
+
+fn twice() -> Unit {
+    let p = ffi.Pin.new(Res { id: 7 })
+    let ptr = p.ptr()
+    let a = unsafe { ffi.Pin.with(ptr, (r: &Res) => r.id) }
+    let b = unsafe { ffi.Pin.with(ptr, (r: &Res) => r.id) }
+    print "${a} ${b}"
+}
+
+fn never() -> Unit {
+    let p = ffi.Pin.new(Res { id: 9 })
+    print "no call"
+}
+
+twice()
+never()
+print "end"
+-- stdout --
+7 7
+drop 7
+no call
+drop 9
+end

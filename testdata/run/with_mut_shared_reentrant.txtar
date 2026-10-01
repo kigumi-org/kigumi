@@ -1,0 +1,26 @@
+-- src --
+import {Shared} from std/alloc
+
+type Item = {
+    pub mut count Int
+}
+
+fn Item.update(mut self, delta: Int) -> Unit {
+    self.count = self.count + delta
+}
+
+let cell = Shared.new(Item { count: 1 })
+print "start"
+cell.withMut((x: &mut Item) => {
+    cell.withMut((y: &mut Item) => {
+        y.update(100)
+    })
+    x.update(1)
+})
+print "unreachable"
+-- stdout --
+start
+-- stderr --
+panic: Shared is already borrowed
+-- exit --
+2

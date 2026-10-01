@@ -1,0 +1,3 @@
+compose: 12
+total: 5
+evens=2,4,6 sum of squares=56

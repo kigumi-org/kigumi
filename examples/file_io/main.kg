@@ -1,0 +1,23 @@
+#!/usr/bin/env kigumi
+
+import fs from std/fs
+import text from std/text
+
+let files = host.files()
+let dir = fs.Path.fromString("notes")?
+files.mkdir(dir)?
+files.writeText(fs.Path.fromString("notes/a.txt")?, "first\n")?
+files.writeText(fs.Path.fromString("notes/b.txt")?, "second\nline\n")?
+for entry in files.list(dir)? {
+    let body = files.read(entry)?
+    print "${entry.toString()}: ${text.lines(body).len()} line(s)"
+}
+let missing = fs.Path.fromString("notes/none.txt")?
+print "exists=${files.exists(missing)}"
+match files.read(missing) {
+    Ok(_) -> print "unexpected"
+    Err(e) -> print "read failed as expected"
+}
+files.remove(fs.Path.fromString("notes/a.txt")?)?
+files.remove(fs.Path.fromString("notes/b.txt")?)?
+print "left=${(files.list(dir)?).len()}"

@@ -1,0 +1,51 @@
+-- lib/partial_move_closure_capture.kg --
+type Res = resource {
+    pub id Int
+}
+
+fn Res.drop(move self) -> Unit {
+    ()
+}
+
+type S = { mut r Res }
+
+fn S.take(mut self) -> Res {
+    let f = () => move self.r
+    let out = f()
+    self.r = Res { id: 999 }
+    out
+}
+-- expect --
+fn lib.Res.drop(%self: Res) -> Unit {
+  b0:
+    %t1 = unit
+    return %t1
+}
+fn lib.S.take.closure1(%self: S) -> Res {
+  b0:
+    %t1 = cellget(%self)
+    %t2 = fieldmove 0(%t1)
+    return %t2
+}
+fn lib.S.take(%t0: S) -> Res {
+  b0:
+    %self = newcell(%t0)
+    %t2 = closure closure(%self)
+    %f = copy(%t2)
+    %t4 = callv(%f)
+    %out = copy(%t4)
+    %t6 = cellget(%self)
+    %t7 = const 999: Int
+    %t8 = record Res(%t7)
+    setfield 0(%t6, %t8)
+    %t9 = move(%out)
+    nop
+    drop(%f)
+    return %t9
+}
+error[move-from-borrow]: a value borrowed here cannot be moved out; clone it
+  --> lib/partial_move_closure_capture.kg:12:24
+   |
+12 |     let f = () => move self.r
+   |                        ^^^^^^
+

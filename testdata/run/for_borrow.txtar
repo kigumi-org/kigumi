@@ -1,0 +1,27 @@
+-- src --
+// Ledger L-181: `for x in &xs` holds a shared borrow for the loop's
+// duration and binds x: &T; xs is still usable afterward. A Copy element
+// keeps the existing rule that &T of a Copy T is usable as T in operators.
+type Item = {
+    pub name String
+}
+
+fn main() -> Unit! {
+    let nums = Array.of(1, 2, 3)
+    let mut total = 0
+    for x in &nums {
+        total = total + x
+    }
+    print "total=${total} nums.len=${nums.len()}"
+
+    let items = Array.of(Item { name: "a" }, Item { name: "b" })
+    for it in &items {
+        print "name=${it.name}"
+    }
+    print "items.len=${items.len()}"
+}
+-- stdout --
+total=6 nums.len=3
+name=a
+name=b
+items.len=2

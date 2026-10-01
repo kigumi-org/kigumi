@@ -1,0 +1,15 @@
+open 1
+open 2
+close 2
+drop 2
+close 1
+drop 1
+transfer finished
+open 1
+open 2
+rolling back
+transfer finished
+drop 2
+drop 1
+error: network down
+end

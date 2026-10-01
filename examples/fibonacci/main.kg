@@ -1,0 +1,26 @@
+#!/usr/bin/env kigumi
+
+// Recursive and iterative Fibonacci numbers.
+fn fibRec(n: Int) -> Int {
+    if n < 2 {
+        n
+    } else {
+        fibRec(n - 1) + fibRec(n - 2)
+    }
+}
+
+fn fibIter(n: Int) -> Int {
+    let mut a = 0
+    let mut b = 1
+    for _ in 0..n {
+        let next = a + b
+        a = b
+        b = next
+    }
+    a
+}
+
+for n in 0..10 {
+    print "fib(${n}) = ${fibRec(n)}"
+}
+print "fib(50) = ${fibIter(50)}"

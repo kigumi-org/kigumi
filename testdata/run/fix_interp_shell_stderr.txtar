@@ -1,0 +1,9 @@
+-- src --
+import shell from std/shell
+
+let sh = host.shell()
+let plan = $"sh -c 'printf e1 >&2' | sh -c 'printf e2 >&2'"
+let captured = (plan |> shell.capture(sh))?
+print "stderr=${String.fromBytes(captured.stderr)?}"
+-- stdout --
+stderr=e1e2

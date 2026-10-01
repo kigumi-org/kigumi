@@ -1,0 +1,24 @@
+-- src --
+import task from std/task
+
+type Counter = {
+    n Int
+}
+
+async fn Counter.bump(move self, by: Int) -> Int {
+    print "bump ${self.n} by ${by}"
+    self.n + by
+}
+
+let ex = task.local()
+let a = Counter { n: 10 }
+let b = Counter { n: 100 }
+let pending = a.bump(5)
+print "created"
+let t = ex.spawn(b.bump(1))
+print "${ex.run(pending)} ${t.join()}"
+-- stdout --
+created
+bump 10 by 5
+bump 100 by 1
+15 101

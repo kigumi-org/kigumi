@@ -1,0 +1,35 @@
+-- lib/g.kg --
+fn applyOnce[A, R, F: FnOnce[fn(A) -> R]](f: F, value: A) -> R {
+    f(value)
+}
+
+fn applyOnceRev[F: FnOnce[fn(A) -> R], A, R](f: F, value: A) -> R {
+    f(value)
+}
+
+fn applyTwice[A, R, F: Fn[fn(A) -> R]](f: F, value: A) -> R {
+    f(value)
+}
+
+fn use() -> Unit {
+    let a = applyOnce((x: Int) => x + 1, 41) //~ TYPE a : Int
+    let b = applyOnceRev((x: Int) => "n=${x}", 7) //~ TYPE b : String
+    let mut n = 0
+    applyTwice((x: Int) => { //~ WARNING unused value of type `Int`
+        n += 1
+        x
+    }, 1) //~ | ERROR does not satisfy `Fn[fn(Int) -> Int]`: the closure assigns `n`; it is `FnMut`
+}
+-- expect --
+error[E300]: `closure fn(Int) -> Int` does not satisfy `Fn[fn(Int) -> Int]`: the closure assigns `n`; it is `FnMut`
+  --> lib/g.kg:17:5
+   |
+17 |     applyTwice((x: Int) => { //~ WARNING unused value of type `Int`
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning[W400]: unused value of type `Int`
+  --> lib/g.kg:17:5
+   |
+17 |     applyTwice((x: Int) => { //~ WARNING unused value of type `Int`
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+

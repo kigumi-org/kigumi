@@ -1,0 +1,58 @@
+-- src --
+import io from std/io
+
+// Reader.read that appends into but claims more than max.
+type OverMaxReader = {
+    mut called usize
+}
+
+fn OverMaxReader.read(mut self, into: &mut Array[u8], max: usize) -> usize! {
+    self.called += 1
+    into.push(1)
+    max + 1
+}
+
+// Reader.read that claims nonzero progress without appending anything.
+type GhostReader = {
+    mut calls usize
+}
+
+fn GhostReader.read(mut self, into: &mut Array[u8], max: usize) -> usize! {
+    self.calls += 1
+    max
+}
+
+// Writer.write that claims more bytes sent than it was given.
+type OverclaimWriter = {
+    mut buf Array[u8]
+}
+
+fn OverclaimWriter.write(mut self, data: Bytes) -> usize! {
+    self.buf.push(data.get(0) || 0)
+    data.len() + 1
+}
+
+match io.readAll(OverMaxReader { called: 0 }) {
+    Ok(_) -> print "readAll overmax: no error"
+    Err(e) -> print "readAll overmax: ${e.message()}"
+}
+
+match io.readAll(GhostReader { calls: 0 }) {
+    Ok(_) -> print "readAll ghost: no error"
+    Err(e) -> print "readAll ghost: ${e.message()}"
+}
+
+match io.copy(OverMaxReader { called: 0 }, io.BytesWriter.new()) {
+    Ok(_) -> print "copy overmax: no error"
+    Err(e) -> print "copy overmax: ${e.message()}"
+}
+
+match io.writeAll(OverclaimWriter { buf: Array.empty[u8]() }, "hello".toBytes()) {
+    Ok(_) -> print "writeAll overclaim: no error"
+    Err(e) -> print "writeAll overclaim: ${e.message()}"
+}
+-- stdout --
+readAll overmax: Reader.read law violated: returned n=4097 > max=4096
+readAll ghost: Reader.read law violated: appended 0 bytes but returned n=4096
+copy overmax: Reader.read law violated: returned n=4097 > max=4096
+writeAll overclaim: Writer.write law violated: returned n=6 > data.len()=5

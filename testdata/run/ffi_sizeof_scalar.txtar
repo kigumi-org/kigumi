@@ -1,0 +1,9 @@
+-- src --
+import ffi from std/ffi
+
+// interp/vm's cLayout lacked the Bool/Char cases llgen's cLayoutOf has,
+// so a bare Bool or Char sized to 0 on those two engines while native
+// (llgen) already got it right (layout-attributes-2).
+print "${ffi.sizeOf(&'x')} ${ffi.sizeOf(&false)} ${ffi.sizeOf(&true)}"
+-- stdout --
+4 1 1

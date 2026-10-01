@@ -1,0 +1,70 @@
+-- src --
+type Res = resource {
+    pub id Int
+}
+
+fn Res.drop(move self) -> Unit {
+    print "drop ${self.id}"
+}
+
+type Pair = { mut a Res, mut b Res }
+
+fn localTake(mut p: Pair) -> Res {
+    let taken = move p.a
+    print "b=${p.b.id}"
+    p.a = Res { id: 30 }
+    print "a=${p.a.id}"
+    taken
+}
+
+type S = { mut r Res, mut n Int }
+
+fn S.take(mut self) -> Res {
+    let taken = move self.r
+    self.n = self.n + 1
+    self.r = Res { id: 40 }
+    print "n=${self.n}"
+    taken
+}
+
+fn S.takeEarly(mut self, bail: Bool) -> Res? {
+    let taken = move self.r
+    if bail {
+        self.r = Res { id: 50 }
+        return None
+    }
+    self.r = Res { id: 60 }
+    Some(taken)
+}
+
+let d1 = localTake(Pair { a: Res { id: 10 }, b: Res { id: 20 } })
+print "d1=${d1.id}"
+
+let mut s = S { r: Res { id: 1 }, n: 0 }
+let d2 = s.take()
+print "d2=${d2.id}"
+
+let mut s2 = S { r: Res { id: 2 }, n: 0 }
+let none = s2.takeEarly(true)
+print "bailed"
+
+let mut s3 = S { r: Res { id: 3 }, n: 0 }
+let some = s3.takeEarly(false)
+print "not bailed"
+-- stdout --
+b=20
+a=30
+drop 20
+drop 30
+d1=10
+n=1
+d2=1
+drop 2
+bailed
+not bailed
+drop 3
+drop 60
+drop 50
+drop 1
+drop 40
+drop 10

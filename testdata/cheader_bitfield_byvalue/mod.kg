@@ -1,0 +1,9 @@
+Module {
+    name: "cheader-bitfield-byvalue-sample"
+    kigumi: "0.1"
+}
+
+Header {
+    path: "bitfield.h"
+    package: "bf"
+}

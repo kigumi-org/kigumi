@@ -1,0 +1,7 @@
+import sample from c/sample
+
+let p = sample.Point { x: 3, y: 4 }
+let sum = unsafe { sample.cheader_point_sum(p) }
+let total = unsafe { sample.cheader_add(1, 2) }
+let next = unsafe { sample.cheader_next_color(sample.RED) }
+print "${total} ${sum} ${sample.RED} ${sample.GREEN} ${sample.BLUE} ${sample.CHEADER_MAX} ${next}"

@@ -1,0 +1,58 @@
+-- src --
+import ffi from std/ffi
+
+extern(C) {
+    fn memcpy(dst: *mut u8, src: *const u8, n: usize) -> *mut u8
+}
+
+fn copy(c: Bool) -> Unit {
+    let text = "abc"
+    let buf = ffi.CString.new(&text).unwrap()
+    if c {
+        unsafe { memcpy(ffi.toMut(buf.ptr()), buf.ptr(), 1) }
+    }
+}
+
+copy(true)
+print "done"
+-- expect --
+fn main.copy(%c: Bool) -> Unit {
+  b0:
+    %t1 = const "abc": String
+    %text = copy(%t1)
+    %t3 = borrow 0(%text)
+    %t4 = call new(%t3)
+    %t5 = call unwrap(%t4)
+    %buf = copy(%t5)
+    branch %c ? b1 : b2
+  b1:
+    %t8 = call ptr(%buf)
+    %t9 = call toMut(%t8)
+    %t10 = call ptr(%buf)
+    %t11 = const 1: usize
+    %t12 = call memcpy(%t9, %t10, %t11)
+    drop(%t12)
+    %t13 = unit
+    %t7 = copy(%t13)
+    jump b3
+  b2:
+    %t14 = unit
+    %t7 = copy(%t14)
+    jump b3
+  b3:
+    drop(%buf)
+    drop(%text)
+    drop(%c)
+    return %t7
+}
+fn main() -> Unit! {
+  b0:
+    %t0 = const true: Bool
+    %t1 = call copy(%t0)
+    drop(%t1)
+    %t2 = const "done": String
+    %t3 = builtin print(%t2)
+    drop(%t3)
+    %t4 = unit
+    return %t4
+}

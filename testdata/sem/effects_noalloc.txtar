@@ -1,0 +1,133 @@
+-- lib/na.kg --
+type MyErr = {
+    pub code Int
+}
+
+fn MyErr.message(self) -> String {
+    "e"
+}
+
+noalloc fn interp(x: Int) -> String {
+    "x=${x}" //~ ERROR string interpolation allocates
+}
+
+noalloc fn variadic() -> Array[Int] {
+    Array.of(1, 2) //~ ERROR `of` is not `noalloc` //~ ERROR listed variadic arguments allocate
+}
+
+noalloc fn widen() -> Unit! {
+    fail MyErr { code: 1 } //~ ERROR boxing `MyErr` into `Error` allocates
+}
+
+pure noalloc fn ok(data: Bytes) -> usize {
+    data.len()
+}
+
+noalloc fn bytes(s: String) -> Bytes {
+    s.toBytes()
+}
+
+noalloc fn pushes(mut xs: Array[Int]) -> Unit {
+    xs.push(1) //~ ERROR `push` is not `noalloc`
+}
+
+noalloc fn cb(f: fn() -> Unit) -> Unit {
+    f()
+}
+
+fn grows() -> Unit {
+    let mut xs = Array.empty[Int]()
+    xs.push(1)
+}
+
+noalloc fn cbCaller() -> Unit {
+    cb(() => grows()) //~ ERROR closure is not `noalloc` (calls `grows`)
+}
+
+noalloc fn cbOk(f: noalloc fn() -> Unit) -> Unit {
+    f()
+}
+
+noalloc fn dropsErr(e: Error) -> Unit {
+    _ = e //~ ERROR dropping `Error` may allocate or deallocate
+}
+
+fn helper(xs: Array[Int]) -> usize {
+    xs.len()
+}
+
+noalloc fn inferred(xs: Array[Int]) -> usize {
+    helper(xs)
+}
+
+fn helper2(x: Int) -> String {
+    "${x}"
+}
+
+noalloc fn viaInferredAlloc(x: Int) -> String {
+    helper2(x) //~ ERROR `helper2` is not `noalloc`
+}
+
+pure fn pureOnly(xs: Array[Int]) -> usize {
+    xs.len()
+}
+
+noalloc fn callsDeclaredPure(xs: Array[Int]) -> usize {
+    pureOnly(xs) //~ ERROR `pureOnly` is not `noalloc`
+}
+-- expect --
+error[E909]: string interpolation allocates
+  --> lib/na.kg:10:5
+   |
+10 |     "x=${x}" //~ ERROR string interpolation allocates
+   |     ^^^^^^^^
+
+error[E907]: `of` is not `noalloc`
+  --> lib/na.kg:14:5
+   |
+14 |     Array.of(1, 2) //~ ERROR `of` is not `noalloc` //~ ERROR listed variadic arguments allocate
+   |     ^^^^^^^^^^^^^
+
+error[E911]: listed variadic arguments allocate
+  --> lib/na.kg:14:5
+   |
+14 |     Array.of(1, 2) //~ ERROR `of` is not `noalloc` //~ ERROR listed variadic arguments allocate
+   |     ^^^^^^^^^^^^^
+   = help: pass `...array`
+
+error[E910]: boxing `MyErr` into `Error` allocates
+  --> lib/na.kg:18:10
+   |
+18 |     fail MyErr { code: 1 } //~ ERROR boxing `MyErr` into `Error` allocates
+   |          ^^^^^^^^^^^^^^^
+
+error[E907]: `push` is not `noalloc`
+  --> lib/na.kg:30:5
+   |
+30 |     xs.push(1) //~ ERROR `push` is not `noalloc`
+   |     ^^^^^^^^^
+
+error[E422]: closure is not `noalloc` (calls `grows`)
+  --> lib/na.kg:43:8
+   |
+43 |     cb(() => grows()) //~ ERROR closure is not `noalloc` (calls `grows`)
+   |        ^^^^^^^^^^^^
+
+error[E912]: dropping `Error` may allocate or deallocate
+  --> lib/na.kg:51:9
+   |
+51 |     _ = e //~ ERROR dropping `Error` may allocate or deallocate
+   |         ^
+
+error[E907]: `helper2` is not `noalloc`
+  --> lib/na.kg:67:5
+   |
+67 |     helper2(x) //~ ERROR `helper2` is not `noalloc`
+   |     ^^^^^^^^^
+
+error[E907]: `pureOnly` is not `noalloc`
+  --> lib/na.kg:75:5
+   |
+75 |     pureOnly(xs) //~ ERROR `pureOnly` is not `noalloc`
+   |     ^^^^^^^^^^^
+

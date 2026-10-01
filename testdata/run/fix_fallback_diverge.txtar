@@ -1,0 +1,38 @@
+-- src --
+type Inner = {
+    pub text String
+}
+
+fn Inner.message(self) -> String {
+    self.text
+}
+
+type Outer = Wrapped(Inner) | Plain
+
+fn Outer.message(self) -> String {
+    match self {
+        Outer.Wrapped(i) -> "wrapped: ${i.message()}"
+        Outer.Plain -> "plain"
+    }
+}
+
+fn source(ok: Bool) -> Result[Int, Inner] {
+    if ok {
+        return Ok(1)
+    }
+    Err(Inner { text: "boom" })
+}
+
+fn relay(ok: Bool) -> Int! {
+    let v = source(ok) || (e) => fail Outer.Wrapped(e)
+    v + 1
+}
+
+fn relay2(ok: Bool) -> Int! {
+    let v = source(ok) || (e) => fail Outer.Plain
+    v + 1
+}
+
+print "${relay(true) || 0} ${relay(false) || -1} ${relay2(false) || -2}"
+-- stdout --
+2 -1 -2

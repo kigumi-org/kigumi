@@ -1,0 +1,108 @@
+-- app/t/t.kg --
+extern(C, naked) { //~ ERROR `naked` belongs to `export` blocks
+    fn getpid() -> i32
+}
+
+export(C, naked) {
+    pub fn start() -> Never {
+        asm {
+            "ud2"
+        }
+    }
+    pub pure fn twice(x: i64) -> i64 { //~ ERROR naked functions cannot be `pure`
+        asm {
+            "lea rax, [rdi + rdi]"
+            "ret"
+        }
+    }
+    pub fn bad(x: i64) -> i64 { //~ ERROR a naked function's body is one `asm { }` block and nothing else
+        let y = x
+        asm {
+            "ret"
+        }
+    }
+    pub fn kg_export_x() -> i64 { //~ ERROR `kg_export_x`: names starting with `kg_export_`, `kg_byval_` or `kg_call_` are reserved for generated C symbols
+        asm {
+            "ret"
+        }
+    }
+    pub fn args(x: i64) -> i64 {
+        asm {
+            "mov rax, {x}"
+            "ret"
+            x: in(rdi) x //~ ERROR naked asm takes only `const` and `sym` operands
+        }
+    }
+}
+
+type Foo = {
+    pub v i64
+}
+
+export(C, naked) {
+    pub fn Foo.addSelf(self, b: i64) -> i64 { //~ ERROR naked functions cannot be methods
+        asm {
+            "ret"
+        }
+    }
+}
+
+fn use() -> i64 {
+    let a = twice(1) //~ ERROR calling `twice` requires an `unsafe { }` block
+    let f: extern(C) fn(i64) -> i64 = twice
+    let g: fn(i64) -> i64 = twice //~ ERROR expected `fn(Int) -> Int`, found `extern(C) fn(Int) -> Int`
+    a + unsafe { f(2) }
+}
+
+-- expect --
+error[E951]: `naked` belongs to `export` blocks
+ --> app/t/t.kg:1:11
+  |
+1 | extern(C, naked) { //~ ERROR `naked` belongs to `export` blocks
+  |           ^^^^^
+  = help: extern declarations have no body
+
+error[E954]: naked functions cannot be `pure`
+  --> app/t/t.kg:11:5
+   |
+11 |     pub pure fn twice(x: i64) -> i64 { //~ ERROR naked functions cannot be `pure`
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E952]: a naked function's body is one `asm { }` block and nothing else
+  --> app/t/t.kg:17:31
+   |
+17 |     pub fn bad(x: i64) -> i64 { //~ ERROR a naked function's body is one `asm { }` block and nothing else
+   |                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E957]: `kg_export_x`: names starting with `kg_export_`, `kg_byval_` or `kg_call_` are reserved for generated C symbols
+  --> app/t/t.kg:23:5
+   |
+23 |     pub fn kg_export_x() -> i64 { //~ ERROR `kg_export_x`: names starting with `kg_export_`, `kg_byval_` or `kg_call_` are reserved for generated C symbols
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E953]: naked asm takes only `const` and `sym` operands
+  --> app/t/t.kg:32:16
+   |
+32 |             x: in(rdi) x //~ ERROR naked asm takes only `const` and `sym` operands
+   |                ^^^^^^^^^
+   = help: arguments arrive in the C ABI's registers
+
+error[E955]: naked functions cannot be methods
+  --> app/t/t.kg:42:5
+   |
+42 |     pub fn Foo.addSelf(self, b: i64) -> i64 { //~ ERROR naked functions cannot be methods
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   = help: they have no Kigumi body to receive `self`
+
+error[E914]: calling `twice` requires an `unsafe { }` block
+  --> app/t/t.kg:50:13
+   |
+50 |     let a = twice(1) //~ ERROR calling `twice` requires an `unsafe { }` block
+   |             ^^^^^^^
+
+error[E400]: expected `fn(Int) -> Int`, found `extern(C) fn(Int) -> Int`
+  --> app/t/t.kg:52:29
+   |
+52 |     let g: fn(i64) -> i64 = twice //~ ERROR expected `fn(Int) -> Int`, found `extern(C) fn(Int) -> Int`
+   |                             ^^^^^
+

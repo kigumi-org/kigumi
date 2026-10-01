@@ -1,0 +1,24 @@
+-- src --
+let a = b"\xZZ"
+let b = b"café"
+-- expect --
+File
+  Let
+    pattern: PatBind a
+    init: ByteStringLit b"\xZZ"
+  Let
+    pattern: PatBind b
+    init: ByteStringLit b"café"
+-- diagnostics --
+error: invalid hex escape (need two hex digits after \x)
+ --> lit_byte_string_err.txtar:1:11
+  |
+1 | let a = b"\xZZ"
+  |           ^^
+
+error: non-ASCII character in byte string literal (it would be UTF-8-encoded, not written byte for byte; use \xNN)
+ --> lit_byte_string_err.txtar:2:14
+  |
+2 | let b = b"café"
+  |              ^^
+

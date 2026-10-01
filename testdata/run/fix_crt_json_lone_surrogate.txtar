@@ -1,0 +1,11 @@
+-- src --
+import json from std/json
+
+let data = "\"\\uD800\""
+let v = json.decode[String](data)
+match v {
+    Ok(x) -> print x
+    Err(e) -> print "decode err: ${e.message()}"
+}
+-- stdout --
+�

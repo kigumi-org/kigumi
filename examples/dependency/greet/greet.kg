@@ -1,0 +1,10 @@
+/// How the greeting sounds.
+pub type Tone = Plain | Warm
+
+/// A greeting for name.
+pub fn hello(name: String, tone: Tone) -> String {
+    match tone {
+        Tone.Plain -> "hello, ${name}"
+        Tone.Warm -> "hello, ${name}! good to see you"
+    }
+}

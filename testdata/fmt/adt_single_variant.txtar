@@ -1,0 +1,7 @@
+-- src --
+pub type AllocError = | OutOfMemory
+pub type Two = A | B
+-- expect --
+pub type AllocError = | OutOfMemory
+
+pub type Two = A | B

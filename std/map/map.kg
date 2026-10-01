@@ -1,0 +1,246 @@
+/// Map from K to V; keys need `Eq` and `Hash`. Entries keep insertion order.
+pub type Map[K: Eq + Hash, V] = {
+    mut keyList Array[K]
+    mut valueList Array[V]
+    // slots is an open-addressing index over the entry positions, stored
+    // as position + 1 so that 0 marks a free slot; its length is a power of two.
+    mut slots Array[usize]
+}
+
+/// Same entries in any order; satisfies `Eq` when the values do.
+pub pure fn Map[K: Eq + Hash, V: Eq].equals(self, other: &Map[K, V]) -> Bool {
+    if self.len() != other.len() {
+        return false
+    }
+    let mut i: usize = 0
+    for i < self.keyList.len() {
+        let same = self.keyList.with(i, (k: &K) => match other.position(k) {
+            Some(pos) -> self.valueList.with(i, (v: &V) => other.valueList.with(pos, (ov: &V) => v == ov) is Some(true)) is Some(true)
+            None -> false
+        })
+        if same is Some(true) {
+            i = i + 1
+        } else {
+            return false
+        }
+    }
+    true
+}
+
+/// Hash over the entries in any order; satisfies `Hash` when the values do.
+pub pure fn Map[K: Eq + Hash, V: Hash].hash(self) -> u64 {
+    let mut h: u64 = 0
+    let mut i: usize = 0
+    for i < self.keyList.len() {
+        let kh = self.keyList.with(i, (k: &K) => hash(k)) || 0
+        let vh = self.valueList.with(i, (v: &V) => hash(v)) || 0
+        h = h.wrappingAdd((kh ^ vh.wrappingMul(31)).wrappingMul(1099511628211))
+        i = i + 1
+    }
+    h
+}
+
+/// One key/value pair of a map, as returned by `entries`.
+pub type Entry[K, V] = {
+    pub key K
+    pub value V
+}
+
+/// A copy of the map; keys and values are Copy, so nothing is shared.
+pub pure fn Map[K: Copy, V: Copy].clone(self) -> Map[K, V] {
+    Map {
+        keyList: self.keyList.clone()
+        valueList: self.valueList.clone()
+        slots: self.slots.clone()
+    }
+}
+
+/// Creates an empty map.
+pub pure fn empty[K: Eq + Hash, V]() -> Map[K, V] {
+    Map {
+        keyList: Array.empty[K]()
+        valueList: Array.empty[V]()
+        slots: Array.empty[usize]()
+    }
+}
+
+/// The position of key among the entries, or None.
+pure fn Map[K: Eq + Hash, V].position(self, key: &K) -> usize? {
+    let n = self.slots.len()
+    if n == 0 {
+        return None
+    }
+    let mut i = hash(key).toUsize() & (n - 1)
+    for {
+        let s = self.slots.get(i) || 0
+        if s == 0 {
+            return None
+        }
+        let pos = s - 1
+        if self.keyList.with(pos, (k: &K) => k == key) is Some(true) {
+            return Some(pos)
+        }
+        i = (i + 1) & (n - 1)
+    }
+}
+
+/// Records entry pos in the first free slot of its probe sequence.
+pure noalloc fn Map[K: Eq + Hash, V].fileSlot(mut self, h: u64, pos: usize) -> Unit {
+    let n = self.slots.len()
+    let mut i = h.toUsize() & (n - 1)
+    for (self.slots.get(i) || 0) != 0 {
+        i = (i + 1) & (n - 1)
+    }
+    self.slots[i] = pos + 1
+}
+
+/// A fresh index of size zeroed slots, or AllocError when the allocator refuses.
+pure fn tryBuildSlots(size: usize) -> Result[Array[usize], AllocError] {
+    let mut slots = Array.empty[usize]()
+    slots.tryReserve(size)?
+    let mut i: usize = 0
+    for i < size {
+        slots.push(0)
+        i = i + 1
+    }
+    Ok(slots)
+}
+
+/// Files every entry into the (already right-sized) index; used after the
+/// index is replaced wholesale, when the old slots cannot be reused.
+pure fn Map[K: Eq + Hash, V].refileAll(mut self) -> Unit {
+    let mut pos: usize = 0
+    for pos < self.keyList.len() {
+        let h = self.keyList.with(pos, (k: &K) => hash(k)) || 0
+        self.fileSlot(h, pos)
+        pos = pos + 1
+    }
+}
+
+/// Rebuilds the index with size slots; entries keep their positions.
+pure fn Map[K: Eq + Hash, V].reindex(mut self, size: usize) -> Unit {
+    self.slots = tryBuildSlots(size) || panic("out of memory")
+    self.refileAll()
+}
+
+/// Inserts value under key, replacing an existing value.
+pub pure fn Map[K: Eq + Hash, V].set(mut self, key: K, value: V) -> Unit {
+    if self.position(&key) is Some(pos) {
+        self.valueList[pos] = value
+        return
+    }
+    let h = hash(&key)
+    self.keyList.push(key)
+    self.valueList.push(value)
+    let pos = self.keyList.len() - 1
+    if (pos + 1) * 2 > self.slots.len() {
+        let mut size: usize = 8
+        for size < (pos + 1) * 2 {
+            size = size * 2
+        }
+        self.reindex(size)
+        return
+    }
+    self.fileSlot(h, pos)
+}
+
+/// Inserts value under key, or AllocError when the allocator refuses; the
+/// map is left unchanged in that case (set panics instead).
+pub pure fn Map[K: Eq + Hash, V].trySet(mut self, key: K, value: V) -> Result[Unit, AllocError] {
+    if self.position(&key) is Some(pos) {
+        self.valueList[pos] = value
+    } else {
+        self.keyList.tryReserve(1)?
+        self.valueList.tryReserve(1)?
+        let pos = self.keyList.len()
+        let h = hash(&key)
+        if (pos + 1) * 2 > self.slots.len() {
+            let mut size: usize = 8
+            for size < (pos + 1) * 2 {
+                size = size * 2
+            }
+            // Build the bigger index before committing key/value, so a
+            // refused allocation here still leaves the map untouched.
+            let slots = tryBuildSlots(size)?
+            self.keyList.push(key)
+            self.valueList.push(value)
+            self.slots = slots
+            self.refileAll()
+        } else {
+            self.keyList.push(key)
+            self.valueList.push(value)
+            self.fileSlot(h, pos)
+        }
+    }
+}
+
+/// A copy of the value stored under key, or None when the key is absent.
+pub pure fn Map[K: Eq + Hash, V: Copy].get(self, key: &K) -> V? {
+    if self.position(key) is Some(pos) {
+        return self.valueList.get(pos)
+    }
+    None
+}
+
+/// Calls f with a borrow of the value under key; None when the key is absent.
+pub pure fn Map[K: Eq + Hash, V].with[R](self, key: &K, f: fn(&V) -> R) -> R? {
+    if self.position(key) is Some(pos) {
+        return self.valueList.with(pos, f)
+    }
+    None
+}
+
+/// Moves the value under key out of the map; None when the key is absent.
+/// Removing shifts the later positions, so the index is rebuilt.
+pub pure fn Map[K: Eq + Hash, V].take(mut self, key: &K) -> V? {
+    if self.position(key) is Some(pos) {
+        _ = self.keyList.takeAt(pos)
+        let value = self.valueList.takeAt(pos)
+        self.reindex(self.slots.len())
+        return value
+    }
+    None
+}
+
+/// Number of entries.
+pub pure noalloc fn Map[K, V].len(self) -> usize {
+    self.keyList.len()
+}
+
+/// Copies of all entries in insertion order.
+pub pure fn Map[K: Copy, V: Copy].entries(self) -> Array[Entry[K, V]] {
+    let mut out = Array.empty[Entry[K, V]]()
+    let mut i: usize = 0
+    for i < self.keyList.len() {
+        if self.keyList.get(i) is Some(key) {
+            if self.valueList.get(i) is Some(value) {
+                out.push(Entry {
+                    key: key
+                    value: value
+                })
+            }
+        }
+        i = i + 1
+    }
+    out
+}
+
+/// Whether key is present.
+pub pure fn Map[K: Eq + Hash, V].contains(self, key: &K) -> Bool {
+    self.position(key) is Some(_)
+}
+
+/// Removes key and drops its value; does nothing when the key is absent.
+pub pure fn Map[K: Eq + Hash, V].remove(mut self, key: &K) -> Unit {
+    _ = self.take(key)
+}
+
+/// Copies of all keys in insertion order; the values stay untouched.
+pub pure fn Map[K: Copy, V].keys(self) -> Array[K] {
+    self.keyList.clone()
+}
+
+/// Copies of all values in insertion order.
+pub pure fn Map[K: Copy, V: Copy].values(self) -> Array[V] {
+    self.valueList.clone()
+}

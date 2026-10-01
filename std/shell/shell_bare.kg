@@ -1,0 +1,9 @@
+/// Runs the plan; a bare target has no processes.
+pub fn capture(plan: Plan, sh: Shell) -> Captured! {
+    panic()
+}
+
+/// Runs the plan; a bare target has no processes.
+pub fn run(plan: Plan, sh: Shell) -> PipelineResult! {
+    panic()
+}

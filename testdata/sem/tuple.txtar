@@ -1,0 +1,78 @@
+-- app/t/t.kg --
+type Res = resource {
+    pub id Int
+}
+
+fn Res.drop(move self) -> Unit {
+    _ = self
+}
+
+// A 1-tuple is a parenthesized expression, not a type of its own (R4).
+type Bad = (Int,) //~ ERROR a tuple needs 2 to 8 elements, found 1
+
+fn oneLit() -> Unit {
+    let x = (1,) //~ ERROR a tuple needs 2 to 8 elements, found 1
+    _ = x
+}
+
+fn onePat() -> Unit {
+    let (a,) = (1, 2) //~ ERROR a tuple needs 2 to 8 elements, found 1
+    _ = a
+}
+
+fn two() -> (Int, Int) {
+    (1, 2)
+}
+
+// A pattern's arity must match the scrutinee's tuple arity, the same as a
+// record pattern naming the wrong type.
+fn arityMismatch() -> Unit {
+    let (a, b, c) = two() //~ ERROR this pattern cannot match `(Int, Int)`
+    _ = a
+    _ = b
+    _ = c
+}
+
+// Destructuring through a borrow gives `&T` bindings, the same binding mode
+// a record pattern uses over a borrowed scrutinee (§2.8); a move-only
+// component cannot then be read back out as owned.
+fn steal(t: &(Res, Int)) -> Res {
+    let (r, n) = t
+    _ = n
+    r //~ ERROR expected `Res`, found `&Res`
+}
+
+-- expect --
+error[E971]: a tuple needs 2 to 8 elements, found 1
+  --> app/t/t.kg:10:12
+   |
+10 | type Bad = (Int,) //~ ERROR a tuple needs 2 to 8 elements, found 1
+   |            ^^^^
+   = help: a single element is a parenthesized expression, more than 8 needs a record
+
+error[E971]: a tuple needs 2 to 8 elements, found 1
+  --> app/t/t.kg:13:13
+   |
+13 |     let x = (1,) //~ ERROR a tuple needs 2 to 8 elements, found 1
+   |             ^^
+   = help: a single element is a parenthesized expression, more than 8 needs a record
+
+error[E971]: a tuple needs 2 to 8 elements, found 1
+  --> app/t/t.kg:18:9
+   |
+18 |     let (a,) = (1, 2) //~ ERROR a tuple needs 2 to 8 elements, found 1
+   |         ^^
+   = help: a single element is a parenthesized expression, more than 8 needs a record
+
+error[E810]: this pattern cannot match `(Int, Int)`
+  --> app/t/t.kg:29:9
+   |
+29 |     let (a, b, c) = two() //~ ERROR this pattern cannot match `(Int, Int)`
+   |         ^^^^^^^^
+
+error[E400]: expected `Res`, found `&Res`
+  --> app/t/t.kg:41:5
+   |
+41 |     r //~ ERROR expected `Res`, found `&Res`
+   |     ^
+

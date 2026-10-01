@@ -1,0 +1,45 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  hermetic:
+    name: go test (no C toolchain)
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+      - run: test -z "$(gofmt -l .)"
+      - run: go vet ./...
+      - run: go test -timeout 60m ./...
+      - run: go test -run 'Fuzz' -fuzz 'Fuzz' -fuzztime 20s ./internal/syntax/
+
+  aot:
+    name: AOT with pinned zig
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+      - uses: mlugg/setup-zig@v2
+        with:
+          version: 0.15.2
+      - run: go test -timeout 60m ./internal/driver/
+      - run: KIGUMI_CFLAGS=-DKIGUMI_RC_CHECK go test -timeout 60m ./internal/driver/
+      - run: KIGUMI_CFLAGS='-fsanitize=address,undefined -g' go test -timeout 60m -run 'TestAotCorpus|TestAotFFI|TestAotDL|TestAotAsm' ./internal/driver/
+
+  # The reusable workflow other Kigumi repositories call, exercised on an
+  # example module with the toolchain built from this checkout.
+  module:
+    uses: ./.github/workflows/kigumi-test.yml
+    with:
+      module-root: examples/repostat
+      kigumi-version: local
+      zig-version: 0.15.2

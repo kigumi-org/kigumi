@@ -1,0 +1,33 @@
+-- src --
+interface Show {
+    fn show(self) -> String
+}
+
+interface R {
+    fn render(self, x: Wrap) -> String
+}
+
+type Wrap = {
+    pub v Int
+}
+
+fn Wrap.show(self) -> String {
+    "${self.v}"
+}
+
+type Tag = {
+    pub n Int
+}
+
+fn Tag.render[T: Show](self, x: T) -> String {
+    "Tag(${self.n})=${x.show()}"
+}
+
+fn callRender[X: R](x: X) -> String {
+    x.render(Wrap { v: 5 })
+}
+
+let t = Tag { n: 3 }
+print callRender(t)
+-- stdout --
+Tag(3)=5

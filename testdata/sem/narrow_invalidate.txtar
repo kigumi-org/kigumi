@@ -1,0 +1,95 @@
+-- lib/inv.kg --
+type Box = {
+    pub mut v Int?
+    pub w Int?
+}
+
+fn get() -> Int? {
+    None
+}
+
+fn mutate(b: &mut Box) -> Unit {}
+
+fn use(mut x: Int?, mut b: Box, xs: Array[Int?]) -> Int {
+    if x is None { return 0 }
+    match x {
+        Some(v) -> v
+    }
+    x = get()
+    match x { //~ ERROR non-exhaustive match: `None` is not covered
+        Some(v) -> v
+    }
+    if b.v is None { return 1 }
+    match b.v {
+        Some(v) -> v
+    }
+    b.v = None
+    match b.v { //~ ERROR non-exhaustive match: `None` is not covered
+        Some(v) -> v
+    }
+    if b.w is None { return 2 }
+    b.v = None
+    match b.w {
+        Some(v) -> v
+    }
+    mutate(&mut b)
+    match b.w { //~ ERROR non-exhaustive match: `None` is not covered
+        Some(v) -> v
+    }
+    if xs[0] is None { return 3 }
+    match xs[0] { //~ ERROR non-exhaustive match: `None` is not covered
+        Some(v) -> v
+    }
+    if x is None { return 4 }
+    for i in 0..3 {
+        match x { //~ ERROR non-exhaustive match: `None` is not covered
+            Some(v) -> v
+        }
+    }
+    if x is None { return 5 }
+    let f = () => {
+        x = None
+    }
+    _ = get()
+    match x { //~ ERROR non-exhaustive match: `None` is not covered
+        Some(v) -> v
+    }
+    0
+}
+-- expect --
+error[E814]: non-exhaustive match: `None` is not covered
+  --> lib/inv.kg:18:5
+   |
+18 |     match x { //~ ERROR non-exhaustive match: `None` is not covered
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E814]: non-exhaustive match: `None` is not covered
+  --> lib/inv.kg:26:5
+   |
+26 |     match b.v { //~ ERROR non-exhaustive match: `None` is not covered
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E814]: non-exhaustive match: `None` is not covered
+  --> lib/inv.kg:35:5
+   |
+35 |     match b.w { //~ ERROR non-exhaustive match: `None` is not covered
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E814]: non-exhaustive match: `None` is not covered
+  --> lib/inv.kg:39:5
+   |
+39 |     match xs[0] { //~ ERROR non-exhaustive match: `None` is not covered
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E814]: non-exhaustive match: `None` is not covered
+  --> lib/inv.kg:44:9
+   |
+44 |         match x { //~ ERROR non-exhaustive match: `None` is not covered
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E814]: non-exhaustive match: `None` is not covered
+  --> lib/inv.kg:53:5
+   |
+53 |     match x { //~ ERROR non-exhaustive match: `None` is not covered
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+

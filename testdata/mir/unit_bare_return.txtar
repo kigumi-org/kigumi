@@ -1,0 +1,36 @@
+-- src --
+fn f() -> Unit! {
+    return
+}
+f()?
+print "ok"
+-- expect --
+fn main.f() -> Unit! {
+  b0:
+    %t0 = unit
+    %t1 = variant Ok(%t0)
+    return %t1
+  b1:
+    %t2 = unit
+    return %t2
+}
+fn main() -> Unit! {
+  b0:
+    %t0 = call f
+    %t1 = isvariant Ok(%t0)
+    branch %t1 ? b1 : b2
+  b1:
+    %t4 = payload 0(%t0)
+    drop(%t0)
+    drop(%t4)
+    %t5 = const "ok": String
+    %t6 = builtin print(%t5)
+    drop(%t6)
+    %t7 = unit
+    return %t7
+  b2:
+    %t2 = payload 0(%t0)
+    drop(%t0)
+    %t3 = variant Err(%t2)
+    return %t3
+}

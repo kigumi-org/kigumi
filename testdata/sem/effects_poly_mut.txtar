@@ -1,0 +1,123 @@
+-- lib/poly_mut.kg --
+import fs from std/fs
+
+type App = {
+    pub view pure? fn(Int) -> Int
+}
+
+pure fn pureView(x: Int) -> Int {
+    x + 1
+}
+
+fn plainView(x: Int) -> Int {
+    x * 2
+}
+
+fn impureView(files: fs.Files, p: fs.Path, x: Int) -> Int {
+    _ = files.remove(p)
+    x
+}
+
+// A closure literal bound directly to a `pure?` field defers to its own
+// (later inferred) summary, same as a named function.
+pure fn withPureClosure() -> Int {
+    let app = App { view: (n) => n + 1 }
+    app.view(1)
+}
+
+pure fn withImpureClosure(files: fs.Files, p: fs.Path) -> Int {
+    let app = App { view: (n) => { _ = files.remove(p); n + 1 } }
+    app.view(1) //~ ERROR closure is not `pure` (calls `remove`)
+}
+
+// A field bound to an identifier tracing to this function's own `pure?
+// fn` parameter defers to the caller's instantiation of that parameter.
+fn withCallbackField(cb: pure? fn(Int) -> Int) -> Int {
+    let app = App { view: cb }
+    app.view(1)
+}
+
+pure fn callWithCallbackFieldOk() -> Int {
+    withCallbackField(pureView)
+}
+
+pure fn callWithCallbackFieldBad(files: fs.Files, p: fs.Path) -> Int {
+    withCallbackField((n) => impureView(files, p, n)) //~ ERROR closure is not `pure` (calls `impureView`)
+}
+
+// A closure reading a `pure?` field through a captured enclosing
+// parameter does not defer to the caller's instantiation the way a
+// direct call in the parameter's own function body does (L-156): its
+// summary is resolved once, so it stays impure by default.
+pure fn withParamClosure(app: App) -> Int {
+    let f = () => app.view(1)
+    f() //~ ERROR `f` is not `pure`
+}
+
+// A `mut` local's field stays known across a straight-line reassignment.
+pure fn withMutReassigned() -> Int {
+    let mut app = App { view: pureView }
+    app = App { view: pureView }
+    app.view(1)
+}
+
+// Reassignment inside a conditionally-taken branch to a differently-pure
+// value invalidates the field: the read after the `if` can no longer see
+// either arm's value.
+pure fn withMutBranch(flag: Bool) -> Int {
+    let mut app = App { view: pureView }
+    if flag {
+        app = App { view: plainView }
+    }
+    app.view(1) //~ ERROR `app.view` may be impure
+}
+
+// The two arms agree, so the field stays known through the join.
+pure fn withMutBranchAgree(flag: Bool) -> Int {
+    let mut app = App { view: pureView }
+    if flag {
+        app = App { view: pureView }
+    }
+    app.view(1)
+}
+
+// A `mut` parameter has no entry-point fact a reassignment could
+// invalidate the way a `mut` local's does, so it never defers to the
+// caller's argument (L-158): unlike `withParam` in effects_poly.txtar,
+// this stays impure even though every actual argument is pure.
+pure fn withMutParam(mut app: App) -> Int {
+    app.view(1) //~ ERROR `app.view` may be impure
+}
+-- expect --
+error[E422]: closure is not `pure` (calls `remove`)
+  --> lib/poly_mut.kg:29:5
+   |
+29 |     app.view(1) //~ ERROR closure is not `pure` (calls `remove`)
+   |     ^^^^^^^^^^
+
+error[E422]: closure is not `pure` (calls `impureView`)
+  --> lib/poly_mut.kg:44:23
+   |
+44 |     withCallbackField((n) => impureView(files, p, n)) //~ ERROR closure is not `pure` (calls `impureView`)
+   |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E900]: `f` is not `pure`
+  --> lib/poly_mut.kg:53:5
+   |
+53 |     f() //~ ERROR `f` is not `pure`
+   |     ^^
+
+error[E901]: `app.view` may be impure
+  --> lib/poly_mut.kg:71:5
+   |
+71 |     app.view(1) //~ ERROR `app.view` may be impure
+   |     ^^^^^^^^^^
+   = help: declare it `pure fn(...)`
+
+error[E901]: `app.view` may be impure
+  --> lib/poly_mut.kg:88:5
+   |
+88 |     app.view(1) //~ ERROR `app.view` may be impure
+   |     ^^^^^^^^^^
+   = help: declare it `pure fn(...)`
+

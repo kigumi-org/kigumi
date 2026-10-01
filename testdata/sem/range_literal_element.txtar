@@ -1,0 +1,12 @@
+-- src --
+let mut n: Bool = true
+for i in 0..3 {
+    n = n + i //~ ERROR expected `Bool`, found `{integer}`
+}
+-- expect --
+error[E400]: expected `Bool`, found `{integer}`
+ --> main/main.kg:3:13
+  |
+3 |     n = n + i //~ ERROR expected `Bool`, found `{integer}`
+  |             ^
+

@@ -1,0 +1,14 @@
+-- src --
+fn spin(n: Int) -> Int {
+    let mut i = 0
+    for {
+        i = i + 1
+        if i > n {
+            return i
+        }
+    }
+}
+
+print "${spin(3)}"
+-- stdout --
+4

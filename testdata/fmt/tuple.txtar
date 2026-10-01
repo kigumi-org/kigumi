@@ -1,0 +1,30 @@
+-- src --
+type Pair=(Int,String)
+
+fn two() -> (Int,String) {
+    (1,"a")
+}
+
+fn use(p: (Int, Int)) -> Int {
+    let (x,y)=p
+    x+y
+}
+
+fn single() -> Unit {
+    let a = (1,)
+}
+-- expect --
+type Pair = (Int, String)
+
+fn two() -> (Int, String) {
+    (1, "a")
+}
+
+fn use(p: (Int, Int)) -> Int {
+    let (x, y) = p
+    x + y
+}
+
+fn single() -> Unit {
+    let a = (1,)
+}

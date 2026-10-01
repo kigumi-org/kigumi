@@ -1,0 +1,56 @@
+-- lib/field.kg --
+type Inner = resource {
+    pub id Int
+}
+
+fn Inner.drop(move self) -> Unit {
+    _ = self
+}
+
+type Outer = {
+    pub inner Inner
+    pub n Int
+}
+
+fn Outer.steal(self) -> Inner {
+    self.inner
+}
+
+fn Outer.count(self) -> Int {
+    self.n
+}
+
+fn peek(o: &Outer) -> Int {
+    o.inner.id
+}
+
+-- expect --
+fn lib.Inner.drop(%self: Inner) -> Unit {
+  b0:
+    %t1 = move(%self)
+    drop(%t1)
+    %t2 = unit
+    return %t2
+}
+fn lib.Outer.steal(%self: Outer) -> Inner {
+  b0:
+    %t1 = field 0(%self)
+    return %t1
+}
+fn lib.Outer.count(%self: Outer) -> Int {
+  b0:
+    %t1 = field 1(%self)
+    return %t1
+}
+fn lib.peek(%o: &Outer) -> Int {
+  b0:
+    %t1 = field 0(%o)
+    %t2 = field 0(%t1)
+    return %t2
+}
+error[move-from-borrow]: a value borrowed here cannot be moved out; clone it
+  --> lib/field.kg:15:5
+   |
+15 |     self.inner
+   |     ^^^^^^^^^^
+

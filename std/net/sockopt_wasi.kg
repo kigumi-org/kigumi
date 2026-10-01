@@ -1,0 +1,75 @@
+/// setsockopt level for SOL_SOCKET on this platform: wasi-libc's own
+/// __header_sys_socket.h overrides musl's generic 1 with 0x7fffffff, so
+/// the "wasi is musl, same as Linux" assumption does not hold here.
+fn solSocket() -> i32 {
+    0x7fffffff
+}
+
+// SO_REUSEADDR has no #define at all in the wasi-libc header wasi-sdk
+// actually ships for this (non-wasip2) ABI, and wasi-libc supplies no
+// setsockopt(2) implementation to receive it either; 2 is musl/Linux's
+// number, kept as a placeholder until real WASI socket options exist.
+fn soReuseAddr() -> i32 {
+    2
+}
+
+// SO_RCVTIMEO/SO_SNDTIMEO are likewise undefined outside the wasip2
+// ABI (__wasilibc_use_wasip2, which this driver never targets) and
+// wasi-libc has no setsockopt(2) body regardless; these placeholders
+// keep IR emission/type-checking working, same as sockopt_windows.kg.
+fn soRcvTimeo() -> i32 {
+    20
+}
+
+fn soSndTimeo() -> i32 {
+    21
+}
+
+// struct timeval on this LP64 target: both tv_sec and tv_usec are 8 bytes.
+type Timeval layout(C) = {
+    pub sec i64
+    pub usec i64
+}
+
+fn timeoutValue(seconds: i32) -> Timeval {
+    Timeval {
+        sec: seconds.toInt()
+        usec: 0
+    }
+}
+
+/// fcntl(2) F_GETFL/F_SETFL on this platform: wasi-libc's own
+/// __header_fcntl.h happens to match musl/Linux's numbers here.
+fn fcntlGetFl() -> i32 {
+    3
+}
+
+fn fcntlSetFl() -> i32 {
+    4
+}
+
+// O_NONBLOCK is __WASI_FDFLAGS_NONBLOCK (1 << 2) in wasi-libc's
+// __header_fcntl.h, not Linux's 2048.
+fn oNonBlock() -> i32 {
+    4
+}
+
+// SO_ERROR is undefined outside the wasip2 ABI, same caveat as
+// soReuseAddr/soRcvTimeo/soSndTimeo above; 4 is musl/Linux's number.
+fn soError() -> i32 {
+    4
+}
+
+// poll(2) POLLOUT bit: wasi-libc's __header_poll.h defines POLLOUT as
+// POLLWRNORM (0x2), not Linux's bit 4; wasi's own poll() implementation
+// tests events against POLLRDNORM/POLLWRNORM specifically, so the wrong
+// bit here would make every write-readiness poll come back empty.
+fn pollOut() -> i16 {
+    2
+}
+
+/// errno(3) EINTR on this platform: wasi's own errno space
+/// (__WASI_ERRNO_INTR in wasi/api.h) numbers it 27, not musl/Linux's 4.
+fn eintr() -> i32 {
+    27
+}

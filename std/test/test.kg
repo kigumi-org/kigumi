@@ -1,0 +1,21 @@
+/// Error raised by `fail test.failure(...)` inside a `test` block.
+pub type Failure = {
+    pub text String
+}
+
+/// The failure text.
+pub fn Failure.message(self) -> String {
+    self.text
+}
+
+/// Creates a test failure carrying text.
+pub pure fn failure(text: String) -> Failure {
+    Failure { text: text }
+}
+
+/// Fails with `expected <expected>, got <actual>` unless the two are equal.
+pub pure fn expectEq[T: Eq](actual: T, expected: T) -> Unit! {
+    if actual != expected {
+        fail failure("expected ${debug(&expected)}, got ${debug(&actual)}")
+    }
+}

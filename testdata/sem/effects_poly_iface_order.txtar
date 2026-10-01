@@ -1,0 +1,175 @@
+-- lib/order_same_file.kg --
+interface Viewer {
+    pure? fn view(self, x: Int) -> Int
+}
+
+// The caller is declared, and so body-checked, BEFORE the generic callee in
+// this file — every effects_poly_iface.txtar fixture has the generic callee
+// first. CalledWitnessReqs must not depend on this order (L-178).
+pure fn callGenericImpure(x: Int) -> Int {
+    callViewGeneric(ImpureV { tag: 1 }, x) //~ ERROR `callViewGeneric` may be impure
+}
+
+fn callViewGeneric[T: Viewer](t: T, x: Int) -> Int {
+    t.view(x)
+}
+
+@impl(Viewer)
+type PureV = {
+    pub tag Int
+}
+
+pure fn PureV.view(self, x: Int) -> Int {
+    x + self.tag
+}
+
+@impl(Viewer)
+type ImpureV = {
+    pub tag Int
+}
+
+fn ImpureV.view(self, x: Int) -> Int {
+    x * self.tag
+}
+-- lib/order_wrap.kg --
+interface WrapViewer {
+    pure? fn wview(self, x: Int) -> Int
+}
+
+// Same order flip, this time through a WitnessBind's own nested
+// CalledWitnessReqs (`Wrap[T].wview` calling `self.inner.wview(x)`), which
+// witnessArgMods recurses into (L-178).
+pure fn wrapImpure(x: Int) -> Int {
+    callWrapGeneric(Wrap { inner: ImpureW { tag: 1 } }, x) //~ ERROR `callWrapGeneric` may be impure
+}
+
+fn callWrapGeneric[T: WrapViewer](t: T, x: Int) -> Int {
+    t.wview(x)
+}
+
+@impl(WrapViewer)
+type PureW = {
+    pub tag Int
+}
+
+pure fn PureW.wview(self, x: Int) -> Int {
+    x + self.tag
+}
+
+@impl(WrapViewer)
+type ImpureW = {
+    pub tag Int
+}
+
+fn ImpureW.wview(self, x: Int) -> Int {
+    x * self.tag
+}
+
+@impl(WrapViewer)
+type Wrap[T: WrapViewer] = {
+    pub inner T
+}
+
+pure fn Wrap[T].wview(self, x: Int) -> Int {
+    self.inner.wview(x)
+}
+-- lib/order_local_alias.kg --
+interface AliasViewer {
+    pure? fn aview(self, x: Int) -> Int
+}
+
+// Same order flip, but the generic callee's receiver is a local alias
+// (`let u = t`), not `t` itself: witnessRecvType's structural pre-pass only
+// chased self/a parameter/one field access, so this shape kept the order
+// dependency even after L-178 (L-178 追記).
+pure fn aliasImpure(x: Int) -> Int {
+    callAliasGeneric(ImpureA { tag: 1 }, x) //~ ERROR `callAliasGeneric` may be impure
+}
+
+fn callAliasGeneric[T: AliasViewer](t: T, x: Int) -> Int {
+    let u = t
+    u.aview(x)
+}
+
+@impl(AliasViewer)
+type PureA = {
+    pub tag Int
+}
+
+pure fn PureA.aview(self, x: Int) -> Int {
+    x + self.tag
+}
+
+@impl(AliasViewer)
+type ImpureA = {
+    pub tag Int
+}
+
+fn ImpureA.aview(self, x: Int) -> Int {
+    x * self.tag
+}
+-- lib/order_call_result.kg --
+interface ResultViewer {
+    pure? fn rview(self, x: Int) -> Int
+}
+
+fn identity[T](t: T) -> T {
+    t
+}
+
+// Same order flip, receiver is another call's result (`identity(t)`), same
+// gap as order_local_alias.kg (L-178 追記).
+pure fn resultImpure(x: Int) -> Int {
+    callResultGeneric(ImpureR { tag: 1 }, x) //~ ERROR `callResultGeneric` may be impure
+}
+
+fn callResultGeneric[T: ResultViewer](t: T, x: Int) -> Int {
+    identity(t).rview(x)
+}
+
+@impl(ResultViewer)
+type PureR = {
+    pub tag Int
+}
+
+pure fn PureR.rview(self, x: Int) -> Int {
+    x + self.tag
+}
+
+@impl(ResultViewer)
+type ImpureR = {
+    pub tag Int
+}
+
+fn ImpureR.rview(self, x: Int) -> Int {
+    x * self.tag
+}
+-- expect --
+error[E901]: `callResultGeneric` may be impure
+  --> lib/order_call_result.kg:12:5
+   |
+12 |     callResultGeneric(ImpureR { tag: 1 }, x) //~ ERROR `callResultGeneric` may be impure
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   = help: declare it `pure fn(...)`
+
+error[E901]: `callAliasGeneric` may be impure
+  --> lib/order_local_alias.kg:10:5
+   |
+10 |     callAliasGeneric(ImpureA { tag: 1 }, x) //~ ERROR `callAliasGeneric` may be impure
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   = help: declare it `pure fn(...)`
+
+error[E901]: `callViewGeneric` may be impure
+ --> lib/order_same_file.kg:9:5
+  |
+9 |     callViewGeneric(ImpureV { tag: 1 }, x) //~ ERROR `callViewGeneric` may be impure
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  = help: declare it `pure fn(...)`
+
+error[E901]: `callWrapGeneric` may be impure
+ --> lib/order_wrap.kg:9:5
+  |
+9 |     callWrapGeneric(Wrap { inner: ImpureW { tag: 1 } }, x) //~ ERROR `callWrapGeneric` may be impure
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  = help: declare it `pure fn(...)`
+

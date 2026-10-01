@@ -1,0 +1,112 @@
+-- src --
+let i8Add0a: i8 = 127
+let i8Add0b: i8 = 1
+let i8Add1a: i8 = -128
+let i8Add1b: i8 = -1
+let i8Add2a: i8 = 5
+let i8Add2b: i8 = -3
+let i8Sub0a: i8 = -128
+let i8Sub0b: i8 = 1
+let i8Sub1a: i8 = 127
+let i8Sub1b: i8 = -1
+let i8Sub2a: i8 = 5
+let i8Sub2b: i8 = 3
+let i8Mul0a: i8 = 127
+let i8Mul0b: i8 = 2
+let i8Mul1a: i8 = -128
+let i8Mul1b: i8 = -1
+let i8Mul2a: i8 = -128
+let i8Mul2b: i8 = 2
+let i8Mul3a: i8 = 3
+let i8Mul3b: i8 = 4
+let i16Add0a: i16 = 32767
+let i16Add0b: i16 = 1
+let i16Add1a: i16 = -32768
+let i16Add1b: i16 = -1
+let i16Add2a: i16 = 5
+let i16Add2b: i16 = -3
+let i16Sub0a: i16 = -32768
+let i16Sub0b: i16 = 1
+let i16Sub1a: i16 = 32767
+let i16Sub1b: i16 = -1
+let i16Sub2a: i16 = 5
+let i16Sub2b: i16 = 3
+let i16Mul0a: i16 = 32767
+let i16Mul0b: i16 = 2
+let i16Mul1a: i16 = -32768
+let i16Mul1b: i16 = -1
+let i16Mul2a: i16 = -32768
+let i16Mul2b: i16 = 2
+let i16Mul3a: i16 = 3
+let i16Mul3b: i16 = 4
+let i32Add0a: i32 = 2147483647
+let i32Add0b: i32 = 1
+let i32Add1a: i32 = -2147483648
+let i32Add1b: i32 = -1
+let i32Add2a: i32 = 5
+let i32Add2b: i32 = -3
+let i32Sub0a: i32 = -2147483648
+let i32Sub0b: i32 = 1
+let i32Sub1a: i32 = 2147483647
+let i32Sub1b: i32 = -1
+let i32Sub2a: i32 = 5
+let i32Sub2b: i32 = 3
+let i32Mul0a: i32 = 2147483647
+let i32Mul0b: i32 = 2
+let i32Mul1a: i32 = -2147483648
+let i32Mul1b: i32 = -1
+let i32Mul2a: i32 = -2147483648
+let i32Mul2b: i32 = 2
+let i32Mul3a: i32 = 3
+let i32Mul3b: i32 = 4
+let i64Add0a: i64 = 9223372036854775807
+let i64Add0b: i64 = 1
+let i64Add1a: i64 = -9223372036854775808
+let i64Add1b: i64 = -1
+let i64Add2a: i64 = 5
+let i64Add2b: i64 = -3
+let i64Sub0a: i64 = -9223372036854775808
+let i64Sub0b: i64 = 1
+let i64Sub1a: i64 = 9223372036854775807
+let i64Sub1b: i64 = -1
+let i64Sub2a: i64 = 5
+let i64Sub2b: i64 = 3
+let i64Mul0a: i64 = 9223372036854775807
+let i64Mul0b: i64 = 2
+let i64Mul1a: i64 = -9223372036854775808
+let i64Mul1b: i64 = -1
+let i64Mul2a: i64 = -9223372036854775808
+let i64Mul2b: i64 = 2
+let i64Mul3a: i64 = 3
+let i64Mul3b: i64 = 4
+let isizeAdd0a: isize = 9223372036854775807
+let isizeAdd0b: isize = 1
+let isizeAdd1a: isize = -9223372036854775808
+let isizeAdd1b: isize = -1
+let isizeAdd2a: isize = 5
+let isizeAdd2b: isize = -3
+let isizeSub0a: isize = -9223372036854775808
+let isizeSub0b: isize = 1
+let isizeSub1a: isize = 9223372036854775807
+let isizeSub1b: isize = -1
+let isizeSub2a: isize = 5
+let isizeSub2b: isize = 3
+let isizeMul0a: isize = 9223372036854775807
+let isizeMul0b: isize = 2
+let isizeMul1a: isize = -9223372036854775808
+let isizeMul1b: isize = -1
+let isizeMul2a: isize = -9223372036854775808
+let isizeMul2b: isize = 2
+let isizeMul3a: isize = 3
+let isizeMul3b: isize = 4
+print "${i8Add0a.saturatingAdd(i8Add0b)} ${i8Add1a.saturatingAdd(i8Add1b)} ${i8Add2a.saturatingAdd(i8Add2b)} ${i8Sub0a.saturatingSub(i8Sub0b)} ${i8Sub1a.saturatingSub(i8Sub1b)} ${i8Sub2a.saturatingSub(i8Sub2b)} ${i8Mul0a.saturatingMul(i8Mul0b)} ${i8Mul1a.saturatingMul(i8Mul1b)} ${i8Mul2a.saturatingMul(i8Mul2b)} ${i8Mul3a.saturatingMul(i8Mul3b)}"
+print "${i16Add0a.saturatingAdd(i16Add0b)} ${i16Add1a.saturatingAdd(i16Add1b)} ${i16Add2a.saturatingAdd(i16Add2b)} ${i16Sub0a.saturatingSub(i16Sub0b)} ${i16Sub1a.saturatingSub(i16Sub1b)} ${i16Sub2a.saturatingSub(i16Sub2b)} ${i16Mul0a.saturatingMul(i16Mul0b)} ${i16Mul1a.saturatingMul(i16Mul1b)} ${i16Mul2a.saturatingMul(i16Mul2b)} ${i16Mul3a.saturatingMul(i16Mul3b)}"
+print "${i32Add0a.saturatingAdd(i32Add0b)} ${i32Add1a.saturatingAdd(i32Add1b)} ${i32Add2a.saturatingAdd(i32Add2b)} ${i32Sub0a.saturatingSub(i32Sub0b)} ${i32Sub1a.saturatingSub(i32Sub1b)} ${i32Sub2a.saturatingSub(i32Sub2b)} ${i32Mul0a.saturatingMul(i32Mul0b)} ${i32Mul1a.saturatingMul(i32Mul1b)} ${i32Mul2a.saturatingMul(i32Mul2b)} ${i32Mul3a.saturatingMul(i32Mul3b)}"
+print "${i64Add0a.saturatingAdd(i64Add0b)} ${i64Add1a.saturatingAdd(i64Add1b)} ${i64Add2a.saturatingAdd(i64Add2b)} ${i64Sub0a.saturatingSub(i64Sub0b)} ${i64Sub1a.saturatingSub(i64Sub1b)} ${i64Sub2a.saturatingSub(i64Sub2b)} ${i64Mul0a.saturatingMul(i64Mul0b)} ${i64Mul1a.saturatingMul(i64Mul1b)} ${i64Mul2a.saturatingMul(i64Mul2b)} ${i64Mul3a.saturatingMul(i64Mul3b)}"
+print "${isizeAdd0a.saturatingAdd(isizeAdd0b)} ${isizeAdd1a.saturatingAdd(isizeAdd1b)} ${isizeAdd2a.saturatingAdd(isizeAdd2b)} ${isizeSub0a.saturatingSub(isizeSub0b)} ${isizeSub1a.saturatingSub(isizeSub1b)} ${isizeSub2a.saturatingSub(isizeSub2b)} ${isizeMul0a.saturatingMul(isizeMul0b)} ${isizeMul1a.saturatingMul(isizeMul1b)} ${isizeMul2a.saturatingMul(isizeMul2b)} ${isizeMul3a.saturatingMul(isizeMul3b)}"
+-- stdout --
+127 -128 2 -128 127 2 127 127 -128 12
+32767 -32768 2 -32768 32767 2 32767 32767 -32768 12
+2147483647 -2147483648 2 -2147483648 2147483647 2 2147483647 2147483647 -2147483648 12
+9223372036854775807 -9223372036854775808 2 -9223372036854775808 9223372036854775807 2 9223372036854775807 9223372036854775807 -9223372036854775808 12
+9223372036854775807 -9223372036854775808 2 -9223372036854775808 9223372036854775807 2 9223372036854775807 9223372036854775807 -9223372036854775808 12

@@ -1,0 +1,10 @@
+#!/usr/bin/env kigumi
+
+// Command line arguments: index 0 is the program itself.
+let args = host.args()
+print "${args.len() - 1} argument(s)"
+for i in 1..args.len() {
+    print "  ${i}: ${args.get(i) || "?"}"
+}
+let name = args.get(1) || "world"
+print "hello, ${name}"

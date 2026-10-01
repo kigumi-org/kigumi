@@ -1,0 +1,138 @@
+/// Explicit numeric conversions: no cast syntax, every conversion is a method.
+/// A conversion that always fits returns the target type; one that can lose the value returns an Option.
+/// usize / isize count as 64 bit here.
+pub pure noalloc fn i8.toI16(self) -> i16
+
+pub pure noalloc fn i8.toI32(self) -> i32
+pub pure noalloc fn i8.toInt(self) -> i64
+pub pure noalloc fn i8.toIsize(self) -> isize
+pub pure noalloc fn i8.toU8(self) -> u8?
+pub pure noalloc fn i8.toU16(self) -> u16?
+pub pure noalloc fn i8.toU32(self) -> u32?
+pub pure noalloc fn i8.toU64(self) -> u64?
+pub pure noalloc fn i8.toUsize(self) -> usize?
+pub pure noalloc fn i8.toFloat(self) -> Float
+pub pure noalloc fn i8.toF32(self) -> f32
+
+pub pure noalloc fn i16.toI8(self) -> i8?
+pub pure noalloc fn i16.toI32(self) -> i32
+pub pure noalloc fn i16.toInt(self) -> i64
+pub pure noalloc fn i16.toIsize(self) -> isize
+pub pure noalloc fn i16.toU8(self) -> u8?
+pub pure noalloc fn i16.toU16(self) -> u16?
+pub pure noalloc fn i16.toU32(self) -> u32?
+pub pure noalloc fn i16.toU64(self) -> u64?
+pub pure noalloc fn i16.toUsize(self) -> usize?
+pub pure noalloc fn i16.toFloat(self) -> Float
+pub pure noalloc fn i16.toF32(self) -> f32
+
+pub pure noalloc fn i32.toI8(self) -> i8?
+pub pure noalloc fn i32.toI16(self) -> i16?
+pub pure noalloc fn i32.toInt(self) -> i64
+pub pure noalloc fn i32.toIsize(self) -> isize
+pub pure noalloc fn i32.toU8(self) -> u8?
+pub pure noalloc fn i32.toU16(self) -> u16?
+pub pure noalloc fn i32.toU32(self) -> u32?
+pub pure noalloc fn i32.toU64(self) -> u64?
+pub pure noalloc fn i32.toUsize(self) -> usize?
+pub pure noalloc fn i32.toFloat(self) -> Float
+pub pure noalloc fn i32.toF32(self) -> f32
+
+pub pure noalloc fn i64.toI8(self) -> i8?
+pub pure noalloc fn i64.toI16(self) -> i16?
+pub pure noalloc fn i64.toI32(self) -> i32?
+pub pure noalloc fn i64.toIsize(self) -> isize
+pub pure noalloc fn i64.toU8(self) -> u8?
+pub pure noalloc fn i64.toU16(self) -> u16?
+pub pure noalloc fn i64.toU32(self) -> u32?
+pub pure noalloc fn i64.toU64(self) -> u64?
+pub pure noalloc fn i64.toUsize(self) -> usize?
+pub pure noalloc fn i64.toFloat(self) -> Float
+pub pure noalloc fn i64.toF32(self) -> f32
+
+pub pure noalloc fn isize.toI8(self) -> i8?
+pub pure noalloc fn isize.toI16(self) -> i16?
+pub pure noalloc fn isize.toI32(self) -> i32?
+pub pure noalloc fn isize.toInt(self) -> i64
+pub pure noalloc fn isize.toU8(self) -> u8?
+pub pure noalloc fn isize.toU16(self) -> u16?
+pub pure noalloc fn isize.toU32(self) -> u32?
+pub pure noalloc fn isize.toU64(self) -> u64?
+pub pure noalloc fn isize.toUsize(self) -> usize?
+pub pure noalloc fn isize.toFloat(self) -> Float
+pub pure noalloc fn isize.toF32(self) -> f32
+
+pub pure noalloc fn u8.toI8(self) -> i8?
+pub pure noalloc fn u8.toI16(self) -> i16
+pub pure noalloc fn u8.toI32(self) -> i32
+pub pure noalloc fn u8.toInt(self) -> i64
+pub pure noalloc fn u8.toIsize(self) -> isize
+pub pure noalloc fn u8.toU16(self) -> u16
+pub pure noalloc fn u8.toU32(self) -> u32
+pub pure noalloc fn u8.toU64(self) -> u64
+pub pure noalloc fn u8.toUsize(self) -> usize
+pub pure noalloc fn u8.toFloat(self) -> Float
+pub pure noalloc fn u8.toF32(self) -> f32
+
+pub pure noalloc fn u16.toI8(self) -> i8?
+pub pure noalloc fn u16.toI16(self) -> i16?
+pub pure noalloc fn u16.toI32(self) -> i32
+pub pure noalloc fn u16.toInt(self) -> i64
+pub pure noalloc fn u16.toIsize(self) -> isize
+pub pure noalloc fn u16.toU8(self) -> u8?
+pub pure noalloc fn u16.toU32(self) -> u32
+pub pure noalloc fn u16.toU64(self) -> u64
+pub pure noalloc fn u16.toUsize(self) -> usize
+pub pure noalloc fn u16.toFloat(self) -> Float
+pub pure noalloc fn u16.toF32(self) -> f32
+
+pub pure noalloc fn u32.toI8(self) -> i8?
+pub pure noalloc fn u32.toI16(self) -> i16?
+pub pure noalloc fn u32.toI32(self) -> i32?
+pub pure noalloc fn u32.toInt(self) -> i64
+pub pure noalloc fn u32.toIsize(self) -> isize
+pub pure noalloc fn u32.toU8(self) -> u8?
+pub pure noalloc fn u32.toU16(self) -> u16?
+pub pure noalloc fn u32.toU64(self) -> u64
+pub pure noalloc fn u32.toUsize(self) -> usize
+pub pure noalloc fn u32.toFloat(self) -> Float
+pub pure noalloc fn u32.toF32(self) -> f32
+
+pub pure noalloc fn u64.toI8(self) -> i8?
+pub pure noalloc fn u64.toI16(self) -> i16?
+pub pure noalloc fn u64.toI32(self) -> i32?
+pub pure noalloc fn u64.toInt(self) -> i64?
+pub pure noalloc fn u64.toIsize(self) -> isize?
+pub pure noalloc fn u64.toU8(self) -> u8?
+pub pure noalloc fn u64.toU16(self) -> u16?
+pub pure noalloc fn u64.toU32(self) -> u32?
+pub pure noalloc fn u64.toUsize(self) -> usize
+pub pure noalloc fn u64.toFloat(self) -> Float
+pub pure noalloc fn u64.toF32(self) -> f32
+
+pub pure noalloc fn usize.toI8(self) -> i8?
+pub pure noalloc fn usize.toI16(self) -> i16?
+pub pure noalloc fn usize.toI32(self) -> i32?
+pub pure noalloc fn usize.toInt(self) -> i64?
+pub pure noalloc fn usize.toIsize(self) -> isize?
+pub pure noalloc fn usize.toU8(self) -> u8?
+pub pure noalloc fn usize.toU16(self) -> u16?
+pub pure noalloc fn usize.toU32(self) -> u32?
+pub pure noalloc fn usize.toU64(self) -> u64
+pub pure noalloc fn usize.toFloat(self) -> Float
+pub pure noalloc fn usize.toF32(self) -> f32
+
+/// Truncates toward zero; None for NaN, an infinity or a value outside the Int range.
+pub pure noalloc fn f64.toInt(self) -> Int?
+
+pub pure noalloc fn f64.toF32(self) -> f32
+pub pure noalloc fn f32.toInt(self) -> Int?
+pub pure noalloc fn f32.toF64(self) -> Float
+
+/// The Unicode scalar value of the character.
+pub pure noalloc fn Char.toInt(self) -> Int
+
+/// The character with this scalar value; None outside 0..0x10FFFF or inside the surrogate range.
+pub pure noalloc fn Char.fromInt(value: Int) -> Char?
+
+pub pure noalloc fn u8.toChar(self) -> Char

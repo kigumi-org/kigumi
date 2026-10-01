@@ -1,0 +1,51 @@
+-- app/t/t.kg --
+import {Shared} from std/alloc
+
+type View['a] = { pub data &'a Bytes, pub off usize }
+
+fn pick['a](x: &'a Int, y: &'a Int) -> &Int { //~ ERROR a returned borrow needs a lifetime
+    x
+}
+
+type Bad = {
+    r &Int //~ ERROR a field cannot hold a borrow without a lifetime
+}
+
+fn stash['a](b: &'a Bytes) -> Unit {
+    let v = View { data: b, off: 0 }
+    let s: Shared[View['a]] = Shared.new(v) //~ ERROR carries a borrow and cannot be stored
+    _ = s
+}
+
+fn escape['a](b: &'a Bytes) -> Unit {
+    let v = View { data: b, off: 0 }
+    let f = () => v.off //~ ERROR carries a borrow and cannot be stored
+    _ = f
+}
+-- expect --
+error[E1016]: a returned borrow needs a lifetime
+ --> app/t/t.kg:5:40
+  |
+5 | fn pick['a](x: &'a Int, y: &'a Int) -> &Int { //~ ERROR a returned borrow needs a lifetime
+  |                                        ^^^^
+  = help: annotate `&'a` here, or give the function exactly one `&'a` parameter to elide it
+
+error[E1017]: a field cannot hold a borrow without a lifetime
+  --> app/t/t.kg:10:7
+   |
+10 |     r &Int //~ ERROR a field cannot hold a borrow without a lifetime
+   |       ^^^^
+   = help: add a lifetime parameter to this type, `['a]`, and write `&'a`
+
+error[E1020]: `View['a]` carries a borrow and cannot be stored in `Shared`
+  --> app/t/t.kg:15:12
+   |
+15 |     let s: Shared[View['a]] = Shared.new(v) //~ ERROR carries a borrow and cannot be stored
+   |            ^^^^^^^^^^^^^^
+
+error[E1020]: `View['a]` carries a borrow and cannot be stored in a closure
+  --> app/t/t.kg:21:19
+   |
+21 |     let f = () => v.off //~ ERROR carries a borrow and cannot be stored
+   |                   ^
+

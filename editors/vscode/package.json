@@ -1,0 +1,104 @@
+{
+    "name": "kigumi-vscode",
+    "displayName": "Kigumi",
+    "description": "Kigumi language support: diagnostics, hover, go to definition, formatting and completion via the kigumi language server.",
+    "version": "0.1.0",
+    "publisher": "kigumi",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/Hayao0819/kigumi.git",
+        "directory": "editors/vscode"
+    },
+    "private": true,
+    "engines": {
+        "vscode": "^1.85.0"
+    },
+    "categories": [
+        "Programming Languages"
+    ],
+    "activationEvents": [
+        "onLanguage:kigumi",
+        "workspaceContains:**/*.kg"
+    ],
+    "main": "./out/extension.js",
+    "contributes": {
+        "languages": [
+            {
+                "id": "kigumi",
+                "aliases": [
+                    "Kigumi",
+                    "kigumi"
+                ],
+                "extensions": [
+                    ".kg"
+                ],
+                "configuration": "./language-configuration.json"
+            }
+        ],
+        "grammars": [
+            {
+                "language": "kigumi",
+                "scopeName": "source.kigumi",
+                "path": "./syntaxes/kigumi.tmLanguage.json"
+            }
+        ],
+        "configuration": {
+            "title": "Kigumi",
+            "properties": {
+                "kigumi.serverPath": {
+                    "type": "string",
+                    "default": "kigumi",
+                    "description": "Path to the kigumi executable; the extension runs `kigumi lsp`."
+                },
+                "kigumi.stdRoot": {
+                    "type": "string",
+                    "default": "",
+                    "description": "The std directory (the one holding prelude/, array/, ...). Empty means $KIGUMI_STD, <workspace>/std, or the std directory next to the executable."
+                },
+                "kigumi.trace.server": {
+                    "type": "string",
+                    "enum": [
+                        "off",
+                        "messages",
+                        "verbose"
+                    ],
+                    "default": "off",
+                    "description": "Trace the communication with the language server."
+                }
+            }
+        },
+        "commands": [
+            {
+                "command": "kigumi.restartServer",
+                "title": "Kigumi: Restart Language Server"
+            },
+            {
+                "command": "kigumi.showServerLog",
+                "title": "Kigumi: Show Language Server Log"
+            }
+        ],
+        "configurationDefaults": {
+            "[kigumi]": {
+                "editor.formatOnSave": true,
+                "editor.defaultFormatter": "kigumi.kigumi-vscode"
+            }
+        }
+    },
+    "scripts": {
+        "vscode:prepublish": "pnpm run compile",
+        "compile": "tsc --noEmit -p ./ && esbuild src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node --sourcemap",
+        "watch": "esbuild src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node --sourcemap --watch",
+        "package": "cp ../../LICENSE LICENSE && vsce package --no-dependencies"
+    },
+    "dependencies": {
+        "vscode-languageclient": "^9.0.1"
+    },
+    "devDependencies": {
+        "@types/node": "^24.0.0",
+        "@types/vscode": "^1.85.0",
+        "@vscode/vsce": "^3.0.0",
+        "esbuild": "^0.28.2",
+        "typescript": "^5.9.0"
+    }
+}

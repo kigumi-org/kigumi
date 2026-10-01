@@ -1,0 +1,85 @@
+-- src --
+type Block[const N: usize] = { pub bytes FixedArray[u8, N] }
+type Fixed = { pub bytes FixedArray[u8, 16] }
+fn zeroLen[const N: usize]() -> usize { N }
+fn get[T: Copy, const N: usize](a: &FixedArray[T, N], i: usize) -> T? { a.get(i) }
+-- expect --
+File
+  TypeDecl
+    name: Block
+    generics: List
+      GenericParam N const
+        TypePath
+          Path usize
+    body: RecordBody
+      Field bytes
+        vis: Visibility
+        type: TypePath
+          Path FixedArray
+          List
+            TypePath
+              Path u8
+            TypePath
+              Path N
+  TypeDecl
+    name: Fixed
+    body: RecordBody
+      Field bytes
+        vis: Visibility
+        type: TypePath
+          Path FixedArray
+          List
+            TypePath
+              Path u8
+            IntLit 16
+  FnDecl
+    attrs: -
+    vis: -
+    recv: -
+    name: zeroLen
+    generics: List
+      GenericParam N const
+        TypePath
+          Path usize
+    params: List
+    ret: TypePath
+      Path usize
+    body: Block
+      ExprStmt
+        Ident N
+  FnDecl
+    attrs: -
+    vis: -
+    recv: -
+    name: get
+    generics: List
+      GenericParam T
+        List
+          TypePath
+            Path Copy
+      GenericParam N const
+        TypePath
+          Path usize
+    params: List
+      Param a
+        type: TypeRef
+          TypePath
+            Path FixedArray
+            List
+              TypePath
+                Path T
+              TypePath
+                Path N
+      Param i
+        type: TypePath
+          Path usize
+    ret: TypeOptional
+      TypePath
+        Path T
+    body: Block
+      ExprStmt
+        Call
+          Member get
+            Ident a
+          List
+            Ident i

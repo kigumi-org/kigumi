@@ -1,0 +1,650 @@
+import ffi from std/ffi
+
+extern(C) {
+    fn getaddrinfo(host: *const u8, port: *const u8, hints: *const AddrInfo, out: *mut PtrBox) -> i32
+    fn gai_strerror(code: i32) -> *const u8
+    fn freeaddrinfo(res: *const u8) -> Unit
+    fn socket(family: i32, socktype: i32, protocol: i32) -> i32
+    fn connect(fd: i32, addr: *const u8, len: u32) -> i32
+    fn bind(fd: i32, addr: *const u8, len: u32) -> i32
+    fn listen(fd: i32, backlog: i32) -> i32
+    fn accept(fd: i32, addr: *mut u8, len: *mut u32) -> i32
+    fn setsockopt(fd: i32, level: i32, name: i32, value: *const OptBox, len: u32) -> i32
+    fn setsockopt(fd: i32, level: i32, name: i32, value: *const Timeval, len: u32) -> i32
+    fn getsockopt(fd: i32, level: i32, name: i32, value: *mut OptBox, len: *mut LenBox) -> i32
+    fn getsockname(fd: i32, addr: *mut SockAddrIn, len: *mut LenBox) -> i32
+    fn close(fd: i32) -> i32
+    fn read(fd: i32, buf: *mut u8, n: usize) -> isize
+    fn write(fd: i32, buf: *const u8, n: usize) -> isize
+    fn poll(fds: *mut u8, n: usize, timeout: i32) -> i32
+    fn fcntl(fd: i32, cmd: i32, ...) -> i32
+    fn malloc(n: usize) -> *mut u8
+    fn free(p: *mut u8) -> Unit
+    fn ntohs(v: u16) -> u16
+}
+
+// struct sockaddr_in (IPv4) as every target in addrinfo_*.kg lays it out;
+// only Listener.port reads it, to learn the port after binding to 0.
+type SockAddrIn layout(C) = {
+    pub family u16
+    pub port u16
+    pub addr u32
+    pub zero u64
+}
+
+// setsockopt/getsockname take a plain scalar in or out; ffi.CValue[T]
+// needs T's own layout(C) record, so scalars go through one-field boxes.
+type OptBox layout(C) = {
+    pub v i32
+}
+
+type LenBox layout(C) = {
+    pub v u32
+}
+
+// getaddrinfo's out-param (struct addrinfo**) as a one-field box, so
+// ffi.CValue sizes the slot to the target's real pointer width instead
+// of a hardcoded byte count.
+type PtrBox layout(C) = {
+    pub v *const u8
+}
+
+// poll(2)'s struct pollfd, matching std/shell's copy field for field.
+type Pollfd layout(C) = {
+    pub fd i32
+    pub events i16
+    pub revents i16
+}
+
+fn fails(text: String) -> Failure {
+    Failure { text: text }
+}
+
+// getaddrinfo reports failure through its own EAI_* code space, not errno,
+// so its text comes from gai_strerror rather than ffi.lastError().
+fn gaiFails(code: i32) -> Failure {
+    fails("cannot resolve host: ${unsafe { ffi.stringLossy(gai_strerror(code)) }}")
+}
+
+fn pollFdPtr(buf: *mut u8) -> *mut Pollfd {
+    unsafe {
+        ffi.toMut(ffi.cast[Pollfd](ffi.toConst(buf)))
+    }
+}
+
+// connectSocket connects s to addr, bounding the wait to timeoutSeconds
+// with a non-blocking connect() plus poll(2) for POLLOUT, then restores
+// s's original blocking mode; timeoutSeconds <= 0 keeps a plain blocking
+// connect() (Net.connect makes no timeout promise, so it passes 0). Every
+// failure path reports the errno connect() (or SO_ERROR) actually left
+// behind, and poll's EINTR is retried rather than surfaced as a failure.
+fn connectSocket(s: i32, addr: *const u8, addrlen: u32, timeoutSeconds: i32) -> Unit! {
+    if timeoutSeconds <= 0 {
+        if unsafe {
+            connect(s, addr, addrlen)
+        } != 0 {
+            fail ffi.lastError()
+        }
+    } else {
+        let flags = unsafe {
+            fcntl(s, fcntlGetFl())
+        }
+        _ = unsafe {
+            fcntl(s, fcntlSetFl(), flags | oNonBlock())
+        }
+        let immediate = unsafe {
+            connect(s, addr, addrlen)
+        } == 0
+        let outcome = if immediate {
+            0
+        } else {
+            let pbuf = unsafe {
+                malloc(8)
+            }
+            let mut ready = false
+            for true {
+                unsafe {
+                    ffi.writeRecord(pollFdPtr(pbuf), &Pollfd {
+                        fd: s
+                        events: pollOut()
+                        revents: 0
+                    })
+                }
+                let r = unsafe {
+                    poll(pbuf, 1, timeoutSeconds * 1000)
+                }
+                if r < 0 {
+                    if ffi.errno() == eintr() {
+                        continue
+                    }
+                    break
+                }
+                ready = r > 0
+                break
+            }
+            unsafe {
+                free(pbuf)
+            }
+            if ready {
+                connectSucceeded(s)
+            } else {
+                -1
+            }
+        }
+        _ = unsafe {
+            fcntl(s, fcntlSetFl(), flags)
+        }
+        if outcome > 0 {
+            fail ffi.CError {
+                code: outcome
+                text: ffi.errorText(outcome)
+            }
+        }
+        if outcome < 0 {
+            fail fails("connect timed out")
+        }
+    }
+}
+
+// connectSucceeded reads SO_ERROR on a socket a poll(2) just reported
+// ready for writing: 0 means connect() finished, anything else is the
+// errno connect() would have failed with.
+fn connectSucceeded(s: i32) -> i32 {
+    let errRaw = OptBox { v: 0 }
+    let errLen = ffi.sizeOf(&errRaw).toU32() || 0
+    let errBoxed = ffi.CValue.new(errRaw)
+    let lenBoxed = ffi.CValue.new(LenBox { v: errLen })
+    _ = unsafe {
+        getsockopt(s, solSocket(), soError(), errBoxed.ptr(), lenBoxed.ptr())
+    }
+    errBoxed.get().v
+}
+
+// connectTo resolves host:port and connects to the first address that
+// accepts, bounding each attempt to timeoutSeconds (0 for unbounded).
+fn connectTo(host: String, port: String, timeoutSeconds: i32) -> i32! {
+    let h = ffi.CString.new(&host)?
+    let p = ffi.CString.new(&port)?
+    let hints = ffi.CValue.new(AddrInfo {
+        flags: 0
+        family: 0
+        socktype: 1
+        protocol: 0
+        addrlen: 0
+        addr: ffi.null[u8]()
+        canonname: ffi.null[u8]()
+        next: ffi.null[u8]()
+    })
+    let slot = ffi.CValue.new(PtrBox { v: ffi.null[u8]() })
+    let gaiCode = unsafe {
+        getaddrinfo(h.ptr(), p.ptr(), ffi.toConst(hints.ptr()), slot.ptr())
+    }
+    if gaiCode != 0 {
+        fail gaiFails(gaiCode)
+    }
+    let head = slot.get().v
+    let mut cur = head
+    let mut fd: i32 = -1
+    let mut lastErr = fails("cannot connect")
+    for !ffi.isNull(cur) && fd < 0 {
+        let ai = unsafe {
+            ffi.readRecord(ffi.cast[AddrInfo](cur))
+        }
+        let s = unsafe {
+            socket(ai.family, ai.socktype, ai.protocol)
+        }
+        if s >= 0 {
+            let attempt = connectSocket(s, ai.addr, ai.addrlen, timeoutSeconds)
+            if attempt is Err(e) {
+                lastErr = fails(e.message())
+                _ = unsafe {
+                    close(s)
+                }
+            } else {
+                fd = s
+            }
+        } else {
+            lastErr = fails(ffi.lastError().message())
+        }
+        cur = ai.next
+    }
+    unsafe {
+        freeaddrinfo(head)
+    }
+    if fd < 0 {
+        fail lastErr
+    }
+    fd
+}
+
+fn sendAll(fd: i32, data: Bytes) -> Unit! {
+    let n = data.len()
+    let mut off: usize = 0
+    for off < n {
+        let w = unsafe {
+            write(fd, ffi.offset(ffi.bytesPtr(&data), off.toInt() || 0), n - off)
+        }
+        if w <= 0 {
+            if w < 0 && ffi.errno() == eintr() {
+                continue
+            }
+            fail ffi.lastError()
+        }
+        off = off + (w.toUsize() || 0)
+    }
+}
+
+// readLine stops at LF or EOF; a real read error (including a timeout
+// once setTimeout has armed SO_RCVTIMEO) or invalid UTF-8 in the line
+// fails instead of returning whatever was read so far.
+fn readLine(fd: i32) -> String! {
+    let buf = unsafe {
+        malloc(1)
+    }
+    let mut acc = "".toBytes()
+    for acc.len() < 64 {
+        let got = unsafe {
+            read(fd, buf, 1)
+        }
+        if got < 0 {
+            if ffi.errno() == eintr() {
+                continue
+            }
+            unsafe {
+                free(buf)
+            }
+            fail ffi.lastError()
+        }
+        if got == 0 || unsafe {
+            ffi.readU8(ffi.toConst(buf))
+        } == 10 {
+            break
+        }
+        acc = acc.concat(unsafe {
+            ffi.bytesFrom(ffi.toConst(buf), 1)
+        })
+    }
+    unsafe {
+        free(buf)
+    }
+    String.fromBytes(acc)
+}
+
+// setTimeout bounds send/recv on fd so a peer that accepts a connection
+// but never answers cannot hang the caller forever; the connect() phase
+// is bounded separately, by connectSocket's poll(2) (SO_SNDTIMEO set
+// before connect() is not a portable connect timeout on its own).
+fn setTimeout(fd: i32, seconds: i32) -> Unit {
+    let raw = timeoutValue(seconds)
+    let len = ffi.sizeOf(&raw).toU32() || 0
+    let boxed = ffi.CValue.new(raw)
+    _ = unsafe {
+        setsockopt(fd, solSocket(), soRcvTimeo(), ffi.toConst(boxed.ptr()), len)
+    }
+    _ = unsafe {
+        setsockopt(fd, solSocket(), soSndTimeo(), ffi.toConst(boxed.ptr()), len)
+    }
+}
+
+fn requestTimeoutSeconds() -> i32 {
+    10
+}
+
+fn hasUnsafeByte(text: String) -> Bool {
+    let b = text.bytes()
+    let mut i: usize = 0
+    for i < b.len() {
+        let c = b.get(i) || 0
+        if c <= 32 || c == 127 {
+            return true
+        }
+        i = i + 1
+    }
+    false
+}
+
+type HostPort = {
+    host String
+    header String
+    port String
+}
+
+// Splits an authority (`host[:port]`, `[v6]:port`, or a rejected
+// `user:pass@host`) into a resolver host, a Host-header form (brackets
+// kept for IPv6), and a port.
+fn parseAuthority(authority: String) -> HostPort! {
+    if indexOf(authority, "@") is Some(_) {
+        fail fails("userinfo in URL is not supported")
+    }
+    if authority.startsWith("[") {
+        let i = indexOf(authority, "]") || fail fails("malformed IPv6 host")
+        let host = authority.sliceBytes(1, i) || ""
+        let after = authority.sliceBytes(i + 1, authority.len()) || ""
+        let port = if after == "" {
+            "80"
+        } else if after.startsWith(":") {
+            after.sliceBytes(1, after.len()) || "80"
+        } else {
+            fail fails("malformed IPv6 host")
+        }
+        return HostPort {
+            host: host
+            header: "[${host}]"
+            port: port
+        }
+    }
+    let colon = indexOf(authority, ":")
+    let host = if colon is Some(i) {
+        authority.sliceBytes(0, i) || ""
+    } else {
+        authority
+    }
+    let port = if colon is Some(i) {
+        authority.sliceBytes(i + 1, authority.len()) || "80"
+    } else {
+        "80"
+    }
+    HostPort {
+        host: host
+        header: host
+        port: port
+    }
+}
+
+fn indexOf(text: String, sub: String) -> usize? {
+    let mut i: usize = 0
+    for i + sub.len() <= text.len() {
+        if text.matchesAt(sub, i) {
+            return Some(i)
+        }
+        i = i + 1
+    }
+    None
+}
+
+fn statusOf(line: String) -> Int? {
+    // "HTTP/1.1 200 OK": the status is the second space-separated word.
+    let parts = line.split(" ")
+    if parts.len() < 2 || !line.startsWith("HTTP/") {
+        return None
+    }
+    let code = parts.get(1) || ""
+    let b = code.bytes()
+    if b.len() != 3 {
+        return None
+    }
+    let mut n = 0
+    for i in 0..3 {
+        let d = (b.get(i) || 0).toInt()
+        if d < 48 || d > 57 {
+            return None
+        }
+        n = n * 10 + (d - 48)
+    }
+    Some(n)
+}
+
+/// Sends body in a POST request to url over plain HTTP/1.1 (https is
+/// refused); a `[v6]:port` IPv6 literal is accepted, but a `user:pass@`
+/// authority and any control character or space in the host or path are
+/// rejected, since either could inject extra headers or a second request.
+/// The 10 second timeout from `Net.http` covers the whole request, not just
+/// the connect phase.
+pub fn Http.post(self, url: String, body: String) -> Response! {
+    if url.startsWith("https://") {
+        fail fails("https is not supported in native builds")
+    }
+    if !url.startsWith("http://") {
+        fail fails("unsupported URL scheme")
+    }
+    let rest = url.sliceBytes(7, url.len()) || ""
+    let slash = indexOf(rest, "/")
+    let authority = if slash is Some(i) {
+        rest.sliceBytes(0, i) || ""
+    } else {
+        rest
+    }
+    let path = if slash is Some(i) {
+        rest.sliceBytes(i, rest.len()) || "/"
+    } else {
+        "/"
+    }
+    if hasUnsafeByte(path) {
+        fail fails("path contains a control character or a space")
+    }
+    // Checked on the whole authority, not just the host split out of it:
+    // a colon-free CRLF payload (no "/" before it) would otherwise land in
+    // parseAuthority's port half, which never reaches the wire but would
+    // fail with a misleading "cannot resolve host" instead of this.
+    if hasUnsafeByte(authority) {
+        fail fails("host contains a control character or a space")
+    }
+    let hp = parseAuthority(authority)?
+    let fd = connectTo(hp.host, hp.port, requestTimeoutSeconds())?
+    setTimeout(fd, requestTimeoutSeconds())
+    let request = "POST ${path} HTTP/1.1\r\nHost: ${hp.header}\r\nContent-Type: text/plain\r\nContent-Length: ${body.len()}\r\nConnection: close\r\n\r\n${body}"
+    let sent = sendAll(fd, request.toBytes())
+    if sent is Err(e) {
+        _ = unsafe {
+            close(fd)
+        }
+        fail e
+    }
+    let lineResult = readLine(fd)
+    _ = unsafe {
+        close(fd)
+    }
+    let line = lineResult?
+    if statusOf(line) is Some(status) {
+        return Response { status: status }
+    }
+    fail fails("malformed response")
+}
+
+/// TCP connection; `read`/`write` match std/io's Reader/Writer shape.
+pub type Conn = resource {
+    fd i32
+}
+
+/// TCP listening socket, from `Net.listen`.
+pub type Listener = resource {
+    fd i32
+}
+
+/// Connects to host:port over IPv4; no timeout (unlike Http.post, this
+/// call blocks until the OS gives up or a peer answers).
+pub fn Net.connect(self, host: String, port: Int) -> Conn! {
+    let fd = connectTo(host, "${port}", 0)?
+    Conn { fd: fd }
+}
+
+/// Binds host:port (SO_REUSEADDR set) and starts listening; a modest,
+/// fixed backlog, matching the rest of std/net's lack of tuning knobs.
+/// family is forced to AF_INET (2) so SockAddrIn's fixed layout matches
+/// what the kernel later hands back from getsockname.
+pub fn Net.listen(self, host: String, port: Int) -> Listener! {
+    // An empty host means "every interface", matching internal/netsock.Listen.
+    let host = if host == "" {
+        "0.0.0.0"
+    } else {
+        host
+    }
+    let portStr = "${port}"
+    let h = ffi.CString.new(&host)?
+    let p = ffi.CString.new(&portStr)?
+    let hints = ffi.CValue.new(AddrInfo {
+        flags: 0
+        family: 2
+        socktype: 1
+        protocol: 0
+        addrlen: 0
+        addr: ffi.null[u8]()
+        canonname: ffi.null[u8]()
+        next: ffi.null[u8]()
+    })
+    let slot = ffi.CValue.new(PtrBox { v: ffi.null[u8]() })
+    let gaiCode = unsafe {
+        getaddrinfo(h.ptr(), p.ptr(), ffi.toConst(hints.ptr()), slot.ptr())
+    }
+    if gaiCode != 0 {
+        fail gaiFails(gaiCode)
+    }
+    let head = slot.get().v
+    if ffi.isNull(head) {
+        fail fails("cannot resolve host")
+    }
+    let ai = unsafe {
+        ffi.readRecord(ffi.cast[AddrInfo](head))
+    }
+    let fd = unsafe {
+        socket(ai.family, ai.socktype, ai.protocol)
+    }
+    if fd < 0 {
+        let err = ffi.lastError()
+        unsafe {
+            freeaddrinfo(head)
+        }
+        fail err
+    }
+    let optRaw = OptBox { v: 1 }
+    let optLen = ffi.sizeOf(&optRaw).toU32() || 0
+    let opt = ffi.CValue.new(optRaw)
+    _ = unsafe {
+        setsockopt(fd, solSocket(), soReuseAddr(), ffi.toConst(opt.ptr()), optLen)
+    }
+    let bound = unsafe {
+        bind(fd, ai.addr, ai.addrlen)
+    } == 0
+    if !bound {
+        let err = ffi.lastError()
+        unsafe {
+            freeaddrinfo(head)
+        }
+        _ = unsafe {
+            close(fd)
+        }
+        fail err
+    }
+    unsafe {
+        freeaddrinfo(head)
+    }
+    if unsafe {
+        listen(fd, 16)
+    } != 0 {
+        let err = ffi.lastError()
+        _ = unsafe {
+            close(fd)
+        }
+        fail err
+    }
+    Listener { fd: fd }
+}
+
+/// Accepts the next incoming connection, blocking until one arrives.
+pub fn Listener.accept(mut self) -> Conn! {
+    let mut fd: i32 = -1
+    for fd < 0 {
+        fd = unsafe {
+            accept(self.fd, ffi.toMut(ffi.null[u8]()), ffi.toMut(ffi.null[u32]()))
+        }
+        if fd < 0 && ffi.errno() != eintr() {
+            fail ffi.lastError()
+        }
+    }
+    Conn { fd: fd }
+}
+
+/// The local port bound, or 0 when it cannot be read; lets a caller bind
+/// port 0 and learn which port the OS picked.
+pub fn Listener.port(self) -> Int {
+    let blank = SockAddrIn {
+        family: 0
+        port: 0
+        addr: 0
+        zero: 0
+    }
+    let length = ffi.sizeOf(&blank).toU32() || 0
+    let addr = ffi.CValue.new(blank)
+    let lenBox = ffi.CValue.new(LenBox { v: length })
+    if unsafe {
+        getsockname(self.fd, addr.ptr(), lenBox.ptr())
+    } != 0 {
+        return 0
+    }
+    (unsafe {
+        ntohs(addr.get().port)
+    }).toInt()
+}
+
+/// Reads up to max bytes into into; 0 with no error is end of input,
+/// matching std/io's Reader (POSIX read semantics).
+pub fn Conn.read(mut self, into: &mut Array[u8], max: usize) -> usize! {
+    if max == 0 {
+        return 0
+    }
+    let buf = unsafe {
+        malloc(max)
+    }
+    if ffi.isNull(ffi.toConst(buf)) {
+        fail fails("out of memory")
+    }
+    let mut got: isize = -1
+    for got < 0 {
+        got = unsafe {
+            read(self.fd, buf, max)
+        }
+        if got < 0 && ffi.errno() != eintr() {
+            unsafe {
+                free(buf)
+            }
+            fail ffi.lastError()
+        }
+    }
+    let n = got.toUsize() || 0
+    let data = unsafe {
+        ffi.bytesFrom(ffi.toConst(buf), n)
+    }
+    unsafe {
+        free(buf)
+    }
+    let mut i: usize = 0
+    for i < n {
+        into.push(data.get(i) || 0)
+        i = i + 1
+    }
+    n
+}
+
+/// Writes data; may send fewer bytes than given, matching write(2) and
+/// std/io's Writer (writeAll loops for the rest).
+pub fn Conn.write(mut self, data: Bytes) -> usize! {
+    let n = data.len()
+    if n == 0 {
+        return 0
+    }
+    let mut w: isize = -1
+    for w < 0 {
+        w = unsafe {
+            write(self.fd, ffi.bytesPtr(&data), n)
+        }
+        if w < 0 && ffi.errno() != eintr() {
+            fail ffi.lastError()
+        }
+    }
+    w.toUsize() || 0
+}
+
+/// Nothing to flush for a socket; the drop closes it, as File.close's does.
+pub fn Conn.close(move self) -> Unit! {}
+
+/// Closes the connection when it goes out of scope, ignoring errors.
+///
+/// Bodiless unlike File.drop: the VM runs a resource's real lowered body
+/// on an implicit drop even when an accelerator exists for it, so a body
+/// here would hit the unsupported extern(C) close on the first Conn ever
+/// dropped without an explicit close().
+pub fn Conn.drop(move self) -> Unit
+
+/// Closes the listening socket when it goes out of scope, ignoring errors;
+/// see Conn.drop for why this is bodiless.
+pub fn Listener.drop(move self) -> Unit

@@ -1,0 +1,27 @@
+-- src --
+const LIMIT = 10
+
+fn fib(n: Int) -> Int {
+    if n < 2 {
+        n
+    } else {
+        fib(n - 1) + fib(n - 2)
+    }
+}
+
+let table = comptime {
+    let mut s = ""
+    for i in 0..LIMIT {
+        s = "${s}${fib(i)} "
+    }
+    s
+}
+let n = comptime {
+    fib(20)
+}
+let ready = comptime {
+    LIMIT > 5
+}
+print "${table}| ${n} ${ready}"
+-- stdout --
+0 1 1 2 3 5 8 13 21 34 | 6765 true

@@ -1,0 +1,19 @@
+-- src --
+import ffi from std/ffi
+
+// align widens a record's own alignment past what its fields alone need,
+// padding size to a multiple of it; a smaller align than the fields already
+// need has no effect (§13.1, L-145).
+type Wide layout(C, align: 8) = {
+    pub tag u8
+}
+
+type Narrow layout(C, align: 2) = {
+    pub n i64
+}
+
+let w = Wide { tag: 1 }
+let n = Narrow { n: -7 }
+print "${ffi.sizeOf(&w)} ${ffi.alignOf(&w)} ${ffi.sizeOf(&n)} ${ffi.alignOf(&n)}"
+-- stdout --
+8 8 8 8

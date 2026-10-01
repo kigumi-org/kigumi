@@ -1,0 +1,25 @@
+-- src --
+import task from std/task
+
+async fn twice(x: Int) -> Int {
+    print "twice ${x}"
+    x * 2
+}
+
+async fn total(a: Int, b: Int) -> Int {
+    let x = await twice(a)
+    let y = await twice(b)
+    x + y
+}
+
+let ex = task.local()
+let pending = total(1, 2)
+print "created"
+let t = ex.spawn(twice(10))
+print "${ex.run(pending)} ${t.join()}"
+-- stdout --
+created
+twice 1
+twice 2
+twice 10
+6 20

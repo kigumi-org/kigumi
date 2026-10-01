@@ -1,0 +1,26 @@
+-- src --
+type S = {
+    pub a Int
+    pub b Int
+}
+
+fn S.withA(self, a: Int) -> S {
+    S { ..self, a: a }
+}
+
+fn S.withB(self, b: Int) -> S {
+    S { ..self, b: b }
+}
+
+fn bumpB(s: &S) -> S {
+    S { ..s, b: s.b + 1 }
+}
+
+let s = S { a: 1, b: 2 }
+let t = s.withA(10).withB(20)
+print "s=${s.a},${s.b} t=${t.a},${t.b}"
+let u = bumpB(&s)
+print "s=${s.a},${s.b} u=${u.a},${u.b}"
+-- stdout --
+s=1,2 t=10,20
+s=1,2 u=1,3

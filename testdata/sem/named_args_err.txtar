@@ -1,0 +1,72 @@
+-- app/t/t.kg --
+fn greet(name: String, times: Int) -> Unit {}
+
+fn identity(a: Int) -> Int { a }
+
+extern(C) {
+    fn printf(fmt: *const u8, ...) -> i32
+    fn snprintf(buf: *mut u8, size: usize, fmt: *const u8, ...) -> i32
+    fn cstr() -> *const u8
+    fn buf() -> *mut u8
+}
+
+fn use() -> Unit {
+    greet(name: "x", nope: 1) //~ ERROR `greet` has no parameter named `nope`
+    greet(name: "x", name: "x") //~ ERROR argument `name` given more than once
+    greet(times: 1, "x") //~ ERROR positional argument after a named argument
+    let f = identity
+    _ = f(a: 1) //~ ERROR a `fn` value has no parameter names
+}
+
+fn useCVariadic() -> Unit {
+    unsafe {
+        _ = printf(fmt: cstr())
+        _ = snprintf(fmt: cstr(), size: 10, buf: buf())
+        _ = printf(nope: cstr()) //~ ERROR `printf` has no parameter named `nope`
+        _ = printf(fmt: cstr(), 1, 2.0) //~ ERROR positional argument after a named argument //~ ERROR positional argument after a named argument
+    }
+}
+-- expect --
+error[E1012]: `greet` has no parameter named `nope`
+  --> app/t/t.kg:13:22
+   |
+13 |     greet(name: "x", nope: 1) //~ ERROR `greet` has no parameter named `nope`
+   |                      ^^^^^^^
+
+error[E1013]: argument `name` given more than once
+  --> app/t/t.kg:14:22
+   |
+14 |     greet(name: "x", name: "x") //~ ERROR argument `name` given more than once
+   |                      ^^^^^^^^^
+
+error[E1011]: positional argument after a named argument
+  --> app/t/t.kg:15:21
+   |
+15 |     greet(times: 1, "x") //~ ERROR positional argument after a named argument
+   |                     ^^^
+
+error[E1014]: a `fn` value has no parameter names
+  --> app/t/t.kg:17:11
+   |
+17 |     _ = f(a: 1) //~ ERROR a `fn` value has no parameter names
+   |           ^^^^
+   = help: call it positionally
+
+error[E1012]: `printf` has no parameter named `nope`
+  --> app/t/t.kg:24:20
+   |
+24 |         _ = printf(nope: cstr()) //~ ERROR `printf` has no parameter named `nope`
+   |                    ^^^^^^^^^^^
+
+error[E1011]: positional argument after a named argument
+  --> app/t/t.kg:25:33
+   |
+25 |         _ = printf(fmt: cstr(), 1, 2.0) //~ ERROR positional argument after a named argument //~ ERROR positional argument after a named argument
+   |                                 ^
+
+error[E1011]: positional argument after a named argument
+  --> app/t/t.kg:25:36
+   |
+25 |         _ = printf(fmt: cstr(), 1, 2.0) //~ ERROR positional argument after a named argument //~ ERROR positional argument after a named argument
+   |                                    ^^^
+

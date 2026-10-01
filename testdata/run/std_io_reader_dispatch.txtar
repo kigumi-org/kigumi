@@ -1,0 +1,45 @@
+-- src --
+import io from std/io
+
+fn drainGeneric[R: io.Reader](mut r: R) -> usize! {
+    let mut buf = Array.empty[u8]()
+    let mut total: usize = 0
+    for true {
+        let n = r.read(&mut buf, 4096)?
+        if n == 0 {
+            break
+        }
+        total += n
+    }
+    total
+}
+
+fn drainExistential(mut r: io.Reader) -> usize! {
+    let mut buf = Array.empty[u8]()
+    let mut total: usize = 0
+    for true {
+        let n = r.read(&mut buf, 4096)?
+        if n == 0 {
+            break
+        }
+        total += n
+    }
+    total
+}
+
+let src = "hello io".toBytes()
+
+let mut r1 = io.BytesReader.new(src)
+match drainGeneric(r1) {
+    Ok(n) -> print "generic ${n}"
+    Err(e) -> print "generic err ${e.message()}"
+}
+
+let mut r2 = io.BytesReader.new(src)
+match drainExistential(r2) {
+    Ok(n) -> print "existential ${n}"
+    Err(e) -> print "existential err ${e.message()}"
+}
+-- stdout --
+generic 8
+existential 8

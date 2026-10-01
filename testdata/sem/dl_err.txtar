@@ -1,0 +1,70 @@
+-- app/t/t.kg --
+import dl from std/dl
+
+type Twice = extern(C) fn(i32) -> i32
+
+fn use(lib: dl.Library, s: dl.Symbol[Twice], bad: dl.Symbol[i32]) -> i32 {
+    let a = s.call(1) //~ ERROR calling `call` requires an `unsafe { }` block
+    let b = unsafe { s.call("x") } //~ ERROR expected `i32`, found `String`
+    let c = unsafe { bad.call(1) } //~ ERROR `i32` is not a C function pointer type
+    let d = unsafe { s.call() } //~ ERROR `call` expects 1 argument, 0 given
+    let e: dl.Symbol[String]! = lib.get("y") //~ ERROR `String` is not a C function pointer type
+    a + b + c + d
+}
+
+fn sneaky() -> Int {
+    let lib = dl.open("./libctor.so") //~ ERROR
+    let cap = host.dl() //~ ERROR
+    0
+}
+
+-- expect --
+error[E914]: calling `call` requires an `unsafe { }` block
+ --> app/t/t.kg:6:13
+  |
+6 |     let a = s.call(1) //~ ERROR calling `call` requires an `unsafe { }` block
+  |             ^^^^^^^^
+
+error[E400]: expected `i32`, found `String`
+ --> app/t/t.kg:7:29
+  |
+7 |     let b = unsafe { s.call("x") } //~ ERROR expected `i32`, found `String`
+  |                             ^^^
+
+error[E931]: `i32` is not a C function pointer type
+ --> app/t/t.kg:8:22
+  |
+8 |     let c = unsafe { bad.call(1) } //~ ERROR `i32` is not a C function pointer type
+  |                      ^^^^^^^^^^
+  = help: `dl.Symbol` needs `extern(C) fn(...) -> R`
+
+error[E501]: `call` expects 1 argument, 0 given
+ --> app/t/t.kg:9:22
+  |
+9 |     let d = unsafe { s.call() } //~ ERROR `call` expects 1 argument, 0 given
+  |                      ^^^^^^^
+
+error[E931]: `String` is not a C function pointer type
+  --> app/t/t.kg:10:33
+   |
+10 |     let e: dl.Symbol[String]! = lib.get("y") //~ ERROR `String` is not a C function pointer type
+   |                                 ^^^^^^^^^^^
+   = help: `dl.Symbol` needs `extern(C) fn(...) -> R`
+
+error[E103]: package `std/dl` has no visible `open`
+  --> app/t/t.kg:15:15
+   |
+15 |     let lib = dl.open("./libctor.so") //~ ERROR
+   |               ^^^^^^^
+
+error[E100]: undefined name `host`
+  --> app/t/t.kg:16:15
+   |
+16 |     let cap = host.dl() //~ ERROR
+   |               ^^^^
+note: `host` exists only in the entry file
+  --> app/t/t.kg:16:15
+   |
+16 |     let cap = host.dl() //~ ERROR
+   |               ^^^^
+

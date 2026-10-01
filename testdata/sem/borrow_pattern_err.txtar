@@ -1,0 +1,47 @@
+-- lib/borrow.kg --
+type Res = resource {
+    pub id Int
+}
+
+fn Res.drop(move self) -> Unit {
+    _ = self
+}
+
+type Holder = {
+    pub slot Res?
+}
+
+fn steal(h: &Holder) -> Res? {
+    match h.slot {
+        Some(r) -> Some(r) //~ ERROR expected `Res`, found `&Res`
+        None -> None
+    }
+}
+
+fn take(h: &Holder) -> Res? {
+    let x = h.slot
+    x //~ ERROR expected `Res?`, found `&Res?`
+}
+
+fn escape(key: &String) -> fn(String) -> Bool {
+    (s: String) => s == key //~ ERROR closure cannot capture the borrow `key`
+}
+-- expect --
+error[E400]: expected `Res`, found `&Res`
+  --> lib/borrow.kg:15:25
+   |
+15 |         Some(r) -> Some(r) //~ ERROR expected `Res`, found `&Res`
+   |                         ^
+
+error[E400]: expected `Res?`, found `&Res?`
+  --> lib/borrow.kg:22:5
+   |
+22 |     x //~ ERROR expected `Res?`, found `&Res?`
+   |     ^
+
+error[E412]: closure cannot capture the borrow `key`
+  --> lib/borrow.kg:26:25
+   |
+26 |     (s: String) => s == key //~ ERROR closure cannot capture the borrow `key`
+   |                         ^^^
+

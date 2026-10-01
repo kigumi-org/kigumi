@@ -1,0 +1,28 @@
+-- src --
+type Res = resource {
+    pub id Int
+}
+
+fn Res.drop(move self) -> Unit {
+    print "drop ${self.id}"
+}
+
+type Inner = { mut r Res }
+type Outer = { mut inner Inner, mut n Int }
+
+fn Outer.take(mut self) -> Res {
+    let taken = move self.inner.r
+    self.n = self.n + 1
+    self.inner.r = Res { id: 40 }
+    print "n=${self.n}"
+    taken
+}
+
+let mut o = Outer { inner: Inner { r: Res { id: 1 } }, n: 0 }
+let d = o.take()
+print "d=${d.id}"
+-- stdout --
+n=1
+d=1
+drop 1
+drop 40

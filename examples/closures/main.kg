@@ -1,0 +1,28 @@
+#!/usr/bin/env kigumi
+
+import array from std/array
+
+fn compose[A, B, C](f: fn(A) -> B, g: fn(B) -> C) -> fn(A) -> C {
+    (x) => g(f(x))
+}
+
+let inc = (x: Int) => x + 1
+let double = (x: Int) => x * 2
+let incThenDouble = compose(inc, double)
+print "compose: ${incThenDouble(5)}"
+
+// A closure may update a variable of the enclosing scope.
+let mut total = 0
+let add = (x: Int) => {
+    total += x
+}
+add(2)
+add(3)
+print "total: ${total}"
+
+let xs = Array.of(1, 2, 3, 4, 5, 6)
+let evens = xs.filter((x) => x % 2 == 0)
+let squares = evens.map((x) => x * x)
+let sum = squares.fold(0, (acc, x) => acc + x)
+let shown = evens.map((x) => "${x}")
+print "evens=${array.join(&shown, ",")} sum of squares=${sum}"

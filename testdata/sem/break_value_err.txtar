@@ -1,0 +1,47 @@
+-- app/t/t.kg --
+fn disagree(n: Int) -> Unit {
+    let mut i = 0
+    let v = for {
+        i = i + 1
+        if i > 2 {
+            break "done"
+        }
+        if i > 5 {
+            break 5 //~ ERROR branches have different types
+        }
+    }
+}
+
+fn valueInForIn(xs: Array[Int]) -> Unit {
+    for x in xs {
+        break x //~ ERROR `break` with a value is only allowed in a value-less `for { }` loop
+    }
+}
+
+fn valueInWhile(n: Int) -> Unit {
+    let mut i = n
+    for i > 0 {
+        i = i - 1
+        break i //~ ERROR `break` with a value is only allowed in a value-less `for { }` loop
+    }
+}
+
+-- expect --
+error[E401]: branches have different types: `String` and `Int`
+ --> app/t/t.kg:9:19
+  |
+9 |             break 5 //~ ERROR branches have different types
+  |                   ^
+
+error[E1010]: `break` with a value is only allowed in a value-less `for { }` loop
+  --> app/t/t.kg:16:9
+   |
+16 |         break x //~ ERROR `break` with a value is only allowed in a value-less `for { }` loop
+   |         ^^^^^^^
+
+error[E1010]: `break` with a value is only allowed in a value-less `for { }` loop
+  --> app/t/t.kg:24:9
+   |
+24 |         break i //~ ERROR `break` with a value is only allowed in a value-less `for { }` loop
+   |         ^^^^^^^
+

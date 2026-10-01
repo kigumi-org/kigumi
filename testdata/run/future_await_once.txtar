@@ -1,0 +1,22 @@
+-- src --
+import task from std/task
+
+async fn work(x: Int) -> Int {
+    print "work ${x}"
+    x * 2
+}
+
+async fn total(a: Int, b: Int) -> Int {
+    let fa = work(a)
+    let fb = work(b)
+    let x = await fa
+    let y = await fb
+    x + y
+}
+
+let ex = task.local()
+print "sum=${ex.run(total(3, 4))}"
+-- stdout --
+work 3
+work 4
+sum=14

@@ -1,0 +1,49 @@
+-- app/t/t.kg --
+type Fine layout(C) = {
+    pub x i32
+    pub p *const u8
+}
+
+type Bad layout(C) = {
+    pub name String //~ ERROR field `name` of a `layout(C)` record must be a fixed-width number, a raw pointer or another `layout(C)` record, not `String`
+    pub flag Bool //~ ERROR field `flag` of a `layout(C)` record must be a fixed-width number, a raw pointer or another `layout(C)` record, not `Bool`
+    pub inner Fine
+}
+
+type Plain = {
+    pub x Int
+}
+
+type Nested layout(C) = {
+    pub plain Plain //~ ERROR field `plain` of a `layout(C)` record must be a fixed-width number, a raw pointer or another `layout(C)` record, not `Plain`
+}
+
+type Gen[T] layout(C) = { //~ ERROR a `layout(C)` record cannot be generic
+    pub v i32
+}
+
+-- expect --
+error[E252]: field `name` of a `layout(C)` record must be a fixed-width number, a raw pointer or another `layout(C)` record, not `String`
+ --> app/t/t.kg:7:5
+  |
+7 |     pub name String //~ ERROR field `name` of a `layout(C)` record must be a fixed-width number, a raw pointer or another `layout(C)` record, not `String`
+  |     ^^^^^^^^^^^^^^^
+
+error[E252]: field `flag` of a `layout(C)` record must be a fixed-width number, a raw pointer or another `layout(C)` record, not `Bool`
+ --> app/t/t.kg:8:5
+  |
+8 |     pub flag Bool //~ ERROR field `flag` of a `layout(C)` record must be a fixed-width number, a raw pointer or another `layout(C)` record, not `Bool`
+  |     ^^^^^^^^^^^^^
+
+error[E252]: field `plain` of a `layout(C)` record must be a fixed-width number, a raw pointer or another `layout(C)` record, not `Plain`
+  --> app/t/t.kg:17:5
+   |
+17 |     pub plain Plain //~ ERROR field `plain` of a `layout(C)` record must be a fixed-width number, a raw pointer or another `layout(C)` record, not `Plain`
+   |     ^^^^^^^^^^^^^^^
+
+error[E253]: a `layout(C)` record cannot be generic
+  --> app/t/t.kg:20:1
+   |
+20 | type Gen[T] layout(C) = { //~ ERROR a `layout(C)` record cannot be generic
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+

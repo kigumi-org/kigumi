@@ -1,0 +1,27 @@
+-- src --
+type Handle = resource {
+    pub id i32
+}
+
+fn Handle.drop(move self) -> Unit {
+    print "drop ${self.id}"
+}
+
+let mut ok = Array.empty[Handle]()
+ok.push(Handle { id: 1 })
+ok.push(Handle { id: 2 })
+let fa = FixedArray.fromArrayMove[Handle, 2](ok) || panic()
+print "at0 ${fa.at(0, (h: &Handle) => h.id) || 0}"
+print "len ${fa.len()}"
+
+let mut bad = Array.empty[Handle]()
+bad.push(Handle { id: 9 })
+let none = FixedArray.fromArrayMove[Handle, 2](bad)
+print "mismatch is none: ${none is None}"
+-- stdout --
+at0 1
+len 2
+drop 9
+mismatch is none: true
+drop 2
+drop 1

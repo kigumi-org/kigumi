@@ -1,0 +1,10 @@
+-- src --
+fn main() -> Unit! {
+    let h = host.net().http()
+    match h.post("http://exa mple.com/path", "hi") {
+        Ok(r) -> print "ok status=${r.status}"
+        Err(e) -> print "1: ${e.message()}"
+    }
+}
+-- stdout --
+1: host contains a control character or a space

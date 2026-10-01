@@ -1,0 +1,47 @@
+-- src --
+import io from std/io
+
+let mut r = io.BufReader.new(io.BytesReader.new("GET / HTTP/1.1\r\nHost: x\nEmpty:\r\n\r\ntail".toBytes()))
+for true {
+    match r.readLine()? {
+        Some(l) -> print "line=[${l}]"
+        None -> break
+    }
+}
+
+let mut r2 = io.BufReader.new(io.BytesReader.new("a: 1\r\nb: 2\r\n\r\nBODY".toBytes()))
+let head = r2.readUntil("\r\n\r\n".toBytes())?
+print "head=${(head || "".toBytes()).len()} buffered=${r2.buffered()}"
+// BufReader は Reader なので readAll にそのまま流せる
+let rest = io.readAll(r2)?
+print "rest=[${String.fromBytes(rest) || "?"}]"
+
+let mut r3 = io.BufReader.new(io.BytesReader.new("x".toBytes()))
+print "emptyDelim=${r3.readUntil("".toBytes()) is Err(_)}"
+
+let mut r4 = io.BufReader.new(io.BytesReader.new("".toBytes()))
+print "eof=${r4.readLine()? is None} buffered=${r4.buffered()}"
+
+// delimiter が来ないまま入力が尽きたら、残りをそのまま返す
+let mut r5 = io.BufReader.new(io.BytesReader.new("no delimiter here".toBytes()))
+let tail = r5.readUntil("|".toBytes())?
+print "noDelim=[${String.fromBytes(tail || "".toBytes()) || "?"}] again=${r5.readUntil("|".toBytes())? is None}"
+
+// read(into, max) が max を守る
+let mut r6 = io.BufReader.new(io.BytesReader.new("abcdef".toBytes()))
+let mut into = Array.empty[u8]()
+let n1 = r6.read(&mut into, 2)?
+let n2 = r6.read(&mut into, 100)?
+print "chunks=${n1},${n2},${into.len()}"
+-- stdout --
+line=[GET / HTTP/1.1]
+line=[Host: x]
+line=[Empty:]
+line=[]
+line=[tail]
+head=14 buffered=4
+rest=[BODY]
+emptyDelim=true
+eof=true buffered=0
+noDelim=[no delimiter here] again=true
+chunks=2,4,6

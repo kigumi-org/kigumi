@@ -1,0 +1,34 @@
+-- src --
+import ffi from std/ffi
+
+// Inner is plain layout(C) (natural alignment); nested inside a
+// layout(packed) Outer, Inner's own generated reader/writer must not
+// claim natural (align 8) access when the real address is only 1-byte
+// aligned (layout-attributes-1).
+type Inner layout(C) = {
+    pub x i64
+    pub y i64
+}
+
+type Outer layout(packed) = {
+    pub tag u8
+    pub inner Inner
+}
+
+let o = Outer { tag: 9, inner: Inner { x: 111, y: 222 } }
+print "${ffi.sizeOf(&o)}"
+let cv = ffi.CValue.new(o)
+let back = cv.get()
+print "${back.tag} ${back.inner.x} ${back.inner.y}"
+cv.set(&Outer { tag: 1, inner: Inner { x: -5, y: 999999999999 } })
+print "${cv.get().tag} ${cv.get().inner.x} ${cv.get().inner.y}"
+unsafe {
+    ffi.writeRecord(cv.ptr(), &Outer { tag: 42, inner: Inner { x: 7, y: 8 } })
+}
+let again = unsafe { ffi.readRecord(ffi.toConst(cv.ptr())) }
+print "${again.tag} ${again.inner.x} ${again.inner.y}"
+-- stdout --
+17
+9 111 222
+1 -5 999999999999
+42 7 8

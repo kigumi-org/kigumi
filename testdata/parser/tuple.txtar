@@ -1,0 +1,146 @@
+-- src --
+type Pair = (Int, String)
+
+type Holder = {
+    pos (Int, Int)
+}
+
+fn two() -> (Int, String) {
+    (1, "a")
+}
+
+fn addPair(p: (Int, Int)) -> Int {
+    let (x, y) = p
+    x + y
+}
+
+fn use(arr: Array[(Int, String)]) -> Unit {
+    for (n, s) in arr {
+        _ = n
+        _ = s
+    }
+    let single = (1,)
+    match nested() {
+        ((a, b), c) -> a + b + c
+        (_, _) -> 0
+    }
+}
+-- expect --
+File
+  TypeDecl
+    name: Pair
+    body: AliasBody
+      TypeTuple
+        TypePath
+          Path Int
+        TypePath
+          Path String
+  TypeDecl
+    name: Holder
+    body: RecordBody
+      Field pos
+        type: TypeTuple
+          TypePath
+            Path Int
+          TypePath
+            Path Int
+  FnDecl
+    attrs: -
+    vis: -
+    recv: -
+    name: two
+    generics: -
+    params: List
+    ret: TypeTuple
+      TypePath
+        Path Int
+      TypePath
+        Path String
+    body: Block
+      ExprStmt
+        TupleLit
+          IntLit 1
+          StringLit "a"
+  FnDecl
+    attrs: -
+    vis: -
+    recv: -
+    name: addPair
+    generics: -
+    params: List
+      Param p
+        type: TypeTuple
+          TypePath
+            Path Int
+          TypePath
+            Path Int
+    ret: TypePath
+      Path Int
+    body: Block
+      Let
+        pattern: PatTuple
+          PatBind x
+          PatBind y
+        init: Ident p
+      ExprStmt
+        Binary +
+          Ident x
+          Ident y
+  FnDecl
+    attrs: -
+    vis: -
+    recv: -
+    name: use
+    generics: -
+    params: List
+      Param arr
+        type: TypePath
+          Path Array
+          List
+            TypeTuple
+              TypePath
+                Path Int
+              TypePath
+                Path String
+    ret: TypePath
+      Path Unit
+    body: Block
+      ExprStmt
+        For
+          pattern: PatTuple
+            PatBind n
+            PatBind s
+          head: Ident arr
+          body: Block
+            Assign =
+              Ident _
+              Ident n
+            Assign =
+              Ident _
+              Ident s
+      Let
+        pattern: PatBind single
+        init: TupleLit
+          IntLit 1
+      ExprStmt
+        Match
+          Call
+            Ident nested
+            List
+          List
+            Arm
+              pattern: PatTuple
+                PatTuple
+                  PatBind a
+                  PatBind b
+                PatBind c
+              body: Binary +
+                Binary +
+                  Ident a
+                  Ident b
+                Ident c
+            Arm
+              pattern: PatTuple
+                PatWildcard _
+                PatWildcard _
+              body: IntLit 0

@@ -1,0 +1,71 @@
+-- lib/gc.kg --
+fn identity[T](x: T) -> T {
+    x
+}
+
+fn twice[T](f: fn(T) -> T, x: T) -> T {
+    f(f(x))
+}
+
+fn h[T](x: T, y: Int) -> Float {
+    1.0
+}
+
+fn h(x: Int, y: String) -> Bool {
+    true
+}
+
+type Box[T] = {
+    pub v T
+}
+
+fn Box[T].map[U](self, f: fn(T) -> U) -> Box[U] {
+    Box[U] { v: f(self.v) }
+}
+
+fn use(b: Box[Int]) -> Unit {
+    let f = identity //~ ERROR cannot infer type parameter `T`
+    let g: fn(Int) -> Int = identity
+    let a = g(1) //~ TYPE a : Int
+    let c = twice(identity, 2) //~ TYPE c : Int
+    let d = twice(identity[String], "s") //~ TYPE d : String
+    let e = identity[Int] //~ TYPE e : fn(Int) -> Int
+    let k = h[Int](1, 2) //~ TYPE k : Float
+    let m = h(1, "s") //~ TYPE m : Bool
+    let mv = b.map //~ ERROR cannot infer type parameter `U`
+    let mw: fn(fn(Int) -> String) -> Box[String] = b.map
+    let p = h //~ ERROR `h` is overloaded
+    let q = h[Int] //~ ERROR `h` is overloaded
+    // A bare generic passed with no instantiation or use-site annotation
+    // unifies T to &Int here instead of Int (docs/limitations_v1.md).
+    let xs = Array.of(1, 2).map(identity) //~ TYPE xs : Array[&Int]
+}
+-- expect --
+error[E301]: cannot infer type parameter `T`
+  --> lib/gc.kg:26:13
+   |
+26 |     let f = identity //~ ERROR cannot infer type parameter `T`
+   |             ^^^^^^^^
+   = help: write explicit type arguments or an annotation
+
+error[E301]: cannot infer type parameter `U`
+  --> lib/gc.kg:34:14
+   |
+34 |     let mv = b.map //~ ERROR cannot infer type parameter `U`
+   |              ^^^^^
+   = help: write explicit type arguments or an annotation
+
+error[E420]: `h` is overloaded
+  --> lib/gc.kg:36:13
+   |
+36 |     let p = h //~ ERROR `h` is overloaded
+   |             ^
+   = help: annotate the function type
+
+error[E420]: `h` is overloaded
+  --> lib/gc.kg:37:13
+   |
+37 |     let q = h[Int] //~ ERROR `h` is overloaded
+   |             ^^^^^
+   = help: annotate the function type
+

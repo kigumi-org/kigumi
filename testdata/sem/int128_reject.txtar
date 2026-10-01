@@ -1,0 +1,38 @@
+-- app/t/t.kg --
+fn wide(a: u128) -> Unit { //~ ERROR `u128` is not supported by this toolchain yet
+    _ = a
+}
+
+fn use() -> Unit {
+    let x: i128 = 1 //~ ERROR `i128` is not supported by this toolchain yet
+    _ = x
+}
+
+fn same[T](x: T) -> T { x }
+
+fn explicit() -> Unit {
+    _ = same[i128](1) //~ ERROR `i128` is not supported by this toolchain yet
+}
+
+-- expect --
+error[E960]: `u128` is not supported by this toolchain yet: integers are held in 64 bits, so a value would be truncated
+ --> app/t/t.kg:1:12
+  |
+1 | fn wide(a: u128) -> Unit { //~ ERROR `u128` is not supported by this toolchain yet
+  |            ^^^^
+  = help: use i64 or u64
+
+error[E960]: `i128` is not supported by this toolchain yet: integers are held in 64 bits, so a value would be truncated
+ --> app/t/t.kg:6:12
+  |
+6 |     let x: i128 = 1 //~ ERROR `i128` is not supported by this toolchain yet
+  |            ^^^^
+  = help: use i64 or u64
+
+error[E960]: `i128` is not supported by this toolchain yet: integers are held in 64 bits, so a value would be truncated
+  --> app/t/t.kg:13:14
+   |
+13 |     _ = same[i128](1) //~ ERROR `i128` is not supported by this toolchain yet
+   |              ^^^^
+   = help: use i64 or u64
+

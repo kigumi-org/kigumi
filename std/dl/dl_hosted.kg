@@ -1,0 +1,75 @@
+import alloc from std/alloc
+import ffi from std/ffi
+
+extern(C) {
+    fn dlopen(path: *const u8, flags: i32) -> *mut u8
+    fn dlsym(handle: *mut u8, name: *const u8) -> *mut u8
+    fn dlclose(handle: *mut u8) -> i32
+    fn dlerror() -> *const u8
+}
+
+fn lastDlError() -> ffi.CError {
+    let p = unsafe {
+        dlerror()
+    }
+    let text = if ffi.isNull(p) {
+        "unknown dynamic loader error"
+    } else {
+        unsafe {
+            ffi.stringLossy(p)
+        }
+    }
+    ffi.CError {
+        code: 0
+        text: text
+    }
+}
+
+/// Closes the library.
+pub fn Handle.drop(move self) -> Unit {
+    _ = unsafe {
+        dlclose(self.h)
+    }
+}
+
+/// Loads a shared library by file name or path.
+pub fn Loader.open(self, path: String) -> Library! {
+    let c = ffi.CString.new(&path)?
+    let h = unsafe {
+        dlopen(c.ptr(), 2)
+    }
+    if ffi.isNull(ffi.toConst(h)) {
+        fail lastDlError()
+    }
+    Library { lease: alloc.Shared.new(Handle { h: h }) }
+}
+
+/// Looks up a function symbol; T is its C function pointer type. A
+/// symbol whose value is legitimately NULL is not an error, so success is
+/// decided by dlerror (POSIX protocol: clear it, call dlsym, check it
+/// again), not by the returned pointer.
+pub fn Library.get[T](self, name: String) -> Symbol[T]! {
+    let c = ffi.CString.new(&name)?
+    let cp = c.ptr()
+    _ = unsafe {
+        dlerror()
+    }
+    let p = self.lease.with((handle) => unsafe {
+        dlsym(handle.h, cp)
+    })
+    let err = unsafe {
+        dlerror()
+    }
+    if !ffi.isNull(err) {
+        fail ffi.CError {
+            code: 0
+            text: unsafe {
+                ffi.stringLossy(err)
+            }
+        }
+    }
+    Symbol {
+        lease: self.lease.clone()
+        addr: ffi.toConst(p)
+    }
+}

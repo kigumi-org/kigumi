@@ -1,0 +1,32 @@
+-- src --
+import error from std/error
+
+type LeafError = {
+    text String
+}
+
+fn LeafError.message(self) -> String {
+    self.text
+}
+
+let leaf: Error = LeafError { text: "disk full" }
+let mid = error.context(leaf, "write failed")
+let outer = error.context(mid, "save failed")
+
+print outer.message()
+
+if error.cause(outer) is Some(inner1) {
+    print "cause1: ${inner1.message()}"
+    if error.cause(inner1) is Some(inner2) {
+        print "cause2: ${inner2.message()}"
+        print "cause3: ${error.cause(inner2) is None}"
+    }
+}
+-- stdout --
+save failed: write failed: disk full
+cause1: write failed: disk full
+cause2: disk full
+cause3: true
+-- stderr --
+-- exit --
+0

@@ -1,0 +1,55 @@
+-- src --
+let header = "GET / HTTP/1.1\r\nHost: example.com\r\n\r\nbody".toBytes()
+let terminator = "\r\n\r\n".toBytes()
+let empty = Bytes.zeros(0)
+let missing = "xyz".toBytes()
+
+fn showIdx(x: usize?) -> String {
+    if x is Some(i) {
+        "${i}"
+    } else {
+        "none"
+    }
+}
+
+print "terminator at: ${showIdx(header.indexOf(terminator))}"
+print "terminator matchesAt found offset: ${header.matchesAt(terminator, 33)}"
+print "terminator matchesAt one off: ${header.matchesAt(terminator, 34)}"
+print "terminator contains: ${header.contains(terminator)}"
+print "no match indexOf: ${showIdx(header.indexOf(missing))}"
+print "no match contains: ${header.contains(missing)}"
+
+let tail = "\r\n\r\n".toBytes()
+print "endsWith terminator: ${tail.endsWith(terminator)}"
+print "endsWith on tail of header: ${"Host: example.com\r\n\r\n".toBytes().endsWith(terminator)}"
+print "startsWith GET: ${header.startsWith("GET".toBytes())}"
+print "startsWith wrong: ${header.startsWith("POST".toBytes())}"
+
+print "empty sub indexOf: ${showIdx(header.indexOf(empty))}"
+print "empty sub contains: ${header.contains(empty)}"
+print "empty sub matchesAt 0: ${header.matchesAt(empty, 0)}"
+print "empty sub matchesAt len: ${header.matchesAt(empty, header.len())}"
+print "empty sub matchesAt past len: ${header.matchesAt(empty, header.len() + 1)}"
+print "empty self, empty sub: ${empty.matchesAt(empty, 0)}"
+
+print "matchesAt past len: ${header.matchesAt(terminator, header.len() + 1)}"
+print "indexOf sub longer than self: ${showIdx(empty.indexOf(terminator))}"
+-- stdout --
+terminator at: 33
+terminator matchesAt found offset: true
+terminator matchesAt one off: false
+terminator contains: true
+no match indexOf: none
+no match contains: false
+endsWith terminator: true
+endsWith on tail of header: true
+startsWith GET: true
+startsWith wrong: false
+empty sub indexOf: 0
+empty sub contains: true
+empty sub matchesAt 0: true
+empty sub matchesAt len: true
+empty sub matchesAt past len: false
+empty self, empty sub: true
+matchesAt past len: false
+indexOf sub longer than self: none

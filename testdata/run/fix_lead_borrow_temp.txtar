@@ -1,0 +1,23 @@
+-- src --
+fn takeRef(s: &String) -> usize {
+    s.len()
+}
+
+type Tag = {
+    pub name String
+}
+
+fn tagLen(t: &Tag) -> usize {
+    t.name.len()
+}
+
+// The borrow of a temporary has to keep that temporary alive across the call:
+// the AOT backend released it at the borrow itself and handed over freed memory.
+print "lit=${takeRef(&"hello")}"
+print "rec=${tagLen(&Tag { name: "kigumi" })}"
+let joined = "${"a"}b${"c"}"
+print "built=${takeRef(&joined)}"
+-- stdout --
+lit=5
+rec=6
+built=3

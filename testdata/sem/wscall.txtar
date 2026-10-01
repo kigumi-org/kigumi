@@ -1,0 +1,21 @@
+-- src --
+fn twice(x: Int) -> Int {
+    x * 2
+}
+
+fn shout(s: String) -> String {
+    s
+}
+
+let t = twice 3 //~ TYPE t : Int
+let u = shout "hi" //~ TYPE u : String
+print "ok"
+print shout("x")
+let w = twice "s" //~ ERROR expected `Int`, found `String`
+-- expect --
+error[E400]: expected `Int`, found `String`
+  --> main/main.kg:13:15
+   |
+13 | let w = twice "s" //~ ERROR expected `Int`, found `String`
+   |               ^^^
+

@@ -1,0 +1,72 @@
+-- src --
+type Tag = resource {
+    pub n Int
+}
+
+fn Tag.drop(move self) -> Unit {
+    print "drop ${self.n}"
+}
+
+type Boom = {
+    pub text String
+}
+
+fn Boom.message(self) -> String {
+    self.text
+}
+
+fn risky(n: Int) -> Int! {
+    if n > 2 {
+        fail Boom { text: "too big ${n}" }
+    }
+    n
+}
+
+fn relay(n: Int) -> Int! {
+    let guard = Tag { n: n }
+    let v = risky(n) || (e) => fail e
+    v + 1
+}
+
+fn pick(flags: Array[Bool]) -> Unit {
+    for flag in flags {
+        let t = Tag { n: 10 }
+        if flag {
+            let kept = t
+            print "kept ${kept.n}"
+        } else {
+            print "skipped"
+        }
+    }
+}
+
+print "${relay(1) || 0}"
+print "${relay(5) || -1}"
+pick(Array.of(true, false, true))
+print "end"
+
+fn early(r: Tag, flag: Bool) -> Int {
+    if flag {
+        return 1
+    }
+    2
+}
+
+print "early ${early(Tag { n: 7 }, true)}"
+print "late ${early(Tag { n: 8 }, false)}"
+-- stdout --
+drop 1
+2
+drop 5
+-1
+kept 10
+drop 10
+skipped
+drop 10
+kept 10
+drop 10
+end
+drop 7
+early 1
+drop 8
+late 2

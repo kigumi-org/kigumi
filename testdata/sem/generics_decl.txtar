@@ -1,0 +1,106 @@
+-- app/g/g.kg --
+pub interface Display {
+    fn display(self) -> String
+}
+
+pub type Pair[T] = {
+    pub first T
+    pub second T
+}
+
+fn Pair[T].swap(self) -> Pair[T] {
+    self
+}
+
+fn Pair.bad(self) -> Int { //~ ERROR `Pair` is generic
+    1
+}
+
+fn Pair.make() -> Int {
+    1
+}
+
+fn Pair[A].wrongName(self) -> Int { //~ ERROR receiver binders must be `[T]` as declared on `Pair`
+    1
+}
+
+fn Pair[T, U].tooMany(self) -> Int { //~ ERROR receiver binders must be `[T]` as declared on `Pair`
+    1
+}
+
+fn Pair[T].map[U](self, f: fn(T) -> U) -> Pair[U] {
+    Pair[U] {
+        first: f(self.first)
+        second: f(self.second)
+    }
+}
+
+fn dupBinder[T, T](x: T) -> T { //~ ERROR duplicate type parameter `T`
+    x
+}
+
+fn badBound[T: Pair[Int]](x: T) -> T { //~ ERROR `Pair` is not an interface or compiler-known constraint
+    x
+}
+
+fn okBound[T: Display + Copy](x: T) -> T {
+    x
+}
+
+fn fnBound[A, R, F: FnOnce[fn(A) -> R]](f: F, v: A) -> R {
+    f(v)
+}
+
+fn badFn[F: Fn](f: F) -> Unit {} //~ ERROR `Fn` is not an interface or compiler-known constraint
+
+fn T.g(self) -> Int { //~ ERROR `T` is not a nominal type of this package
+    1
+}
+
+type W[T: Display] = {
+    v T
+}
+-- expect --
+error[E231]: `Pair` is generic
+  --> app/g/g.kg:14:4
+   |
+14 | fn Pair.bad(self) -> Int { //~ ERROR `Pair` is generic
+   |    ^^^^
+   = help: write `fn Pair[T].bad`
+
+error[E232]: receiver binders must be `[T]` as declared on `Pair`
+  --> app/g/g.kg:22:4
+   |
+22 | fn Pair[A].wrongName(self) -> Int { //~ ERROR receiver binders must be `[T]` as declared on `Pair`
+   |    ^^^^^^
+
+error[E232]: receiver binders must be `[T]` as declared on `Pair`
+  --> app/g/g.kg:26:4
+   |
+26 | fn Pair[T, U].tooMany(self) -> Int { //~ ERROR receiver binders must be `[T]` as declared on `Pair`
+   |    ^^^^^^^^^
+
+error[E247]: duplicate type parameter `T`
+  --> app/g/g.kg:37:17
+   |
+37 | fn dupBinder[T, T](x: T) -> T { //~ ERROR duplicate type parameter `T`
+   |                 ^
+
+error[E248]: `Pair` is not an interface or compiler-known constraint
+  --> app/g/g.kg:41:16
+   |
+41 | fn badBound[T: Pair[Int]](x: T) -> T { //~ ERROR `Pair` is not an interface or compiler-known constraint
+   |                ^^^^^^^^
+
+error[E248]: `Fn` is not an interface or compiler-known constraint
+  --> app/g/g.kg:53:13
+   |
+53 | fn badFn[F: Fn](f: F) -> Unit {} //~ ERROR `Fn` is not an interface or compiler-known constraint
+   |             ^^
+
+error[E230]: `T` is not a nominal type of this package
+  --> app/g/g.kg:55:4
+   |
+55 | fn T.g(self) -> Int { //~ ERROR `T` is not a nominal type of this package
+   |    ^
+

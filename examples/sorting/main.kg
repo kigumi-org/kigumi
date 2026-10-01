@@ -1,0 +1,35 @@
+#!/usr/bin/env kigumi
+
+import array from std/array
+
+type Person = {
+    pub name String
+    pub age Int
+}
+
+let people = Array.of(Person {
+    name: "Carol"
+    age: 35
+}, Person {
+    name: "alice"
+    age: 30
+}, Person {
+    name: "Bob"
+    age: 30
+})
+
+let byAge = array.sortedBy(&people, (a, b) => {
+    if a.age != b.age {
+        a.age.compareTo(b.age)
+    } else {
+        a.name.toLower().compareTo(&b.name.toLower())
+    }
+})
+
+for p in byAge {
+    print "${p.name} (${p.age})"
+}
+
+let unsortedNames = people.map((p) => p.name)
+let names = array.sortedBy(&unsortedNames, (a, b) => a.compareTo(b))
+print array.join(&names, ", ")

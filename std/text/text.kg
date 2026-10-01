@@ -1,0 +1,268 @@
+import array from std/array
+
+/// Byte offset of the first occurrence of c in s, or None.
+pub pure fn indexOf(s: String, c: Char) -> usize? {
+    let needle = fromChar(c)
+    if needle.len() > s.len() {
+        return None
+    }
+    let mut i: usize = 0
+    for i <= s.len() - needle.len() {
+        if s.matchesAt(needle, i) {
+            return Some(i)
+        }
+        i = i + 1
+    }
+    None
+}
+
+/// Lines of s without their newline characters; a trailing newline adds no empty line.
+pub pure fn lines(s: String) -> Array[String] {
+    let mut out = Array.empty[String]()
+    let mut end = s.len()
+    if end > 0 && s[end - 1] == 10 {
+        end = end - 1
+    }
+    if end == 0 {
+        return out
+    }
+    let mut start: usize = 0
+    let mut i: usize = 0
+    for i <= end {
+        if i == end || s[i] == 10 {
+            out.push(s.sliceBytes(start, i) || "")
+            start = i + 1
+        }
+        i = i + 1
+    }
+    out
+}
+
+/// One string per Unicode scalar value of s.
+pub pure fn graphemes(s: String) -> Array[String] {
+    let mut out = Array.empty[String]()
+    for c in &s.chars() {
+        out.push(fromChar(c))
+    }
+    out
+}
+
+/// Parses a decimal floating-point literal (JSON / C `strtod` grammar); None unless the whole text is a number.
+pub pure fn parseFloat(s: String) -> Float?
+
+/// Parses s (surrounding spaces and tabs allowed) as a base-10 integer with an optional sign, or None.
+pub pure noalloc fn parseInt(s: String) -> Int? {
+    let n = s.len()
+    let mut i: usize = 0
+    for i < n && (s[i] == 32 || s[i] == 9) {
+        i = i + 1
+    }
+    let mut negative = false
+    if i < n && (s[i] == 43 || s[i] == 45) {
+        negative = s[i] == 45
+        i = i + 1
+    }
+    let min = -9223372036854775807 - 1
+    let mut acc = 0
+    let mut digits = 0
+    for i < n && s[i] >= 48 && s[i] <= 57 {
+        let d = (s[i] - 48).toInt()
+        if acc < (min + d) / 10 {
+            return None
+        }
+        acc = acc * 10 - d
+        digits = digits + 1
+        i = i + 1
+    }
+    for i < n && (s[i] == 32 || s[i] == 9) {
+        i = i + 1
+    }
+    if digits == 0 || i != n {
+        return None
+    }
+    if negative {
+        return Some(acc)
+    }
+    if acc == min {
+        return None
+    }
+    Some(-acc)
+}
+
+/// Parses s (surrounding spaces and tabs allowed) as a base-10 unsigned integer with an optional leading `+`, or None. The full u64 range, unlike parseInt.
+pub pure noalloc fn parseUint(s: String) -> u64? {
+    let n = s.len()
+    let mut i: usize = 0
+    for i < n && (s[i] == 32 || s[i] == 9) {
+        i = i + 1
+    }
+    if i < n && s[i] == 43 {
+        i = i + 1
+    }
+    let max: u64 = 18446744073709551615
+    let mut acc: u64 = 0
+    let mut digits = 0
+    for i < n && s[i] >= 48 && s[i] <= 57 {
+        let d = (s[i] - 48).toU64()
+        if acc > (max - d) / 10 {
+            return None
+        }
+        acc = acc * 10 + d
+        digits = digits + 1
+        i = i + 1
+    }
+    for i < n && (s[i] == 32 || s[i] == 9) {
+        i = i + 1
+    }
+    if digits == 0 || i != n {
+        return None
+    }
+    Some(acc)
+}
+
+/// String holding just c.
+pub pure fn fromChar(c: Char) -> String
+
+/// Bytes start..end of s as a string; None unless both offsets are within s and on character boundaries.
+pub pure fn slice(s: String, start: usize, end: usize) -> String? {
+    s.sliceBytes(start, end)
+}
+
+/// s with every occurrence of old replaced by new; an empty old leaves s unchanged.
+pub pure fn replace(s: String, old: String, new: String) -> String {
+    if old.len() == 0 {
+        return s
+    }
+    let mut pieces = Array.empty[String]()
+    let mut start: usize = 0
+    let mut i: usize = 0
+    for i < s.len() {
+        if s.matchesAt(old, i) {
+            pieces.push(s.sliceBytes(start, i) || "")
+            pieces.push(new)
+            i = i + old.len()
+            start = i
+        } else {
+            i = i + 1
+        }
+    }
+    pieces.push(s.sliceBytes(start, s.len()) || "")
+    array.join(&pieces, "")
+}
+
+/// Byte offset of the first `sub` in `s`, or None. The empty `sub` is at 0.
+/// Offsets are byte offsets, the same as `slice` takes.
+///
+/// Why not an `indexOf` overload: the engines key their accelerators by
+/// package and name, so an overload of an accelerated function reaches the
+/// wrong implementation (`internal/interp/call_dispatch.go` builtinKey).
+pub pure fn find(s: String, sub: String) -> usize? {
+    s.toBytes().indexOf(sub.toBytes())
+}
+
+/// Byte offset of the last `sub` in `s`, or None. The empty `sub` is at `s.len()`.
+pub pure fn rfind(s: String, sub: String) -> usize? {
+    if sub.len() > s.len() {
+        return None
+    }
+    let mut i = s.len() - sub.len()
+    for true {
+        if s.matchesAt(sub, i) {
+            return Some(i)
+        }
+        if i == 0 {
+            return None
+        }
+        i = i - 1
+    }
+    None
+}
+
+/// Whether `a` and `b` are equal ignoring the case of ASCII letters. Bytes
+/// outside `A-Za-z` must match exactly, so this is not Unicode case folding.
+/// HTTP field names compare this way, per RFC 9110.
+pub pure noalloc fn equalFold(a: String, b: String) -> Bool {
+    if a.len() != b.len() {
+        return false
+    }
+    let mut i: usize = 0
+    for i < a.len() {
+        if foldAscii(a[i]) != foldAscii(b[i]) {
+            return false
+        }
+        i = i + 1
+    }
+    true
+}
+
+pure noalloc fn foldAscii(b: u8) -> u8 {
+    if b >= 65 && b <= 90 {
+        b + 32
+    } else {
+        b
+    }
+}
+
+/// `s` without a leading `prefix`; `s` unchanged when it does not start with one.
+pub pure fn trimPrefix(s: String, prefix: String) -> String {
+    if prefix.len() == 0 || !s.startsWith(prefix) {
+        return s
+    }
+    s.sliceBytes(prefix.len(), s.len()) || s
+}
+
+/// `s` without a trailing `suffix`; `s` unchanged when it does not end with one.
+pub pure fn trimSuffix(s: String, suffix: String) -> String {
+    if suffix.len() == 0 || !s.endsWith(suffix) {
+        return s
+    }
+    s.sliceBytes(0, s.len() - suffix.len()) || s
+}
+
+/// `s` as an unsigned integer in `base` (2 to 36, letters either case), or None
+/// when it is empty, has a stray character, or does not fit in a u64.
+/// Surrounding spaces and tabs are allowed, a sign is not.
+pub pure fn parseUint(s: String, base: usize) -> u64? {
+    if base < 2 || base > 36 {
+        return None
+    }
+    let t = s.trim()
+    if t.len() == 0 {
+        return None
+    }
+    let radix = base.toU64()
+    let mut v: u64 = 0
+    let mut i: usize = 0
+    for i < t.len() {
+        let d = digitValue(t[i])
+        if d >= base {
+            return None
+        }
+        let next = v.wrappingMul(radix).wrappingAdd(d.toU64())
+        // Overflow shows up as a value that no longer divides back.
+        if v != 0 && next / radix != v {
+            return None
+        }
+        if v == 0 && next < d.toU64() {
+            return None
+        }
+        v = next
+        i = i + 1
+    }
+    Some(v)
+}
+
+/// 36 for anything that is not a digit or an ASCII letter, so a caller comparing
+/// against its base rejects it.
+pure noalloc fn digitValue(c: u8) -> usize {
+    let v = c.toUsize()
+    if v >= 48 && v <= 57 {
+        v - 48
+    } else if v >= 97 && v <= 122 {
+        v - 87
+    } else if v >= 65 && v <= 90 {
+        v - 55
+    } else {
+        36
+    }
+}

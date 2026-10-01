@@ -1,0 +1,154 @@
+/// A value of exactly N elements of T, fixed at the type via const
+/// generics. Backed by an Array[T] since a true inline buffer is out of
+/// scope for now; Copy and structural Eq/Hash still hold because the
+/// compiler derives them from this field the way it does for any other
+/// record.
+pub type FixedArray[T, const N: usize] = {
+    mut items Array[T]
+}
+
+/// N copies of value.
+pub pure fn FixedArray.filled[T: Copy, const N: usize](value: T) -> FixedArray[T, N] {
+    FixedArray { items: Array.fill(value, N) }
+}
+
+/// A type whose zero value is known statically, dispatched the way
+/// `Digest.new()` is: lets `zeroed` reach a correctly-tagged zero of an
+/// otherwise-erased T without a value to copy.
+pub interface Zero {
+    pure fn zero() -> Self
+}
+
+pub pure fn i8.zero() -> i8 {
+    0
+}
+
+pub pure fn i16.zero() -> i16 {
+    0
+}
+
+pub pure fn i32.zero() -> i32 {
+    0
+}
+
+pub pure fn i64.zero() -> i64 {
+    0
+}
+
+pub pure fn u8.zero() -> u8 {
+    0
+}
+
+pub pure fn u16.zero() -> u16 {
+    0
+}
+
+pub pure fn u32.zero() -> u32 {
+    0
+}
+
+pub pure fn u64.zero() -> u64 {
+    0
+}
+
+pub pure fn isize.zero() -> isize {
+    0
+}
+
+pub pure fn usize.zero() -> usize {
+    0
+}
+
+pub pure fn f32.zero() -> f32 {
+    0.0
+}
+
+pub pure fn f64.zero() -> f64 {
+    0.0
+}
+
+/// N zeros.
+pub pure fn FixedArray.zeroed[T: Copy + Zero, const N: usize]() -> FixedArray[T, N] {
+    FixedArray.filled(T.zero())
+}
+
+/// A copy of the element at index, or None when index is out of range.
+pub pure fn FixedArray[T: Copy, N].get(self, index: usize) -> T? {
+    self.items.get(index)
+}
+
+/// Calls f with a borrow of the element at index; None when index is out
+/// of range. `at` cannot return `&T` directly (E220: borrow types cannot
+/// appear in return types), so it follows Array.with's callback shape.
+pub pure fn FixedArray[T, N].at[R](self, index: usize, f: fn(&T) -> R) -> R? {
+    self.items.with(index, f)
+}
+
+/// Calls f with an exclusive borrow of the element at index, so f can
+/// mutate it in place; None when index is out of range.
+pub pure fn FixedArray[T, N].withMut[R](mut self, index: usize, f: fn(&mut T) -> R) -> R? {
+    self.items.withMut(index, f)
+}
+
+/// Replaces the element at index with value; false when index is out of
+/// range. Bracket assignment, not withMut: withMut's callback can only
+/// write through `&mut T` when T is a known scalar, not a generic
+/// T (E400), so a generic `set` needs the array's own index-assignment.
+pub pure fn FixedArray[T, N].set(mut self, index: usize, value: T) -> Bool {
+    if index >= N {
+        return false
+    }
+    self.items[index] = value
+    true
+}
+
+/// Number of elements: always N, the type's own length.
+pub pure noalloc fn FixedArray[T, N].len(self) -> usize {
+    N
+}
+
+/// A growable copy of the elements, in order.
+pub pure fn FixedArray[T: Copy, N].toArray(self) -> Array[T] {
+    self.items.clone()
+}
+
+/// The elements of a, or None when its length is not N.
+pub pure fn FixedArray.fromArray[T: Copy, const N: usize](a: &Array[T]) -> FixedArray[T, N]? {
+    if a.len() != N {
+        return None
+    }
+    Some(FixedArray { items: a.clone() })
+}
+
+/// Moves a's elements in, or None (dropping a) when its length is not N.
+/// The only constructor that works for a move-only (resource) T: it takes
+/// ownership instead of cloning, so it needs no Copy bound.
+pub pure fn FixedArray.fromArrayMove[T, const N: usize](a: Array[T]) -> FixedArray[T, N]? {
+    if a.len() != N {
+        return None
+    }
+    Some(FixedArray { items: a })
+}
+
+/// N bytes read out of a Bytes value, or None when its length is not N.
+/// A method on Bytes (not on FixedArray[u8, N]) because a receiver binder
+/// must reuse the owning type's own parameter names (`FixedArray[T, ...]`);
+/// it cannot fix T to `u8` the way this conversion needs.
+pub pure fn Bytes.toFixed[const N: usize](self) -> FixedArray[u8, N]? {
+    if self.len() != N {
+        return None
+    }
+    let mut items = Array.empty[u8]()
+    let mut i: usize = 0
+    for i < N {
+        items.push(self.get(i) || 0)
+        i = i + 1
+    }
+    Some(FixedArray { items: items })
+}
+
+/// The N bytes of fa, in order. A static function under FixedArray for the
+/// same reason as Bytes.toFixed: no receiver binder can fix T to `u8`.
+pub pure fn FixedArray.toBytes[const N: usize](fa: FixedArray[u8, N]) -> Bytes {
+    Bytes.fromArray(&fa.items)
+}

@@ -1,0 +1,4 @@
+Module {
+    name: "game_of_life"
+    kigumi: "0.1"
+}

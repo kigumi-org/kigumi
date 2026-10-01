@@ -1,0 +1,23 @@
+# The standard library's documentation, published from the main branch.
+name: pages
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  std-docs:
+    uses: ./.github/workflows/kigumi-docs.yml
+    with:
+      module-root: std
+      kigumi-version: local

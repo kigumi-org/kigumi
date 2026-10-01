@@ -1,0 +1,111 @@
+-- src --
+// Ledger L-181: an owned `for` moves its head, and a `for` over a shared
+// borrow holds it for the whole loop; both are the pre-existing own/borrow
+// errors, not new diagnostics.
+fn useAfterOwnedLoop() -> Unit {
+    let items = Array.of(1, 2, 3)
+    for x in items {
+        print "${x}"
+    }
+    print "${items.len()}"
+}
+
+fn mutateInsideBorrowLoop() -> Unit {
+    let mut items = Array.of(1, 2, 3)
+    for x in &items {
+        items.push(4)
+        print "${x}"
+    }
+}
+-- expect --
+fn main.useAfterOwnedLoop() -> Unit {
+  b0:
+    %t0 = const 1: Int
+    %t1 = const 2: Int
+    %t2 = const 3: Int
+    %t3 = array(%t0, %t1, %t2)
+    %t4 = call of(%t3)
+    %items = copy(%t4)
+    %t6 = move(%items)
+    %t7 = const 0: usize
+    %t8 = builtin iter.len(%t6)
+    jump b1
+  b1:
+    %t9 = bin <(%t7, %t8)
+    branch %t9 ? b2 : b4
+  b2:
+    %t10 = builtin iter.at(%t6, %t7)
+    %x = copy(%t10)
+    %t12 = interp ""(%x)
+    %t13 = builtin print(%t12)
+    drop(%x)
+    jump b3
+  b3:
+    %t14 = const 1: usize
+    %t15 = bin +(%t7, %t14)
+    drop(%t7)
+    %t7 = copy(%t15)
+    jump b1
+  b4:
+    drop(%t8)
+    drop(%t7)
+    drop(%t6)
+    %t16 = unit
+    drop(%t16)
+    %t18 = call len(%items)
+    %t17 = interp ""(%t18)
+    %t19 = builtin print(%t17)
+    nop
+    return %t19
+}
+fn main.mutateInsideBorrowLoop() -> Unit {
+  b0:
+    %t0 = const 1: Int
+    %t1 = const 2: Int
+    %t2 = const 3: Int
+    %t3 = array(%t0, %t1, %t2)
+    %t4 = call of(%t3)
+    %items = copy(%t4)
+    %t6 = borrow 0(%items)
+    %t7 = const 0: usize
+    %t8 = builtin iter.len(%t6)
+    jump b1
+  b1:
+    %t9 = bin <(%t7, %t8)
+    branch %t9 ? b2 : b4
+  b2:
+    %t10 = builtin iter.at(%t6, %t7)
+    %x = copy(%t10)
+    %t12 = const 4: Int
+    %t13 = borrow 1(%items)
+    %t14 = call push(%t13, %t12)
+    drop(%t14)
+    %t15 = interp ""(%x)
+    %t16 = builtin print(%t15)
+    drop(%x)
+    jump b3
+  b3:
+    %t17 = const 1: usize
+    %t18 = bin +(%t7, %t17)
+    drop(%t7)
+    %t7 = copy(%t18)
+    jump b1
+  b4:
+    drop(%t8)
+    drop(%t7)
+    %t19 = unit
+    drop(%items)
+    return %t19
+}
+error[use-after-move]: `items` was moved; it cannot be used again
+ --> main/main.kg:9:14
+  |
+9 |     print "${items.len()}"
+  |              ^^^^^^^^^^
+
+error[borrow-conflict]: `items` is borrowed and cannot be mutated here
+  --> main/main.kg:15:9
+   |
+15 |         items.push(4)
+   |         ^^^^^
+

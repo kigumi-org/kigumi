@@ -1,0 +1,4 @@
+Module {
+    name: "json"
+    kigumi: "0.1"
+}

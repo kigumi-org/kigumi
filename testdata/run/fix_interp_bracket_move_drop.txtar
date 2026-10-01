@@ -1,0 +1,42 @@
+-- src --
+// Ledger L-172 (追記 2026-09-27): a resource read out of an Array by plain
+// bracket indexing (`xs[0]`, or `xs[0].field`) and passed straight into a
+// call double-dropped it under --engine interp; `Array.takeAt`/`move self`
+// were already fixed but bracket indexing was out of that fix's scope.
+type Res = resource {
+    pub id Int
+}
+
+type Holder = {
+    pub r Res
+}
+
+fn Res.drop(move self) -> Unit {
+    print "drop ${self.id}"
+}
+
+fn consume(x: Res) -> Unit {
+    print "consume ${x.id}"
+}
+
+fn byIndex() -> Unit {
+    let mut xs = Array.of(Res { id: 1 })
+    consume(xs[0])
+}
+
+fn byIndexField() -> Unit {
+    let mut ys = Array.of(Holder { r: Res { id: 2 } })
+    consume(ys[0].r)
+}
+
+byIndex()
+print "indexed"
+byIndexField()
+print "indexed field"
+-- stdout --
+consume 1
+drop 1
+indexed
+consume 2
+drop 2
+indexed field

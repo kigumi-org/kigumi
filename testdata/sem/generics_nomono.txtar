@@ -1,0 +1,41 @@
+-- lib/nm.kg --
+fn wrap[T](x: T) -> Int {
+    wrap(Some(x)) //~ ERROR instantiation of `wrap[T]` requires `wrap[T?]`: polymorphic recursion does not terminate
+}
+
+fn fine[T](x: T, n: Int) -> Int {
+    if n == 0 { 0 } else { fine(x, n - 1) }
+}
+
+fn ping[T](x: T) -> Int {
+    pong(Array.of(x))
+}
+
+fn pong[U](xs: Array[U]) -> Int {
+    ping(xs) //~ ERROR instantiation of `pong[U]` requires `ping[Array[U]]`: polymorphic recursion does not terminate
+}
+
+fn swap[A, B](a: A, b: B) -> Int {
+    swap(b, a)
+}
+
+fn len[T](xs: Array[T]) -> usize {
+    xs.len()
+}
+
+fn nested[T](x: T) -> usize {
+    len(Array.of(x))
+}
+-- expect --
+error[E302]: instantiation of `wrap[T]` requires `wrap[T?]`: polymorphic recursion does not terminate
+ --> lib/nm.kg:2:5
+  |
+2 |     wrap(Some(x)) //~ ERROR instantiation of `wrap[T]` requires `wrap[T?]`: polymorphic recursion does not terminate
+  |     ^^^^^^^^^^^
+
+error[E302]: instantiation of `pong[U]` requires `ping[Array[U]]`: polymorphic recursion does not terminate
+  --> lib/nm.kg:14:5
+   |
+14 |     ping(xs) //~ ERROR instantiation of `pong[U]` requires `ping[Array[U]]`: polymorphic recursion does not terminate
+   |     ^^^^^^^
+

@@ -1,0 +1,88 @@
+-- lib/own.kg --
+type Handle = resource {
+    pub id Int
+}
+
+fn Handle.close(move self) -> Unit {
+}
+
+type Box = {
+    pub mut h Handle
+}
+
+fn consume(x: Handle) -> Unit {
+    x.close()
+}
+
+fn twiceField(b: Box) -> Unit {
+    consume(b.h)
+    consume(b.h)
+}
+
+fn plainOverwrite(mut b: Box, fresh: Handle) -> Unit {
+    b.h = fresh
+}
+
+fn onceThenRestored(mut b: Box, fresh: Handle) -> Unit {
+    consume(b.h)
+    b.h = fresh
+    consume(b.h)
+}
+-- expect --
+fn lib.Handle.close(%self: Handle) -> Unit {
+  b0:
+    %t1 = unit
+    drop(%self)
+    return %t1
+}
+fn lib.consume(%x: Handle) -> Unit {
+  b0:
+    %t1 = move(%x)
+    %t2 = call close(%t1)
+    nop
+    return %t2
+}
+fn lib.twiceField(%b: Box) -> Unit {
+  b0:
+    %t1 = field 0(%b)
+    %t2 = call consume(%t1)
+    drop(%t2)
+    %t3 = field 0(%b)
+    %t4 = call consume(%t3)
+    drop(%b)
+    return %t4
+}
+fn lib.plainOverwrite(%b: Box, %fresh: Handle) -> Unit {
+  b0:
+    %t2 = move(%fresh)
+    setfield 0(%b, %t2)
+    %t3 = unit
+    nop
+    drop(%b)
+    return %t3
+}
+fn lib.onceThenRestored(%b: Box, %fresh: Handle) -> Unit {
+  b0:
+    %t2 = field 0(%b)
+    %t3 = call consume(%t2)
+    drop(%t3)
+    %t4 = move(%fresh)
+    setfield 0(%b, %t4)
+    %t5 = field 0(%b)
+    %t6 = call consume(%t5)
+    nop
+    drop(%b)
+    return %t6
+}
+error[use-after-move]: `b.h` was moved; it cannot be used again
+  --> lib/own.kg:18:13
+   |
+18 |     consume(b.h)
+   |             ^^^
+
+error[use-after-move]: `b.h` was moved; it cannot be used again
+  --> lib/own.kg:18:5
+   |
+18 |     consume(b.h)
+   |     ^^^^^^^^^^^
+

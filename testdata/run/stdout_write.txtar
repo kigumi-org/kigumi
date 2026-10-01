@@ -1,0 +1,7 @@
+-- src --
+let mut out = host.stdout()
+_ = out.write("AB".toBytes())?
+_ = out.write("CD".toBytes())?
+print "!"
+-- stdout --
+ABCD!

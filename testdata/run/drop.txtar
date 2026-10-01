@@ -1,0 +1,64 @@
+-- src --
+import test from std/test
+
+type Handle = resource {
+    pub id Int
+}
+
+fn Handle.drop(move self) -> Unit {
+    print "drop ${self.id}"
+}
+
+fn Handle.close(move self) -> Unit! {
+    print "close ${self.id}"
+}
+
+type Pair = {
+    pub a Handle
+    pub b Handle
+}
+
+fn make(id: Int) -> Handle {
+    Handle { id: id }
+}
+
+fn consume(h: Handle) -> Unit {
+    print "consume ${h.id}"
+}
+
+fn early(flag: Bool) -> Unit! {
+    let h = make(3)
+    if flag {
+        fail test.failure("early")
+    }
+    h.close()?
+}
+
+fn scoped() -> Unit {
+    let x = make(1)
+    let y = make(2)
+    consume(y)
+    print "end of scoped"
+}
+
+scoped()
+early(true) || (e) => print "err ${e.message()}"
+early(false) || (e) => print "err ${e.message()}"
+let p = Pair { a: make(4), b: make(5) }
+let mut z = make(6)
+z = make(7)
+print "done"
+-- stdout --
+consume 2
+drop 2
+end of scoped
+drop 1
+drop 3
+err early
+close 3
+drop 3
+drop 6
+done
+drop 7
+drop 5
+drop 4

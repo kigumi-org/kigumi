@@ -1,0 +1,105 @@
+-- src --
+interface A {
+    fn name(self) -> Int
+}
+
+interface B {
+    fn name(self) -> String
+}
+
+interface C {
+    fn name(self) -> Int
+}
+
+fn useAB[T: A + B](x: T) -> Int {
+    x.name() //~ ERROR `name` is ambiguous between `A` and `B`
+}
+
+fn useValue[T: A + B](x: T) -> Unit {
+    let f = x.name //~ ERROR `name` is ambiguous between `A` and `B`
+}
+
+fn useAC[T: A + C](x: T) -> Int {
+    x.name()
+}
+
+fn asA[T: A](x: T) -> Int {
+    x.name()
+}
+
+fn pickA[T: A + B](x: T) -> Int {
+    asA(x)
+}
+
+interface Iterator[Item] {
+    fn next(self) -> Item
+}
+
+fn useGeneric[T: Iterator[Int] + Iterator[String]](x: T) -> Int {
+    x.next() //~ ERROR `next` is ambiguous between `Iterator[Int]` and `Iterator[String]`
+}
+
+fn useGenericDup[T: Iterator[Int] + Iterator[Int]](x: T) -> Int {
+    x.next()
+}
+
+interface D { fn conv[U](self, v: U) -> U }
+interface E { fn conv[U](self, v: U) -> U }
+
+fn useOwnGeneric[T: D + E](x: T) -> Unit {
+    let f = x.conv
+}
+
+interface Show {
+    fn show(self) -> String
+}
+
+interface F { fn conv2[U](self) -> Int }
+interface G { fn conv2[U, V](self) -> Int }
+
+fn useOwnArity[T: F + G](x: T) -> Unit {
+    let f = x.conv2 //~ ERROR `conv2` is ambiguous between `F` and `G`
+}
+
+interface H { fn conv3[U](self, v: U) -> U }
+interface I { fn conv3[U: Show](self, v: U) -> U }
+
+fn useOwnConstraint[T: H + I](x: T) -> Unit {
+    let f = x.conv3 //~ ERROR `conv3` is ambiguous between `H` and `I`
+}
+-- expect --
+error[E973]: `name` is ambiguous between `A` and `B`
+  --> main/main.kg:14:5
+   |
+14 |     x.name() //~ ERROR `name` is ambiguous between `A` and `B`
+   |     ^^^^^^
+   = help: write a narrower helper generic function bound to only one of them and call through it
+
+error[E973]: `name` is ambiguous between `A` and `B`
+  --> main/main.kg:18:13
+   |
+18 |     let f = x.name //~ ERROR `name` is ambiguous between `A` and `B`
+   |             ^^^^^^
+   = help: write a narrower helper generic function bound to only one of them and call through it
+
+error[E973]: `next` is ambiguous between `Iterator[Int]` and `Iterator[String]`
+  --> main/main.kg:38:5
+   |
+38 |     x.next() //~ ERROR `next` is ambiguous between `Iterator[Int]` and `Iterator[String]`
+   |     ^^^^^^
+   = help: write a narrower helper generic function bound to only one of them and call through it
+
+error[E973]: `conv2` is ambiguous between `F` and `G`
+  --> main/main.kg:60:13
+   |
+60 |     let f = x.conv2 //~ ERROR `conv2` is ambiguous between `F` and `G`
+   |             ^^^^^^^
+   = help: write a narrower helper generic function bound to only one of them and call through it
+
+error[E973]: `conv3` is ambiguous between `H` and `I`
+  --> main/main.kg:67:13
+   |
+67 |     let f = x.conv3 //~ ERROR `conv3` is ambiguous between `H` and `I`
+   |             ^^^^^^^
+   = help: write a narrower helper generic function bound to only one of them and call through it
+

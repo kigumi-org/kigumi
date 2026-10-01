@@ -1,0 +1,43 @@
+-- src --
+type Res = resource {
+    pub label String
+}
+
+fn Res.drop(move self) -> Unit {
+    print "drop ${self.label}"
+}
+
+type Holder = {
+    pub mut slot Res?
+}
+
+fn peek(h: &mut Holder) -> String {
+    if h.slot is Some(r) {
+        let s = "${r.label}!"
+        h.slot = None
+        return s
+    }
+    "none"
+}
+
+let mut holder = Holder { slot: Some(Res { label: "hello" }) }
+print "${peek(&mut holder)}"
+print "end"
+
+fn take(h: &mut Holder) -> String {
+    let Some(r) = h.slot else { return "none" }
+    let s = "${r.label}!"
+    h.slot = None
+    s
+}
+
+let mut holder2 = Holder { slot: Some(Res { label: "hi" }) }
+print "${take(&mut holder2)}"
+print "end"
+-- stdout --
+drop hello
+hello!
+end
+drop hi
+hi!
+end

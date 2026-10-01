@@ -1,0 +1,43 @@
+-- src --
+import shell from std/shell
+
+// An embedded NUL byte can't survive a C string; every one of these must
+// fail closed rather than silently operate on a truncated prefix (vm/interp
+// reject it through the Go accelerator underneath, native through
+// ffi.CString.new itself -- the wording differs per engine, so only the
+// closed/open outcome is checked here). A grep pattern with an embedded NUL
+// is covered separately, natively only: Go's regexp (vm/interp) has no C
+// string to truncate, so it does not reject it the same way.
+fn withNul(prefix: String, suffix: String) -> String {
+    let mid = prefix.toBytes().concat(Bytes.zeros(1)).concat(suffix.toBytes())
+    String.fromBytes(mid) || "fallback"
+}
+
+let target = withNul("safe.txt", "evilsuffix")
+let redirPlan = $"printf hi > ${target}"
+match shell.run(redirPlan, host.shell()) {
+    Ok(_) -> print "1: succeeded"
+    Err(_) -> print "1: rejected"
+}
+
+let evilHost = withNul("localhost", ".evil.example")
+match host.net().connect(evilHost, 65535) {
+    Ok(_) -> print "2: succeeded"
+    Err(_) -> print "2: rejected"
+}
+
+match host.net().listen(evilHost, 0) {
+    Ok(_) -> print "3: succeeded"
+    Err(_) -> print "3: rejected"
+}
+
+let envName = withNul("PATH", "EVIL")
+match host.env(envName) {
+    Some(_) -> print "4: env-found"
+    None -> print "4: env-not-found"
+}
+-- stdout --
+1: rejected
+2: rejected
+3: rejected
+4: env-not-found

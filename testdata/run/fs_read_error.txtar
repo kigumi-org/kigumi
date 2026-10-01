@@ -1,0 +1,11 @@
+-- src --
+import fs from std/fs
+
+let files = host.files()
+let p = fs.Path.fromString("/proc/self/mem")?
+match files.readBytes(p) {
+    Ok(b) -> print "ok len=${b.len()}"
+    Err(_) -> print "err"
+}
+-- stdout --
+err

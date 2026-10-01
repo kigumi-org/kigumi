@@ -1,0 +1,4 @@
+/// A function the library exposes.
+pub fn one() -> Int {
+    1
+}

@@ -1,0 +1,16 @@
+-- src --
+fn addOne(out: &mut Array[u8]) -> Unit {
+    out.push(1)
+}
+
+// parens around the argument must not defeat reborrow detection.
+fn addTwo(out: &mut Array[u8]) -> Unit {
+    addOne((out))
+    addOne(out)
+}
+
+let mut xs = Array.empty[u8]()
+addTwo(&mut xs)
+print "len=${xs.len()}"
+-- stdout --
+len=2

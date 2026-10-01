@@ -1,0 +1,48 @@
+-- lib/or.kg --
+type Shape = Circle(r: Int) | Rect(w: Int, h: Int) | Dot
+
+fn label(n: Int) -> String {
+    match n {
+        3 | 6 | 9 -> "fizz"
+        5 | 10 -> "buzz"
+        _ -> "${n}"
+    }
+}
+
+fn kind(s: Shape) -> Int {
+    match s {
+        Circle(_) | Dot -> 0
+        Rect(_, _) -> 1
+    }
+}
+
+fn payload(s: Shape) -> Int {
+    match s {
+        Circle(r) | Rect(r, _) -> r //~ ERROR `r` binds a name inside `|` alternatives
+        Dot -> 0
+    }
+}
+
+fn nested(s: Shape?) -> Int {
+    if s is Some(Rect { w }) { w } else { 0 } //~ TYPE w : Int
+}
+
+fn incomplete(s: Shape) -> Int {
+    match s { //~ ERROR non-exhaustive match: `Rect(_, _)` is not covered
+        Circle(_) | Dot -> 0
+    }
+}
+-- expect --
+error[E509]: `r` binds a name inside `|` alternatives
+  --> lib/or.kg:20:16
+   |
+20 |         Circle(r) | Rect(r, _) -> r //~ ERROR `r` binds a name inside `|` alternatives
+   |                ^
+   = help: alternatives may only test
+
+error[E814]: non-exhaustive match: `Rect(_, _)` is not covered
+  --> lib/or.kg:30:5
+   |
+30 |     match s { //~ ERROR non-exhaustive match: `Rect(_, _)` is not covered
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+

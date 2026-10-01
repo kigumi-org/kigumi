@@ -1,0 +1,39 @@
+-- src --
+f(a: 1)
+f(1, b: 2, c: 3)
+recv.method(x: 1, y: 2)
+f(a: 1, ...rest)
+-- expect --
+File
+  ExprStmt
+    Call
+      Ident f
+      List
+        NamedArg a
+          IntLit 1
+  ExprStmt
+    Call
+      Ident f
+      List
+        IntLit 1
+        NamedArg b
+          IntLit 2
+        NamedArg c
+          IntLit 3
+  ExprStmt
+    Call
+      Member method
+        Ident recv
+      List
+        NamedArg x
+          IntLit 1
+        NamedArg y
+          IntLit 2
+  ExprStmt
+    Call
+      Ident f
+      List
+        NamedArg a
+          IntLit 1
+        Spread
+          Ident rest

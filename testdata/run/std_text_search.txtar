@@ -1,0 +1,28 @@
+-- src --
+import text from std/text
+
+print "find=${text.find("hello world", "o w") || 99},${text.find("abc", "z") || 99},${text.find("abc", "") || 99},${text.find("", "a") || 99}"
+print "rfind=${text.rfind("abcabc", "bc") || 99},${text.rfind("abc", "z") || 99},${text.rfind("abc", "") || 99},${text.rfind("aaa", "a") || 99}"
+print "equalFold=${text.equalFold("Content-Type", "content-TYPE")},${text.equalFold("a", "b")},${text.equalFold("ab", "a")},${text.equalFold("", "")}"
+print "nonAsciiExact=${text.equalFold("é", "é")},${text.equalFold("É", "é")}"
+print "trimPrefix=[${text.trimPrefix("Bearer xyz", "Bearer ")}][${text.trimPrefix("abc", "z")}][${text.trimPrefix("abc", "")}][${text.trimPrefix("ab", "abc")}]"
+print "trimSuffix=[${text.trimSuffix("file.txt", ".txt")}][${text.trimSuffix("abc", "z")}][${text.trimSuffix("abc", "")}]"
+print "radix=${text.parseUint("ff", 16) || 99},${text.parseUint("FF", 16) || 99},${text.parseUint("zz", 36) || 99},${text.parseUint("1010", 2) || 99}"
+print "radixSpaces=${text.parseUint("  7f  ", 16) || 99}"
+print "reject=${text.parseUint("ff", 10) is None},${text.parseUint("", 16) is None},${text.parseUint("1", 1) is None},${text.parseUint("1", 37) is None},${text.parseUint("-1", 10) is None}"
+print "u64max=${text.parseUint("ffffffffffffffff", 16) || 0}"
+print "overflow=${text.parseUint("10000000000000000", 16) is None},${text.parseUint("18446744073709551616", 10) is None}"
+print "base10Overload=${text.parseUint("255") || 0},${text.parseInt("-3") || 0}"
+-- stdout --
+find=4,99,0,99
+rfind=4,99,3,2
+equalFold=true,false,false,true
+nonAsciiExact=true,false
+trimPrefix=[xyz][abc][abc][ab]
+trimSuffix=[file][abc][abc]
+radix=255,255,1295,10
+radixSpaces=127
+reject=true,true,true,true,true
+u64max=18446744073709551615
+overflow=true,true
+base10Overload=255,-3

@@ -1,0 +1,75 @@
+-- app/t/t.kg --
+extern(C) {
+    fn strlen(s: *const u8) -> usize
+    fn apply(f: extern(C) fn(i32) -> i32, x: i32) -> i32
+    fn bad(f: extern(Rust) fn(i32) -> i32) -> i32 //~ ERROR unknown ABI `Rust`
+    fn bad2(f: extern(C) pure fn(i32) -> i32) -> i32 //~ ERROR a C function pointer type takes no `pure` modifier
+    fn bad3(f: extern(C) fn(String) -> i32) -> i32 //~ ERROR `String` cannot cross the C ABI
+}
+
+export(C) {
+    pub fn twice(x: i32) -> i32 {
+        x * 2
+    }
+}
+
+fn plain(x: i32) -> i32 {
+    x + 1
+}
+
+fn use() -> i32 {
+    let f: extern(C) fn(i32) -> i32 = twice
+    let g: extern(C) fn(i32) -> i32 = plain //~ ERROR only `extern(C)` declarations and `export(C)` functions convert to `extern(C) fn(i32) -> i32`
+    let h: fn(*const u8) -> usize = strlen //~ ERROR expected `fn(*const u8) -> usize`, found `extern(C) fn(*const u8) -> usize`
+    let n = f(1) //~ ERROR calling a C function pointer requires an `unsafe { }` block
+    let m = unsafe { f(2) }
+    let k = unsafe { apply(twice, 3) }
+    let bad = unsafe { f("x") } //~ ERROR expected `i32`, found `String`
+    n + m + k + bad
+}
+
+-- expect --
+error[E928]: unknown ABI `Rust`
+ --> app/t/t.kg:4:15
+  |
+4 |     fn bad(f: extern(Rust) fn(i32) -> i32) -> i32 //~ ERROR unknown ABI `Rust`
+  |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  = help: only `C` is supported
+
+error[E929]: a C function pointer type takes no `pure` modifier
+ --> app/t/t.kg:5:16
+  |
+5 |     fn bad2(f: extern(C) pure fn(i32) -> i32) -> i32 //~ ERROR a C function pointer type takes no `pure` modifier
+  |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E924]: `String` cannot cross the C ABI
+ --> app/t/t.kg:6:29
+  |
+6 |     fn bad3(f: extern(C) fn(String) -> i32) -> i32 //~ ERROR `String` cannot cross the C ABI
+  |                             ^^^^^^
+  = help: use a fixed-width number, a raw pointer, a C function pointer or a `layout(C)` record
+
+error[E930]: only `extern(C)` declarations and `export(C)` functions convert to `extern(C) fn(i32) -> i32`
+  --> app/t/t.kg:21:39
+   |
+21 |     let g: extern(C) fn(i32) -> i32 = plain //~ ERROR only `extern(C)` declarations and `export(C)` functions convert to `extern(C) fn(i32) -> i32`
+   |                                       ^^^^^
+
+error[E400]: expected `fn(*const u8) -> usize`, found `extern(C) fn(*const u8) -> usize`
+  --> app/t/t.kg:22:37
+   |
+22 |     let h: fn(*const u8) -> usize = strlen //~ ERROR expected `fn(*const u8) -> usize`, found `extern(C) fn(*const u8) -> usize`
+   |                                     ^^^^^^
+
+error[E914]: calling a C function pointer requires an `unsafe { }` block
+  --> app/t/t.kg:23:13
+   |
+23 |     let n = f(1) //~ ERROR calling a C function pointer requires an `unsafe { }` block
+   |             ^^^
+
+error[E400]: expected `i32`, found `String`
+  --> app/t/t.kg:26:26
+   |
+26 |     let bad = unsafe { f("x") } //~ ERROR expected `i32`, found `String`
+   |                          ^^^
+

@@ -1,0 +1,215 @@
+{
+    "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+    "name": "Kigumi",
+    "scopeName": "source.kigumi",
+    "patterns": [
+        {
+            "include": "#comments"
+        },
+        {
+            "include": "#imports"
+        },
+        {
+            "include": "#tests"
+        },
+        {
+            "include": "#shell"
+        },
+        {
+            "include": "#strings"
+        },
+        {
+            "include": "#chars"
+        },
+        {
+            "include": "#numbers"
+        },
+        {
+            "include": "#keywords"
+        },
+        {
+            "include": "#attributes"
+        },
+        {
+            "include": "#types"
+        },
+        {
+            "include": "#functions"
+        },
+        {
+            "include": "#operators"
+        }
+    ],
+    "repository": {
+        "comments": {
+            "patterns": [
+                {
+                    "name": "comment.line.double-slash.kigumi",
+                    "match": "//.*$"
+                }
+            ]
+        },
+        "shell": {
+            "name": "string.interpolated.shell.kigumi",
+            "begin": "\\$\"",
+            "end": "\"",
+            "patterns": [
+                {
+                    "include": "#interpolation"
+                },
+                {
+                    "name": "constant.character.escape.kigumi",
+                    "match": "\\\\."
+                }
+            ]
+        },
+        "strings": {
+            "name": "string.quoted.double.kigumi",
+            "begin": "\"",
+            "end": "\"",
+            "patterns": [
+                {
+                    "include": "#interpolation"
+                },
+                {
+                    "name": "constant.character.escape.kigumi",
+                    "match": "\\\\."
+                }
+            ]
+        },
+        "interpolation": {
+            "name": "meta.embedded.interpolation.kigumi",
+            "begin": "\\$\\{",
+            "end": "\\}",
+            "beginCaptures": {
+                "0": {
+                    "name": "punctuation.section.interpolation.begin.kigumi"
+                }
+            },
+            "endCaptures": {
+                "0": {
+                    "name": "punctuation.section.interpolation.end.kigumi"
+                }
+            },
+            "patterns": [
+                {
+                    "include": "$self"
+                }
+            ]
+        },
+        "chars": {
+            "name": "string.quoted.single.kigumi",
+            "match": "'(\\\\.|[^'\\\\])'"
+        },
+        "numbers": {
+            "patterns": [
+                {
+                    "name": "constant.numeric.hex.kigumi",
+                    "match": "\\b0x[0-9A-Fa-f_]+\\b"
+                },
+                {
+                    "name": "constant.numeric.binary.kigumi",
+                    "match": "\\b0b[01_]+\\b"
+                },
+                {
+                    "name": "constant.numeric.octal.kigumi",
+                    "match": "\\b0o[0-7_]+\\b"
+                },
+                {
+                    "name": "constant.numeric.float.kigumi",
+                    "match": "\\b[0-9][0-9_]*\\.[0-9][0-9_]*([eE][+-]?[0-9]+)?\\b"
+                },
+                {
+                    "name": "constant.numeric.integer.kigumi",
+                    "match": "\\b[0-9][0-9_]*\\b"
+                }
+            ]
+        },
+        "keywords": {
+            "patterns": [
+                {
+                    "name": "keyword.control.kigumi",
+                    "match": "\\b(if|else|match|for|in|return|fail|break|continue|defer|errdefer|await)\\b"
+                },
+                {
+                    "name": "keyword.declaration.kigumi",
+                    "match": "\\b(fn|let|mut|const|type|interface|import|extern|export|instantiate|resource)\\b"
+                },
+                {
+                    "name": "storage.modifier.kigumi",
+                    "match": "\\b(pub|pure|noalloc|unsafe|async|move|comptime|allocator|asm)\\b"
+                },
+                {
+                    "name": "keyword.operator.expression.kigumi",
+                    "match": "\\b(is)\\b"
+                },
+                {
+                    "name": "variable.language.kigumi",
+                    "match": "\\b(self|host|print|eprint|panic)\\b"
+                },
+                {
+                    "name": "constant.language.kigumi",
+                    "match": "\\b(true|false|None|Some|Ok|Err)\\b"
+                }
+            ]
+        },
+        "attributes": {
+            "name": "meta.attribute.kigumi",
+            "match": "@[A-Za-z_][A-Za-z0-9_]*"
+        },
+        "types": {
+            "patterns": [
+                {
+                    "name": "support.type.primitive.kigumi",
+                    "match": "\\b(Int|Float|Bool|String|Bytes|Char|Unit|Never|Error|Array|Option|Result|usize|isize|byte|[iu](8|16|32|64|128)|f32|f64)\\b"
+                },
+                {
+                    "name": "entity.name.type.kigumi",
+                    "match": "\\b[A-Z][A-Za-z0-9_]*\\b"
+                }
+            ]
+        },
+        "functions": {
+            "patterns": [
+                {
+                    "name": "entity.name.function.kigumi",
+                    "match": "\\b[a-z_][A-Za-z0-9_]*(?=\\s*(\\(|\\[))"
+                }
+            ]
+        },
+        "operators": {
+            "patterns": [
+                {
+                    "name": "keyword.operator.pipeline.kigumi",
+                    "match": "\\|>"
+                },
+                {
+                    "name": "keyword.operator.kigumi",
+                    "match": "=>|->|\\?|\\|\\||&&|==|!=|<=|>=|<<|>>|\\.\\.|[-+*/%<>=!&|^~]"
+                }
+            ]
+        },
+        "imports": {
+            "name": "meta.import.kigumi",
+            "match": "^\\s*(import)\\s+(\\{[^}]*\\}|[A-Za-z_][A-Za-z0-9_]*)\\s+(from)\\s+([A-Za-z0-9_/.]+)",
+            "captures": {
+                "1": {
+                    "name": "keyword.declaration.import.kigumi"
+                },
+                "2": {
+                    "name": "entity.name.namespace.kigumi"
+                },
+                "3": {
+                    "name": "keyword.declaration.import.kigumi"
+                },
+                "4": {
+                    "name": "entity.name.namespace.path.kigumi"
+                }
+            }
+        },
+        "tests": {
+            "name": "keyword.declaration.test.kigumi",
+            "match": "^\\s*(test)\\b(?=\\s*\")"
+        }
+    }
+}

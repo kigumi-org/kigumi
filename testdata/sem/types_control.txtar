@@ -1,0 +1,122 @@
+-- lib/ctl.kg --
+fn f(n: Int) -> String {
+    let s = if n > 3 { "big" } else { "small" }
+    s
+}
+
+fn g(n: Int) -> Int? {
+    if n > 0 { n } else { None }
+}
+
+fn h(n: Int) -> Int {
+    let v = if n > 0 { 1 } //~ ERROR `if` in value position needs `else`
+    if n { //~ ERROR condition must be `Bool`, found `Int`
+        return 1
+    }
+    let w = if n > 0 { 1 } else { "a" } //~ ERROR branches have different types: `String` and `Int`
+    for i in 0..n {
+        if i == 2 { break }
+        continue
+    }
+    break //~ ERROR `break` outside a loop
+    let mut count = 0
+    for count < 3 { count += 1 }
+    for { return count }
+    count //~ WARNING unreachable statement
+}
+
+fn k() -> Int {
+    return //~ ERROR `return` needs a value of type `Int`
+}
+
+fn blk() -> Int {
+    let v = {
+        let a = 1
+        a + 1
+    }
+    v
+}
+
+fn unit() -> Unit {
+    1 //~ WARNING unused value of type `Int`
+}
+
+fn never() -> Int {
+    return 1
+    let z = 2 //~ WARNING unreachable statement
+}
+
+fn merged(n: Int) -> Int? {
+    let v = if n > 0 { 1 } else { None } //~ TYPE v : Int?
+    v
+}
+
+fn loops(xs: Array[Int], s: String) -> Unit {
+    for x in xs {
+        let y = x + 1 //~ TYPE y : Int
+    }
+    for c in s {} //~ ERROR `String` is not iterable
+    for q in 5 {} //~ ERROR `Int` is not iterable
+}
+-- expect --
+error[E414]: `if` in value position needs `else`
+  --> lib/ctl.kg:11:13
+   |
+11 |     let v = if n > 0 { 1 } //~ ERROR `if` in value position needs `else`
+   |             ^^^^^^^^^^^^
+
+error[E415]: condition must be `Bool`, found `Int`
+  --> lib/ctl.kg:12:8
+   |
+12 |     if n { //~ ERROR condition must be `Bool`, found `Int`
+   |        ^
+
+error[E401]: branches have different types: `String` and `Int`
+  --> lib/ctl.kg:15:22
+   |
+15 |     let w = if n > 0 { 1 } else { "a" } //~ ERROR branches have different types: `String` and `Int`
+   |                      ^^^
+
+error[E705]: `break` outside a loop
+  --> lib/ctl.kg:20:5
+   |
+20 |     break //~ ERROR `break` outside a loop
+   |     ^^^^^
+
+warning[W401]: unreachable statement
+  --> lib/ctl.kg:24:5
+   |
+24 |     count //~ WARNING unreachable statement
+   |     ^^^^^
+
+error[E704]: `return` needs a value of type `Int`
+  --> lib/ctl.kg:28:5
+   |
+28 |     return //~ ERROR `return` needs a value of type `Int`
+   |     ^^^^^^
+
+warning[W400]: unused value of type `Int`
+  --> lib/ctl.kg:40:5
+   |
+40 |     1 //~ WARNING unused value of type `Int`
+   |     ^
+
+warning[W401]: unreachable statement
+  --> lib/ctl.kg:45:5
+   |
+45 |     let z = 2 //~ WARNING unreachable statement
+   |     ^^^^^^^^^
+
+error[E706]: `String` is not iterable
+  --> lib/ctl.kg:57:14
+   |
+57 |     for c in s {} //~ ERROR `String` is not iterable
+   |              ^
+   = help: choose `s.bytes()`, `s.chars()` or `text.graphemes(s)`
+
+error[E707]: `Int` is not iterable
+  --> lib/ctl.kg:58:14
+   |
+58 |     for q in 5 {} //~ ERROR `Int` is not iterable
+   |              ^
+

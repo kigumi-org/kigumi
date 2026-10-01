@@ -1,0 +1,117 @@
+-- lib/wm.kg --
+type Item = {
+    pub mut count Int
+}
+
+fn Item.update(mut self, delta: Int) -> Unit {
+    self.count = self.count + delta
+}
+
+fn sharedThenWithMut(mut xs: Array[Item]) -> usize {
+    let r = &xs
+    xs.withMut(0, (x: &mut Item) => x.update(1))
+    r.len()
+}
+
+fn exclusiveThenLen(mut xs: Array[Item]) -> usize {
+    let m = &mut xs
+    let k = xs.len()
+    m.withMut(0, (x: &mut Item) => x.update(1))
+    k
+}
+
+fn fine(mut xs: Array[Item]) -> usize {
+    let r = &xs
+    let n = r.len()
+    xs.withMut(0, (x: &mut Item) => x.update(1))
+    xs.len() + n
+}
+-- expect --
+fn lib.Item.update(%self: Item, %delta: Int) -> Unit {
+  b0:
+    %t2 = field 0(%self)
+    %t3 = bin +(%t2, %delta)
+    setfield 0(%self, %t3)
+    %t4 = unit
+    drop(%delta)
+    return %t4
+}
+fn lib.sharedThenWithMut.closure1(%x: &mut Item) -> Unit {
+  b0:
+    %t1 = const 1: Int
+    %t2 = borrow 1(%x)
+    %t3 = call update(%t2, %t1)
+    return %t3
+}
+fn lib.sharedThenWithMut(%xs: Array[Item]) -> usize {
+  b0:
+    %t1 = borrow 0(%xs)
+    %r = copy(%t1)
+    %t3 = const 0: usize
+    %t4 = closure closure
+    %t5 = borrow 1(%xs)
+    %t6 = call withMut(%t5, %t3, %t4)
+    drop(%t6)
+    %t7 = call len(%r)
+    drop(%xs)
+    return %t7
+}
+fn lib.exclusiveThenLen.closure1(%x: &mut Item) -> Unit {
+  b0:
+    %t1 = const 1: Int
+    %t2 = borrow 1(%x)
+    %t3 = call update(%t2, %t1)
+    return %t3
+}
+fn lib.exclusiveThenLen(%xs: Array[Item]) -> usize {
+  b0:
+    %t1 = borrow 1(%xs)
+    %m = copy(%t1)
+    %t3 = call len(%xs)
+    %k = copy(%t3)
+    %t5 = const 0: usize
+    %t6 = closure closure
+    %t7 = borrow 1(%m)
+    %t8 = call withMut(%t7, %t5, %t6)
+    drop(%t8)
+    %t9 = copy(%k)
+    drop(%k)
+    drop(%xs)
+    return %t9
+}
+fn lib.fine.closure1(%x: &mut Item) -> Unit {
+  b0:
+    %t1 = const 1: Int
+    %t2 = borrow 1(%x)
+    %t3 = call update(%t2, %t1)
+    return %t3
+}
+fn lib.fine(%xs: Array[Item]) -> usize {
+  b0:
+    %t1 = borrow 0(%xs)
+    %r = copy(%t1)
+    %t3 = call len(%r)
+    %n = copy(%t3)
+    %t5 = const 0: usize
+    %t6 = closure closure
+    %t7 = borrow 1(%xs)
+    %t8 = call withMut(%t7, %t5, %t6)
+    drop(%t8)
+    %t9 = call len(%xs)
+    %t10 = bin +(%t9, %n)
+    drop(%n)
+    drop(%xs)
+    return %t10
+}
+error[borrow-conflict]: `xs` is borrowed and cannot be mutated here
+  --> lib/wm.kg:11:5
+   |
+11 |     xs.withMut(0, (x: &mut Item) => x.update(1))
+   |     ^^
+
+error[borrow-conflict]: `xs` is exclusively borrowed and cannot be used here
+  --> lib/wm.kg:17:13
+   |
+17 |     let k = xs.len()
+   |             ^^^^^^^
+

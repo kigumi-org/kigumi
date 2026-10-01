@@ -1,0 +1,53 @@
+-- lib/lift.kg --
+fn opt() -> Int? {
+    1
+}
+
+fn opt2() -> Int?? {
+    1
+}
+
+fn res() -> Result[Int, String] {
+    1
+}
+
+fn resOpt() -> Int?! {
+    1
+}
+
+fn optRes() -> Int!? {
+    1
+}
+
+fn arg(x: Int?) -> Unit {}
+
+fn callArg() -> Unit {
+    arg(1)
+    arg(None)
+    arg(Some(1))
+}
+
+fn some() -> Int?? {
+    Some(1)
+}
+
+fn err() -> Result[Int, String] {
+    Err("no")
+}
+
+fn branch(b: Bool) -> Result[Int, String] {
+    if b { 1 } else { Err("no") }
+}
+
+fn merged(b: Bool) -> Unit {
+    let v = if b { 1 } else { None } //~ TYPE v : Int?
+    let w = if b { Some(1) } else { None } //~ TYPE w : Int?
+    let x = if b { None } else { 2 } //~ TYPE x : Int?
+    let y: Int?? = if b { 1 } else { None } //~ TYPE y : Int??
+}
+
+fn never(b: Bool) -> Int {
+    let v = if b { 1 } else { return 0 } //~ TYPE v : Int
+    v
+}
+-- expect --

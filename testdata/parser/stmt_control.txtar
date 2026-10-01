@@ -1,0 +1,385 @@
+-- src --
+fn f() -> Unit! {
+    if let n = count(); n > 3 { use(n) }
+    if shape is Circle(r) && r > 1.0 { print "big" }
+    if x is Some(v) && v > 0 { use(v) }
+    let Some(cfg) = load() else { return }
+    if x is Some(v) {
+        await work()
+        use(v)
+    }
+    if a {
+        1
+    }
+    else if b {
+        2
+    } else {
+        3
+    }
+    let area = match shape {
+        Circle(r) -> 3.14159 * r * r
+        Rect(w, h) -> w * h
+        Missing(n) if n > 0 -> n
+        None -> 0
+        _ -> -1
+    }
+    match cli.parse[Cmd](host.args())? {
+        Serve(f) -> serve(host, f)
+        Version  -> print cli.versionText()
+    }
+    for cond { step() }
+    for { break }
+    let picked = for { break pick() }
+    for x in xs { total += x }
+    for i in 0..xs.len() { continue }
+    let mut f = files.create(path)?
+    defer f.close()
+    errdefer files.remove(path)
+    defer {
+        a()
+        b()
+    }
+    let e = parseAll("") || (e) => {
+        log(e)
+        fail e
+    }
+    let g = find(id) || return
+    if e is notify.TimeoutError { retry() }
+    let rep = allocator arena.scope() {
+        report.build(parseAll(log)?)
+    }
+    let allocator = 1
+    allocator.foo()
+    fail NotFound(path)
+    return
+}
+-- expect --
+File
+  FnDecl
+    attrs: -
+    vis: -
+    recv: -
+    name: f
+    generics: -
+    params: List
+    ret: TypeResult
+      TypePath
+        Path Unit
+    body: Block
+      ExprStmt
+        IfLet
+          pattern: PatBind n
+          init: Call
+            Ident count
+            List
+          guard: Binary >
+            Ident n
+            IntLit 3
+          then: Block
+            ExprStmt
+              Call
+                Ident use
+                List
+                  Ident n
+      ExprStmt
+        If
+          cond: Binary &&
+            Is
+              Ident shape
+              PatCtor
+                Path Circle
+                List
+                  PatBind r
+            Binary >
+              Ident r
+              FloatLit 1.0
+          then: Block
+            ExprStmt
+              WsCall
+                Ident print
+                List
+                  StringLit "big"
+      ExprStmt
+        If
+          cond: Binary &&
+            Is
+              Ident x
+              PatCtor
+                Path Some
+                List
+                  PatBind v
+            Binary >
+              Ident v
+              IntLit 0
+          then: Block
+            ExprStmt
+              Call
+                Ident use
+                List
+                  Ident v
+      Let
+        pattern: PatCtor
+          Path Some
+          List
+            PatBind cfg
+        init: Call
+          Ident load
+          List
+        else: Block
+          ExprStmt
+            Return
+      ExprStmt
+        If
+          cond: Is
+            Ident x
+            PatCtor
+              Path Some
+              List
+                PatBind v
+          then: Block
+            ExprStmt
+              Await
+                Call
+                  Ident work
+                  List
+            ExprStmt
+              Call
+                Ident use
+                List
+                  Ident v
+      ExprStmt
+        If
+          cond: Ident a
+          then: Block
+            ExprStmt
+              IntLit 1
+          else: If
+            cond: Ident b
+            then: Block
+              ExprStmt
+                IntLit 2
+            else: Block
+              ExprStmt
+                IntLit 3
+      Let
+        pattern: PatBind area
+        init: Match
+          Ident shape
+          List
+            Arm
+              pattern: PatCtor
+                Path Circle
+                List
+                  PatBind r
+              body: Binary *
+                Binary *
+                  FloatLit 3.14159
+                  Ident r
+                Ident r
+            Arm
+              pattern: PatCtor
+                Path Rect
+                List
+                  PatBind w
+                  PatBind h
+              body: Binary *
+                Ident w
+                Ident h
+            Arm
+              pattern: PatCtor
+                Path Missing
+                List
+                  PatBind n
+              guard: Binary >
+                Ident n
+                IntLit 0
+              body: Ident n
+            Arm
+              pattern: PatCtor
+                Path None
+              body: IntLit 0
+            Arm
+              pattern: PatWildcard _
+              body: Unary -
+                IntLit 1
+      ExprStmt
+        Match
+          Try
+            Call
+              Bracket
+                Member parse
+                  Ident cli
+                List
+                  Ident Cmd
+              List
+                Call
+                  Member args
+                    Ident host
+                  List
+          List
+            Arm
+              pattern: PatCtor
+                Path Serve
+                List
+                  PatBind f
+              body: Call
+                Ident serve
+                List
+                  Ident host
+                  Ident f
+            Arm
+              pattern: PatCtor
+                Path Version
+              body: WsCall
+                Ident print
+                List
+                  Call
+                    Member versionText
+                      Ident cli
+                    List
+      ExprStmt
+        For
+          head: Ident cond
+          body: Block
+            ExprStmt
+              Call
+                Ident step
+                List
+      ExprStmt
+        For
+          body: Block
+            ExprStmt
+              Break
+      Let
+        pattern: PatBind picked
+        init: For
+          body: Block
+            ExprStmt
+              Break
+                Call
+                  Ident pick
+                  List
+      ExprStmt
+        For
+          pattern: PatBind x
+          head: Ident xs
+          body: Block
+            Assign +=
+              Ident total
+              Ident x
+      ExprStmt
+        For
+          pattern: PatBind i
+          head: Binary ..
+            IntLit 0
+            Call
+              Member len
+                Ident xs
+              List
+          body: Block
+            ExprStmt
+              Continue
+      Let
+        flags: mut
+        pattern: PatBind f
+        init: Try
+          Call
+            Member create
+              Ident files
+            List
+              Ident path
+      Defer
+        ExprStmt
+          Call
+            Member close
+              Ident f
+            List
+      Errdefer
+        ExprStmt
+          Call
+            Member remove
+              Ident files
+            List
+              Ident path
+      Defer
+        Block
+          ExprStmt
+            Call
+              Ident a
+              List
+          ExprStmt
+            Call
+              Ident b
+              List
+      Let
+        pattern: PatBind e
+        init: Binary ||
+          Call
+            Ident parseAll
+            List
+              StringLit ""
+          Lambda
+            List
+              Param e
+            Block
+              ExprStmt
+                Call
+                  Ident log
+                  List
+                    Ident e
+              ExprStmt
+                Fail
+                  Ident e
+      Let
+        pattern: PatBind g
+        init: Binary ||
+          Call
+            Ident find
+            List
+              Ident id
+          Return
+      ExprStmt
+        If
+          cond: Is
+            Ident e
+            PatCtor
+              Path notify.TimeoutError
+          then: Block
+            ExprStmt
+              Call
+                Ident retry
+                List
+      Let
+        pattern: PatBind rep
+        init: Allocator
+          Call
+            Member scope
+              Ident arena
+            List
+          Block
+            ExprStmt
+              Call
+                Member build
+                  Ident report
+                List
+                  Try
+                    Call
+                      Ident parseAll
+                      List
+                        Ident log
+      Let
+        pattern: PatBind allocator
+        init: IntLit 1
+      ExprStmt
+        Call
+          Member foo
+            Ident allocator
+          List
+      ExprStmt
+        Fail
+          Call
+            Ident NotFound
+            List
+              Ident path
+      ExprStmt
+        Return

@@ -1,0 +1,11 @@
+/// struct addrinfo as this platform lays it out.
+type AddrInfo layout(C) = {
+    pub flags i32
+    pub family i32
+    pub socktype i32
+    pub protocol i32
+    pub addrlen u32
+    pub addr *const u8
+    pub canonname *const u8
+    pub next *const u8
+}

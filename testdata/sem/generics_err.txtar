@@ -1,0 +1,136 @@
+-- lib/gen.kg --
+interface Show {
+    fn show(self) -> String
+}
+
+type P = {
+    pub x Int
+}
+
+type Wrap[T: Eq] = {
+    pub v T
+}
+
+fn same[T: Eq](a: T, b: T) -> Bool {
+    a == b
+}
+
+fn bad[T](a: T, b: T) -> Bool {
+    a == b //~ ERROR `==` is not defined for `T` (no `Eq`)
+}
+
+fn call[F: Fn[fn(Int) -> Int]](f: F) -> Int {
+    f(1)
+}
+
+fn callBad[F: Fn[fn(Int) -> Int]](f: F) -> String {
+    f(1) //~ ERROR expected `String`, found `Int`
+}
+
+fn showIt[T: Show](x: T) -> String {
+    x.show()
+}
+
+fn noShow[T](x: T) -> String {
+    x.show() //~ ERROR `T` has no method `show`
+}
+
+fn use(p: P, f: fn() -> Unit) -> Unit {
+    let mut n = 0
+    call(() => 1) //~ ERROR lambda takes 0 parameters, `fn(Int) -> Int` expects 1 //~ WARNING unused value of type `Int`
+    call((x) => { //~ WARNING unused value of type `Int` //~ ERROR does not satisfy `Fn[fn(Int) -> Int]`: the closure assigns `n`
+        n += 1
+        x
+    })
+    showIt(1) //~ ERROR `Int` does not satisfy `Show` //~ WARNING unused value of type `String`
+    showIt(p) //~ ERROR `P` does not satisfy `Show` //~ WARNING unused value of type `String`
+    let x = Wrap { v: f } //~ ERROR `fn() -> Unit` does not satisfy `Eq`
+    let y = same(1, "s") //~ ERROR expected `Int`, found `String`
+    let z = showIt[Int, Int](1) //~ ERROR `showIt` takes 1 type argument, 2 given
+}
+-- expect --
+error[E610]: `==` is not defined for `T` (no `Eq`)
+  --> lib/gen.kg:18:5
+   |
+18 |     a == b //~ ERROR `==` is not defined for `T` (no `Eq`)
+   |     ^^^^^^
+
+error[E400]: expected `String`, found `Int`
+  --> lib/gen.kg:26:5
+   |
+26 |     f(1) //~ ERROR expected `String`, found `Int`
+   |     ^^^
+
+error[E303]: `T` has no method `show`
+  --> lib/gen.kg:34:5
+   |
+34 |     x.show() //~ ERROR `T` has no method `show`
+   |     ^^^^^^
+   = help: add a constraint
+
+warning[W400]: unused value of type `Int`
+  --> lib/gen.kg:39:5
+   |
+39 |     call(() => 1) //~ ERROR lambda takes 0 parameters, `fn(Int) -> Int` expects 1 //~ WARNING unused value of type `Int`
+   |     ^^^^^^^^^^^^
+
+error[E409]: lambda takes 0 parameters, `fn(Int) -> Int` expects 1
+  --> lib/gen.kg:39:10
+   |
+39 |     call(() => 1) //~ ERROR lambda takes 0 parameters, `fn(Int) -> Int` expects 1 //~ WARNING unused value of type `Int`
+   |          ^^^^^^^
+
+error[E300]: `closure fn(Int) -> Int` does not satisfy `Fn[fn(Int) -> Int]`: the closure assigns `n`; it is `FnMut`
+  --> lib/gen.kg:40:5
+   |
+40 |     call((x) => { //~ WARNING unused value of type `Int` //~ ERROR does not satisfy `Fn[fn(Int) -> Int]`: the closure assigns `n`
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning[W400]: unused value of type `Int`
+  --> lib/gen.kg:40:5
+   |
+40 |     call((x) => { //~ WARNING unused value of type `Int` //~ ERROR does not satisfy `Fn[fn(Int) -> Int]`: the closure assigns `n`
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E300]: `Int` does not satisfy `Show`: missing `fn show(self) -> String`
+  --> lib/gen.kg:44:5
+   |
+44 |     showIt(1) //~ ERROR `Int` does not satisfy `Show` //~ WARNING unused value of type `String`
+   |     ^^^^^^^^
+
+warning[W400]: unused value of type `String`
+  --> lib/gen.kg:44:5
+   |
+44 |     showIt(1) //~ ERROR `Int` does not satisfy `Show` //~ WARNING unused value of type `String`
+   |     ^^^^^^^^
+
+error[E300]: `P` does not satisfy `Show`: missing `fn show(self) -> String`
+  --> lib/gen.kg:45:5
+   |
+45 |     showIt(p) //~ ERROR `P` does not satisfy `Show` //~ WARNING unused value of type `String`
+   |     ^^^^^^^^
+
+warning[W400]: unused value of type `String`
+  --> lib/gen.kg:45:5
+   |
+45 |     showIt(p) //~ ERROR `P` does not satisfy `Show` //~ WARNING unused value of type `String`
+   |     ^^^^^^^^
+
+error[E300]: `fn() -> Unit` does not satisfy `Eq`: it cannot be derived
+  --> lib/gen.kg:46:13
+   |
+46 |     let x = Wrap { v: f } //~ ERROR `fn() -> Unit` does not satisfy `Eq`
+   |             ^^^^^^^^^^^
+
+error[E400]: expected `Int`, found `String`
+  --> lib/gen.kg:47:21
+   |
+47 |     let y = same(1, "s") //~ ERROR expected `Int`, found `String`
+   |                     ^^^
+
+error[E217]: `showIt` takes 1 type argument, 2 given
+  --> lib/gen.kg:48:13
+   |
+48 |     let z = showIt[Int, Int](1) //~ ERROR `showIt` takes 1 type argument, 2 given
+   |             ^^^^^^^^^^^^^^^^^^
+

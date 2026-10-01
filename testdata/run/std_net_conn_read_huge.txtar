@@ -1,0 +1,17 @@
+-- src --
+import net from std/net
+
+let zero: usize = 0
+let one: usize = 1
+let huge: usize = zero.wrappingSub(one)
+let n = host.net()
+let mut l = n.listen("127.0.0.1", 0)?
+let mut client = n.connect("127.0.0.1", l.port())?
+let mut server = l.accept()?
+let mut buf = Array.empty[u8]()
+let got = server.read(&mut buf, huge)
+print "${got is Err(_)}"
+client.close()?
+server.close()?
+-- stdout --
+true

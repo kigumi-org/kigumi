@@ -1,0 +1,94 @@
+-- app/v/v.kg --
+type Hidden = {
+    v Int
+}
+
+pub fn leak(h: Hidden) -> Unit {} //~ ERROR `Hidden` is private but appears in the pub signature of `leak`
+
+pub fn leakRet() -> Hidden? { //~ ERROR `Hidden` is private but appears in the pub signature of `leakRet`
+    None
+}
+
+fn fine(h: Hidden) -> Unit {}
+
+pub(module) type ModT = {
+    v Int
+}
+
+pub fn leakMod(m: ModT) -> Unit {} //~ ERROR `ModT` is pub(module) but appears in the pub signature of `leakMod`
+
+pub(module) fn okMod(m: ModT) -> Unit {}
+
+pub type Holder = {
+    pub h Hidden //~ ERROR `Hidden` is private but appears in the pub signature of `h`
+    inner Hidden
+}
+
+pub type Sum = A(Hidden) //~ ERROR `Hidden` is private but appears in the pub signature of `A`
+
+pub type Alias = Hidden //~ ERROR `Hidden` is private but appears in the pub signature of `Alias`
+
+pub interface Display {
+    fn display(self) -> String
+}
+
+@impl(Display) //~ ERROR `Shown` asserts `Display` with pub visibility but witness `display` is private
+pub type Shown = {
+    v Int
+}
+
+fn Shown.display(self) -> String {
+    ""
+}
+
+@impl(Display)
+pub(module) type ModShown = {
+    v Int
+}
+
+pub(module) fn ModShown.display(self) -> String {
+    ""
+}
+-- expect --
+error[E118]: `Hidden` is private but appears in the pub signature of `leak`
+ --> app/v/v.kg:5:1
+  |
+5 | pub fn leak(h: Hidden) -> Unit {} //~ ERROR `Hidden` is private but appears in the pub signature of `leak`
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E118]: `Hidden` is private but appears in the pub signature of `leakRet`
+ --> app/v/v.kg:7:1
+  |
+7 | pub fn leakRet() -> Hidden? { //~ ERROR `Hidden` is private but appears in the pub signature of `leakRet`
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E118]: `ModT` is pub(module) but appears in the pub signature of `leakMod`
+  --> app/v/v.kg:17:1
+   |
+17 | pub fn leakMod(m: ModT) -> Unit {} //~ ERROR `ModT` is pub(module) but appears in the pub signature of `leakMod`
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E118]: `Hidden` is private but appears in the pub signature of `h`
+  --> app/v/v.kg:22:5
+   |
+22 |     pub h Hidden //~ ERROR `Hidden` is private but appears in the pub signature of `h`
+   |     ^^^^^^^^^^^^
+
+error[E118]: `Hidden` is private but appears in the pub signature of `A`
+  --> app/v/v.kg:26:16
+   |
+26 | pub type Sum = A(Hidden) //~ ERROR `Hidden` is private but appears in the pub signature of `A`
+   |                ^^^^^^^^
+
+error[E118]: `Hidden` is private but appears in the pub signature of `Alias`
+  --> app/v/v.kg:28:1
+   |
+28 | pub type Alias = Hidden //~ ERROR `Hidden` is private but appears in the pub signature of `Alias`
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E120]: `Shown` asserts `Display` with pub visibility but witness `display` is private
+  --> app/v/v.kg:34:7
+   |
+34 | @impl(Display) //~ ERROR `Shown` asserts `Display` with pub visibility but witness `display` is private
+   |       ^^^^^^^
+

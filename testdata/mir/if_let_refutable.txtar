@@ -1,0 +1,50 @@
+-- src --
+fn take(x: Int?) -> Int {
+    if let Some(v) = x; v > 0 {
+        v
+    } else {
+        -1
+    }
+}
+
+print "${take(Some(2))} ${take(None)}"
+-- expect --
+fn main.take(%x: Int?) -> Int {
+  b0:
+    %t2 = isvariant Some(%x)
+    branch %t2 ? b4 : b2
+  b1:
+    %t7 = copy(%v)
+    %t1 = copy(%t7)
+    drop(%v)
+    jump b3
+  b2:
+    %t8 = const -1: Int
+    %t1 = copy(%t8)
+    jump b3
+  b3:
+    drop(%x)
+    return %t1
+  b4:
+    %t3 = payload 0(%x)
+    %v = copy(%t3)
+    %t5 = const 0: Int
+    %t6 = bin >(%v, %t5)
+    branch %t6 ? b1 : b5
+  b5:
+    drop(%v)
+    jump b2
+}
+fn main() -> Unit! {
+  b0:
+    %t1 = const 2: Int
+    %t2 = variant Some(%t1)
+    %t3 = call take(%t2)
+    %t4 = variant None
+    %t5 = call take(%t4)
+    %t0 = interp "\x00 \x00"(%t3, %t5)
+    %t6 = builtin print(%t0)
+    drop(%t6)
+    %t7 = unit
+    return %t7
+}

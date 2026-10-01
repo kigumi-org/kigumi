@@ -1,0 +1,15 @@
+-- src --
+import net from std/net
+
+let n = host.net()
+let mut l = n.listen("", 0)?
+let mut client = n.connect("127.0.0.1", l.port())?
+let sent = client.write("hi".toBytes())?
+let mut server = l.accept()?
+let mut buf = Array.empty[u8]()
+let got = server.read(&mut buf, 64)?
+print "sent=${sent} got=${got} data=${String.fromBytes(Bytes.fromArray(&buf)) || "?"}"
+client.close()?
+server.close()?
+-- stdout --
+sent=2 got=2 data=hi

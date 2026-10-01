@@ -1,0 +1,26 @@
+-- src --
+fn spin() -> Int {
+    let v=for{
+        break   42
+    }
+    v
+}
+
+fn plain() -> Unit {
+    for {
+        break
+    }
+}
+-- expect --
+fn spin() -> Int {
+    let v = for {
+        break 42
+    }
+    v
+}
+
+fn plain() -> Unit {
+    for {
+        break
+    }
+}

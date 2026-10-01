@@ -1,0 +1,34 @@
+-- src --
+import json from std/json
+import map from std/map
+
+let mut ints = map.empty[Int, String]()
+ints.set(1, "one")
+ints.set(2, "two")
+let intsText = json.encode(ints)?
+print "ints=${intsText}"
+let intsBack = json.decode[map.Map[Int, String]](intsText)?
+print "ints-back=${intsBack.len()} 1=${intsBack.get(&1) || "?"} 2=${intsBack.get(&2) || "?"}"
+
+let mut bools = map.empty[Bool, Int]()
+bools.set(true, 1)
+bools.set(false, 0)
+let boolsText = json.encode(bools)?
+print "bools=${boolsText}"
+let boolsBack = json.decode[map.Map[Bool, Int]](boolsText)?
+print "bools-back=${boolsBack.len()} true=${boolsBack.get(&true) || -1} false=${boolsBack.get(&false) || -1}"
+
+let mut strs = map.empty[String, Int]()
+strs.set("a", 1)
+strs.set("b", 2)
+let strsText = json.encode(strs)?
+print "strs=${strsText}"
+let strsBack = json.decode[map.Map[String, Int]](strsText)?
+print "strs-back=${strsBack.len()} a=${strsBack.get(&"a") || -1} b=${strsBack.get(&"b") || -1}"
+-- stdout --
+ints={"1":"one","2":"two"}
+ints-back=2 1=one 2=two
+bools={"true":1,"false":0}
+bools-back=2 true=1 false=0
+strs={"a":1,"b":2}
+strs-back=2 a=1 b=2

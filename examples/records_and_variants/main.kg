@@ -1,0 +1,55 @@
+#!/usr/bin/env kigumi
+
+// Records hold named fields; variants (sum types) hold one of several shapes.
+type Point = {
+    pub x Int
+    pub mut y Int
+}
+
+type Shape = Circle(r: Float) | Rect(w: Float, h: Float) | Dot
+
+fn Point.shifted(self, dx: Int) -> Point {
+    Point {
+        x: self.x + dx
+        y: self.y
+    }
+}
+
+fn Point.raise(mut self) -> Unit {
+    self.y += 1
+}
+
+fn Shape.area(self) -> Float {
+    match self {
+        Circle(r) -> 3.0 * r * r
+        Rect {
+            w
+            h
+        } -> w * h
+        Dot -> 0.0
+    }
+}
+
+fn Shape.label(self) -> String {
+    match self {
+        Circle(r) -> "circle r=${r}"
+        Rect(w, h) -> "rect ${w}x${h}"
+        Dot -> "dot"
+    }
+}
+
+let mut p = Point {
+    x: 1
+    y: 2
+}
+let q = p.shifted(10)
+p.raise()
+print "p=(${p.x}, ${p.y}) q=(${q.x}, ${q.y})"
+
+let shapes = Array.of(Circle(1.0), Rect(2.0, 3.0), Dot)
+for s in &shapes {
+    print "${s.label()} area=${s.area()}"
+}
+if shapes.get(1) is Some(Rect(w, _)) {
+    print "second shape is ${w} wide"
+}

@@ -1,0 +1,34 @@
+-- lib/twice.kg --
+// Ledger L-08/L-116: an unconstrained type parameter is affine, so
+// consuming it twice is use-after-move, exactly like a concrete
+// move-only type (this used to type-check: own.go's moveOnly excluded
+// every sem.KParam local from tracking).
+fn consume[T](x: T) -> Unit {}
+
+fn twice[T](w: T) -> Unit {
+    consume(w)
+    consume(w)
+}
+-- expect --
+fn lib.consume(%x: T) -> Unit {
+  b0:
+    %t1 = unit
+    drop(%x)
+    return %t1
+}
+fn lib.twice(%w: T) -> Unit {
+  b0:
+    %t1 = move(%w)
+    %t2 = call consume(%t1)
+    drop(%t2)
+    %t3 = move(%w)
+    %t4 = call consume(%t3)
+    nop
+    return %t4
+}
+error[use-after-move]: `w` was moved; it cannot be used again
+ --> lib/twice.kg:9:13
+  |
+9 |     consume(w)
+  |             ^
+

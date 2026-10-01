@@ -1,0 +1,77 @@
+-- lib/capture.kg --
+type Res = resource {
+    pub id Int
+}
+
+fn Res.drop(move self) -> Unit {
+    _ = self
+}
+
+fn keep(r: Res) -> Int {
+    r.id
+}
+
+fn each(xs: &Array[Int], f: fn(&Int) -> Int) -> Int {
+    xs.with(0, f) || 0
+}
+
+fn moveOut(xs: &Array[Int], r: Res) -> Int {
+    each(xs, (x: &Int) => keep(r))
+}
+-- expect --
+fn lib.Res.drop(%self: Res) -> Unit {
+  b0:
+    %t1 = move(%self)
+    drop(%t1)
+    %t2 = unit
+    return %t2
+}
+fn lib.keep(%r: Res) -> Int {
+  b0:
+    %t1 = field 0(%r)
+    drop(%r)
+    return %t1
+}
+fn lib.each(%xs: &Array[Int], %f: fn(&Int) -> Int) -> Int {
+  b0:
+    %t2 = const 0: usize
+    %t3 = copy(%f)
+    %t4 = call with(%xs, %t2, %t3)
+    %t6 = isvariant Some(%t4)
+    branch %t6 ? b1 : b2
+  b1:
+    %t7 = payload 0(%t4)
+    %t5 = copy(%t7)
+    jump b3
+  b2:
+    %t8 = unit
+    %t9 = const 0: Int
+    %t5 = copy(%t9)
+    jump b3
+  b3:
+    drop(%t4)
+    drop(%f)
+    return %t5
+}
+fn lib.moveOut.closure1(%r: Res, %x: &Int) -> Int {
+  b0:
+    %t2 = move(%r)
+    %t3 = call keep(%t2)
+    nop
+    return %t3
+}
+fn lib.moveOut(%xs: &Array[Int], %r: Res) -> Int {
+  b0:
+    %t2 = copy(%xs)
+    %t3 = copy(%r)
+    %t4 = closure closure(%t3)
+    %t5 = call each(%t2, %t4)
+    drop(%r)
+    return %t5
+}
+error[move-from-borrow]: `r` is lent to this closure and cannot be moved out; clone it
+  --> lib/capture.kg:18:32
+   |
+18 |     each(xs, (x: &Int) => keep(r))
+   |                                ^
+

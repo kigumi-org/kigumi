@@ -1,0 +1,264 @@
+-- src --
+let a = 1 + 2 * 3 - 4 / 5 % 6
+let b = ((x << 2) & (y ^ z)) | w
+let b2 = x | y | z
+let c = (a + b) |> f
+let d = (x |> f) == expected
+let e = (a |> f) || fallback
+let g = await f() + h
+let h = -x + !y + ~z
+let i = (a <= b && c) || (d && e)
+let i2 = a == b && c < d
+let j = a +^ b *- c
+let k = 0..n
+let k2 = 0..(n + 1)
+let l = s[a..b]
+let m = value
+    |> normalize
+    |> encode(utf8)
+    |> sink
+let n = value |>
+    stage
+let o = x?.y?.z || 0
+let p = open(path)?
+let q = &value
+let r = &mut buffer
+let t = comptime f()
+let u = comptime { 1 + 2 }
+let v = pure noalloc { compute() }
+let w = if a { 1 } else { 2 }
+let y = x is Some(v) && v > 0
+let z = n - 1
+let r9a = a
+    && b
+    && c
+let r9b = a
+    || b
+-- expect --
+File
+  Let
+    pattern: PatBind a
+    init: Binary -
+      Binary +
+        IntLit 1
+        Binary *
+          IntLit 2
+          IntLit 3
+      Binary %
+        Binary /
+          IntLit 4
+          IntLit 5
+        IntLit 6
+  Let
+    pattern: PatBind b
+    init: Binary |
+      Paren
+        Binary &
+          Paren
+            Binary <<
+              Ident x
+              IntLit 2
+          Paren
+            Binary ^
+              Ident y
+              Ident z
+      Ident w
+  Let
+    pattern: PatBind b2
+    init: Binary |
+      Binary |
+        Ident x
+        Ident y
+      Ident z
+  Let
+    pattern: PatBind c
+    init: Binary |>
+      Paren
+        Binary +
+          Ident a
+          Ident b
+      Ident f
+  Let
+    pattern: PatBind d
+    init: Binary ==
+      Paren
+        Binary |>
+          Ident x
+          Ident f
+      Ident expected
+  Let
+    pattern: PatBind e
+    init: Binary ||
+      Paren
+        Binary |>
+          Ident a
+          Ident f
+      Ident fallback
+  Let
+    pattern: PatBind g
+    init: Binary +
+      Await
+        Call
+          Ident f
+          List
+      Ident h
+  Let
+    pattern: PatBind h
+    init: Binary +
+      Binary +
+        Unary -
+          Ident x
+        Unary !
+          Ident y
+      Unary ~
+        Ident z
+  Let
+    pattern: PatBind i
+    init: Binary ||
+      Paren
+        Binary &&
+          Binary <=
+            Ident a
+            Ident b
+          Ident c
+      Paren
+        Binary &&
+          Ident d
+          Ident e
+  Let
+    pattern: PatBind i2
+    init: Binary &&
+      Binary ==
+        Ident a
+        Ident b
+      Binary <
+        Ident c
+        Ident d
+  Let
+    pattern: PatBind j
+    init: Binary +^
+      Ident a
+      Binary *-
+        Ident b
+        Ident c
+  Let
+    pattern: PatBind k
+    init: Binary ..
+      IntLit 0
+      Ident n
+  Let
+    pattern: PatBind k2
+    init: Binary ..
+      IntLit 0
+      Paren
+        Binary +
+          Ident n
+          IntLit 1
+  Let
+    pattern: PatBind l
+    init: Bracket
+      Ident s
+      List
+        Binary ..
+          Ident a
+          Ident b
+  Let
+    pattern: PatBind m
+    init: Binary |>
+      Binary |>
+        Binary |>
+          Ident value
+          Ident normalize
+        Call
+          Ident encode
+          List
+            Ident utf8
+      Ident sink
+  Let
+    pattern: PatBind n
+    init: Binary |>
+      Ident value
+      Ident stage
+  Let
+    pattern: PatBind o
+    init: Binary ||
+      OptMember z
+        OptMember y
+          Ident x
+      IntLit 0
+  Let
+    pattern: PatBind p
+    init: Try
+      Call
+        Ident open
+        List
+          Ident path
+  Let
+    pattern: PatBind q
+    init: Borrow
+      Ident value
+  Let
+    pattern: PatBind r
+    init: Borrow mut
+      Ident buffer
+  Let
+    pattern: PatBind t
+    init: Comptime
+      Call
+        Ident f
+        List
+  Let
+    pattern: PatBind u
+    init: Comptime
+      Block
+        ExprStmt
+          Binary +
+            IntLit 1
+            IntLit 2
+  Let
+    pattern: PatBind v
+    init: ContractExpr pure noalloc
+      Block
+        ExprStmt
+          Call
+            Ident compute
+            List
+  Let
+    pattern: PatBind w
+    init: If
+      cond: Ident a
+      then: Block
+        ExprStmt
+          IntLit 1
+      else: Block
+        ExprStmt
+          IntLit 2
+  Let
+    pattern: PatBind y
+    init: Binary &&
+      Is
+        Ident x
+        PatCtor
+          Path Some
+          List
+            PatBind v
+      Binary >
+        Ident v
+        IntLit 0
+  Let
+    pattern: PatBind z
+    init: Binary -
+      Ident n
+      IntLit 1
+  Let
+    pattern: PatBind r9a
+    init: Binary &&
+      Binary &&
+        Ident a
+        Ident b
+      Ident c
+  Let
+    pattern: PatBind r9b
+    init: Binary ||
+      Ident a
+      Ident b

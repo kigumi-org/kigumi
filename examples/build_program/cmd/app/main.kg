@@ -1,0 +1,8 @@
+#!/usr/bin/env kigumi
+
+// gen_value comes from the C file the build program generated.
+extern(C) {
+    fn gen_value() -> i32
+}
+
+print "generated ${unsafe { gen_value() }}"

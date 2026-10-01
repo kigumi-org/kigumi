@@ -1,0 +1,7 @@
+import clib from c/clib
+import ffi from std/ffi
+
+let text = "hello"
+let s = ffi.CString.new(&text)?
+let n = unsafe { clib.strlen(s.ptr()) }
+print "${n}"

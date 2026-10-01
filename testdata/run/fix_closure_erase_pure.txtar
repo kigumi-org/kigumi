@@ -1,0 +1,9 @@
+-- src --
+let mut n = 0
+let k = (x: Int) => x + n
+let m: pure fn(Int) -> Int = k
+let inc = () => { n += 1 }
+inc()
+print "${m(1)}"
+-- stdout --
+2

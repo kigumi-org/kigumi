@@ -1,0 +1,14 @@
+/// The current time; a bare target has no clock.
+pub fn now() -> Instant {
+    panic()
+}
+
+/// Pauses the current thread; a bare target has no clock.
+pub fn sleep(millis: i64) -> Unit {
+    panic()
+}
+
+/// The current reading of the monotonic clock; a bare target has no clock.
+pub fn monotonic() -> Monotonic {
+    panic()
+}

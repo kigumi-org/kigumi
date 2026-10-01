@@ -1,0 +1,45 @@
+-- src --
+fn show(b: Bytes) -> String {
+    let mut out = ""
+    let mut i: usize = 0
+    for x in b {
+        if i > 0 {
+            out = "${out},${x}"
+        } else {
+            out = "${x}"
+        }
+        i = i + 1
+    }
+    out
+}
+
+let data = Bytes.fromArray(&Array.of[u8](1, 2, 3, 4, 5))
+print "mid: ${show(data.slice(1, 3) || Bytes.zeros(0))}"
+print "full: ${show(data.slice(0, 5) || Bytes.zeros(0))}"
+print "empty range: len=${(data.slice(2, 2) || Bytes.zeros(1)).len()}"
+print "end past len: ${data.slice(3, 10) is None}"
+print "start>end: ${data.slice(3, 1) is None}"
+print "start==len: len=${(data.slice(5, 5) || Bytes.zeros(1)).len()}"
+print "empty self: ${Bytes.zeros(0).slice(0, 0) is Some(_)}"
+
+let z = Bytes.zeros(4)
+print "zeros: ${show(z)} len=${z.len()}"
+print "zeros empty: len=${Bytes.zeros(0).len()}"
+
+let f = Bytes.fill(9, 3)
+print "fill: ${show(f)} len=${f.len()}"
+print "fill empty: len=${Bytes.fill(7, 0).len()}"
+print "fill zero value: ${show(Bytes.fill(0, 2))}"
+-- stdout --
+mid: 2,3
+full: 1,2,3,4,5
+empty range: len=0
+end past len: true
+start>end: true
+start==len: len=0
+empty self: true
+zeros: 0,0,0,0 len=4
+zeros empty: len=0
+fill: 9,9,9 len=3
+fill empty: len=0
+fill zero value: 0,0

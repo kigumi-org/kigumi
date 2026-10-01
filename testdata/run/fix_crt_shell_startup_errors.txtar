@@ -1,0 +1,34 @@
+-- src --
+import shell from std/shell
+import coreutil from std/shell/coreutil
+
+let sh = host.shell()
+let missing = $"this_binary_does_not_exist_xyz"
+match missing |> shell.run(sh) {
+    Ok(_) -> print "ok"
+    Err(_) -> print "err-exec"
+}
+
+let arg = "abc\0def"
+let withNul = $"echo ${arg}"
+match withNul |> shell.capture(sh) {
+    Ok(_) -> print "ok"
+    Err(_) -> print "err-nul"
+}
+
+let bad = "[a-"
+match $"printf hi" |> coreutil.grep(bad) |> shell.capture(sh) {
+    Ok(_) -> print "ok"
+    Err(_) -> print "err-grep"
+}
+
+match $"echo done" |> shell.capture(sh) {
+    Ok(res) -> print "ok:${String.fromBytes(res.stdout) || "?"}"
+    Err(_) -> print "err-plain"
+}
+-- stdout --
+err-exec
+err-nul
+err-grep
+ok:done
+

@@ -1,0 +1,79 @@
+-- src --
+interface Parse {
+    fn parse(text: String) -> Self?
+}
+
+interface Show {
+    fn show(self) -> String
+}
+
+type Num = {
+    pub n Int
+}
+
+fn Num.parse(text: String) -> Num? {
+    if text == "one" { Some(Num { n: 1 }) } else if text == "two" { Some(Num { n: 2 }) } else { None }
+}
+
+fn Num.show(self) -> String {
+    "num ${self.n}"
+}
+
+type Pair[T] = {
+    pub a T
+    pub b T
+}
+
+fn Pair[T: Parse].parse(text: String) -> Pair[T]? {
+    if T.parse(text) is Some(x) {
+        if T.parse(text) is Some(y) {
+            return Some(Pair { a: x, b: y })
+        }
+    }
+    None
+}
+
+fn Pair[T: Show].show(self) -> String {
+    "(${self.a.show()}, ${self.b.show()})"
+}
+
+fn parseAll[T: Parse](texts: Array[String]) -> Array[T] {
+    let mut out = Array.empty[T]()
+    for t in texts {
+        if T.parse(t) is Some(v) {
+            out.push(v)
+        }
+    }
+    out
+}
+
+fn showAll[T: Show](xs: Array[T]) -> Array[String] {
+    xs.map((x) => x.show())
+}
+
+fn parseOne[T: Parse](text: String) -> T? {
+    let f = () => T.parse(text)
+    f()
+}
+
+let nums = parseAll[Num](Array.of("one", "zero", "two"))
+for s in showAll(nums) {
+    print s
+}
+let pairs = parseAll[Pair[Num]](Array.of("two", "x"))
+print "pairs ${pairs.len()}"
+for s in showAll(pairs) {
+    print s
+}
+match parseOne[Pair[Pair[Num]]]("one") {
+    Some(p) -> print "nested ${p.show()}"
+    None -> print "nested none"
+}
+print "${parseOne[Num]("nope") is None}"
+-- stdout --
+num 1
+num 2
+pairs 1
+(num 2, num 2)
+nested ((num 1, num 1), (num 1, num 1))
+true
